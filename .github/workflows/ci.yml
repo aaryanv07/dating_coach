@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.6"
+          channel: stable
+          cache: true
+
+      - name: Resolve mobile dependencies
+        run: flutter pub get
+        working-directory: apps/mobile
+
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed .
+        working-directory: apps/mobile
+
+      - name: Analyze mobile application
+        run: flutter analyze
+        working-directory: apps/mobile
+
+      - name: Test mobile application
+        run: flutter test
+        working-directory: apps/mobile
+
+  backend-and-infrastructure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install backend and development tools
+        run: python -m pip install -e "backend[dev]"
+
+      - name: Check Python formatting
+        run: ruff format --check backend
+
+      - name: Lint Python
+        run: ruff check backend
+
+      - name: Type-check backend
+        run: mypy app tests
+        working-directory: backend
+
+      - name: Test backend and shared tokens
+        run: pytest
+        working-directory: backend
+
+      - name: Validate Docker Compose
+        run: docker compose --env-file .env.example config --quiet

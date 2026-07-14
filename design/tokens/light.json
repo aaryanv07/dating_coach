@@ -1,0 +1,22 @@
+{
+  "$description": "ConvoCoach light semantic theme",
+  "color": {
+    "background": { "$type": "color", "$value": "#F7F8FA" },
+    "surface": { "$type": "color", "$value": "#FFFFFF" },
+    "surfaceRaised": { "$type": "color", "$value": "#FFFFFF" },
+    "text": { "$type": "color", "$value": "#17191D" },
+    "textMuted": { "$type": "color", "$value": "#5D636F" },
+    "textOnPrimary": { "$type": "color", "$value": "#FFFFFF" },
+    "primary": { "$type": "color", "$value": "#425582" },
+    "primaryMuted": { "$type": "color", "$value": "#E3E9F7" },
+    "secondary": { "$type": "color", "$value": "#006B60" },
+    "accent": { "$type": "color", "$value": "#A93D58" },
+    "border": { "$type": "color", "$value": "#D7DAE0" },
+    "divider": { "$type": "color", "$value": "#E7E9ED" },
+    "success": { "$type": "color", "$value": "#25743A" },
+    "warning": { "$type": "color", "$value": "#8A5400" },
+    "danger": { "$type": "color", "$value": "#B3261E" },
+    "focus": { "$type": "color", "$value": "#006B8F" },
+    "scrim": { "$type": "color", "$value": "#00000099" }
+  }
+}

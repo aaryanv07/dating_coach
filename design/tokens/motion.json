@@ -1,0 +1,20 @@
+{
+  "$description": "ConvoCoach motion and reduced-motion tokens",
+  "motion": {
+    "duration": {
+      "instant": { "$type": "duration", "$value": "0ms" },
+      "fast": { "$type": "duration", "$value": "120ms" },
+      "standard": { "$type": "duration", "$value": "200ms" },
+      "deliberate": { "$type": "duration", "$value": "320ms" }
+    },
+    "easing": {
+      "standard": { "$type": "cubicBezier", "$value": [0.2, 0, 0, 1] },
+      "enter": { "$type": "cubicBezier", "$value": [0, 0, 0, 1] },
+      "exit": { "$type": "cubicBezier", "$value": [0.3, 0, 1, 1] }
+    },
+    "reduced": {
+      "duration": { "$type": "duration", "$value": "0ms" },
+      "distance": { "$type": "dimension", "$value": "0px" }
+    }
+  }
+}
