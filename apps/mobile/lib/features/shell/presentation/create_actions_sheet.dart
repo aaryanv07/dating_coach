@@ -2,8 +2,9 @@ import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
 import 'package:convo_coach/core/widgets/app_overlays.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-enum _CreateAction { analyse, firstMessage }
+enum _CreateAction { importConversation, profileScreenshot }
 
 Future<void> showCreateActions(BuildContext context) async {
   final action = await showAppBottomSheet<_CreateAction>(
@@ -16,25 +17,26 @@ Future<void> showCreateActions(BuildContext context) async {
         child: Column(
           children: [
             AppCard(
-              semanticLabel: 'Analyse a conversation',
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_CreateAction.analyse),
+              semanticLabel: 'Import a conversation',
+              onTap: () => Navigator.of(
+                sheetContext,
+              ).pop(_CreateAction.importConversation),
               child: const _ActionRow(
                 icon: Icons.forum_outlined,
-                title: 'Analyse a conversation',
-                subtitle: 'Understand balance, momentum and next steps.',
+                title: 'Import conversation',
+                subtitle: 'Prepare screenshots or pasted text for review.',
               ),
             ),
             const SizedBox(height: AppSpacing.md),
             AppCard(
-              semanticLabel: 'Create a first message',
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_CreateAction.firstMessage),
+              semanticLabel: 'Profile screenshot, coming in a future phase',
+              onTap: () => Navigator.of(
+                sheetContext,
+              ).pop(_CreateAction.profileScreenshot),
               child: const _ActionRow(
                 icon: Icons.edit_note_rounded,
-                title: 'Create a first message',
-                subtitle:
-                    'Start from real profile context, not a generic line.',
+                title: 'Profile screenshot',
+                subtitle: 'Reserved for a future phase.',
               ),
             ),
           ],
@@ -44,15 +46,14 @@ Future<void> showCreateActions(BuildContext context) async {
   );
 
   if (action == null || !context.mounted) return;
-  final isAnalysis = action == _CreateAction.analyse;
+  if (action == _CreateAction.importConversation) {
+    context.push('/import');
+    return;
+  }
   await showAppDialog(
     context: context,
-    title: isAnalysis
-        ? 'Conversation tools are next'
-        : 'Profile tools are next',
-    message: isAnalysis
-        ? 'This foundation does not read or analyse conversations yet.'
-        : 'This foundation does not upload profiles or generate messages yet.',
+    title: 'Profile tools are next',
+    message: 'This phase does not upload profiles or generate messages.',
     primaryLabel: 'Got it',
   );
 }

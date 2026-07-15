@@ -17,13 +17,16 @@ def _parse_bool(value: str) -> bool:
 
 @dataclass(frozen=True, slots=True)
 class Settings:
-    """Runtime settings required by the Phase 1 API."""
+    """Runtime settings required by the API."""
 
     app_name: str = "ConvoCoach API"
     app_environment: str = "local"
     debug: bool = False
     database_url: str = DEFAULT_DATABASE_URL
     redis_url: str = DEFAULT_REDIS_URL
+    development_auth_token: str = "convocoach-local-token"
+    development_auth_subject: str = "local-user"
+    development_auth_email: str = "local@convocoach.invalid"
 
     @property
     def dependencies_configured(self) -> bool:
@@ -40,4 +43,7 @@ def get_settings() -> Settings:
         debug=_parse_bool(getenv("APP_DEBUG", "false")),
         database_url=getenv("DATABASE_URL", DEFAULT_DATABASE_URL).strip(),
         redis_url=getenv("REDIS_URL", DEFAULT_REDIS_URL).strip(),
+        development_auth_token=getenv("DEVELOPMENT_AUTH_TOKEN", "convocoach-local-token").strip(),
+        development_auth_subject=getenv("DEVELOPMENT_AUTH_SUBJECT", "local-user").strip(),
+        development_auth_email=getenv("DEVELOPMENT_AUTH_EMAIL", "local@convocoach.invalid").strip(),
     )

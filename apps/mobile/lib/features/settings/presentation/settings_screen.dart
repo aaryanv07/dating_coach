@@ -8,6 +8,7 @@ import 'package:convo_coach/core/widgets/app_overlays.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -24,6 +25,19 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
           children: [
+            Text('You', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.md),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Communication profile'),
+                subtitle: const Text('Tone, intention and message preferences'),
+                trailing: const Icon(Icons.arrow_forward_rounded),
+                onTap: () => context.push('/settings/profile'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
             Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.md),
             AppCard(

@@ -1,0 +1,3 @@
+Alembic migrations for the ConvoCoach PostgreSQL schema.
+
+Run from backend/ with: alembic upgrade head

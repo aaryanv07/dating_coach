@@ -31,6 +31,9 @@ not quietly advance into a later phase.
   data without a clear user-initiated action and informed consent.
 - Do not retain raw conversation content by default. Any retention must have a
   documented purpose, bounded duration, deletion path, and user-facing consent.
+- Keep imported screenshot bytes on-device and temporary. Clear them when an
+  import is abandoned or after its reviewed, normalized messages are saved;
+  never send screenshot paths or bytes to the Phase 4 or Phase 5 backend.
 - Never log message bodies, credentials, tokens, full prompts, or other sensitive
   payloads. Use redacted metadata and correlation IDs for diagnostics.
 - Keep secrets out of source control. Read configuration from environment
@@ -57,6 +60,8 @@ not quietly advance into a later phase.
   brief, and never block an action.
 - Keep copy non-judgmental. Clearly distinguish user-provided content, generated
   suggestions, uncertainty, and safety guidance.
+- Label conversation readiness as data quality only. It must never imply
+  relationship health, compatibility, interest, or likely success.
 
 ## Testing rules
 
@@ -90,6 +95,9 @@ not quietly advance into a later phase.
   readiness. Do not claim dependency readiness unless connectivity is checked.
 - Keep commits and changes scoped to the active phase. Phase 2 features require an
   explicit Phase 2 request.
+- Do not invoke analysis, scoring, or generation on imported conversation data
+  until the user has corrected and explicitly confirmed the normalized message
+  sequence. OCR adapters and analysis adapters must remain separate boundaries.
 
 ## Repository map
 
@@ -125,6 +133,8 @@ not quietly advance into a later phase.
 - Backend: `ruff format backend`, `ruff check backend`, then from `backend/`,
   `mypy app tests` and `pytest`.
 - Infrastructure: `docker compose --env-file .env.example config --quiet`.
+- Migrations: from `backend/`, run `alembic upgrade head` and `alembic check`
+  against PostgreSQL. Verify downgrade behavior for every new revision.
 
 ## Documentation rules
 

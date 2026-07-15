@@ -10,7 +10,7 @@ void main() {
 
     await tester.tap(find.text('Conversations'));
     await tester.pumpAndSettle();
-    expect(find.text('A quiet start.'), findsOneWidget);
+    expect(find.text('Weekend plans'), findsOneWidget);
 
     await tester.tap(find.text('Progress'));
     await tester.pumpAndSettle();
@@ -23,7 +23,7 @@ void main() {
     await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
     expect(find.text('What would help right now?'), findsOneWidget);
-    expect(find.text('Analyse a conversation'), findsOneWidget);
-    expect(find.text('Create a first message'), findsOneWidget);
+    expect(find.text('Import conversation'), findsOneWidget);
+    expect(find.text('Profile screenshot'), findsOneWidget);
   });
 }

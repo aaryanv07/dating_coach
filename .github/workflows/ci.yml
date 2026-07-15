@@ -43,6 +43,23 @@ jobs:
   backend-and-infrastructure:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      APP_ENVIRONMENT: test
+      DATABASE_URL: postgresql+asyncpg://convocoach:convocoach_test@127.0.0.1:5432/convocoach
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: convocoach
+          POSTGRES_PASSWORD: convocoach_test
+          POSTGRES_USER: convocoach
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U convocoach -d convocoach"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -68,8 +85,17 @@ jobs:
         run: mypy app tests
         working-directory: backend
 
+      - name: Apply and validate PostgreSQL migrations
+        run: |
+          alembic upgrade head
+          alembic check
+          alembic downgrade 20260714_0001
+          alembic upgrade head
+          alembic check
+        working-directory: backend
+
       - name: Test backend and shared tokens
-        run: pytest
+        run: pytest -W error
         working-directory: backend
 
       - name: Validate Docker Compose

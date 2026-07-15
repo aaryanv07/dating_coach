@@ -1,5 +1,10 @@
 import 'package:convo_coach/features/authentication/presentation/authentication_screen.dart';
 import 'package:convo_coach/features/conversations/presentation/conversations_screen.dart';
+import 'package:convo_coach/features/conversations/presentation/conversation_detail_screen.dart';
+import 'package:convo_coach/features/conversation_import/presentation/conversation_review_studio.dart';
+import 'package:convo_coach/features/conversation_import/presentation/import_type_screen.dart';
+import 'package:convo_coach/features/conversation_import/presentation/paste_import_screen.dart';
+import 'package:convo_coach/features/conversation_import/presentation/screenshot_import_screen.dart';
 import 'package:convo_coach/features/home/presentation/home_screen.dart';
 import 'package:convo_coach/features/onboarding/presentation/age_confirmation_screen.dart';
 import 'package:convo_coach/features/onboarding/presentation/onboarding_screen.dart';
@@ -9,6 +14,7 @@ import 'package:convo_coach/features/settings/presentation/settings_screen.dart'
 import 'package:convo_coach/features/shell/presentation/app_shell.dart';
 import 'package:convo_coach/features/splash/presentation/splash_screen.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
+import 'package:convo_coach/features/communication_profile/presentation/communication_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,6 +42,24 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/auth',
         builder: (context, state) => const AuthenticationScreen(),
       ),
+      GoRoute(
+        path: '/import',
+        builder: (context, state) => const ImportTypeScreen(),
+        routes: [
+          GoRoute(
+            path: 'screenshots',
+            builder: (context, state) => const ScreenshotImportScreen(),
+          ),
+          GoRoute(
+            path: 'paste',
+            builder: (context, state) => const PasteImportScreen(),
+          ),
+          GoRoute(
+            path: 'review',
+            builder: (context, state) => const ConversationReviewStudio(),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return AppShell(navigationShell: navigationShell);
@@ -54,6 +78,14 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
               GoRoute(
                 path: '/conversations',
                 builder: (context, state) => const ConversationsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':conversationId',
+                    builder: (context, state) => ConversationDetailScreen(
+                      conversationId: state.pathParameters['conversationId']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -70,6 +102,13 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'profile',
+                    builder: (context, state) =>
+                        const CommunicationProfileScreen(),
+                  ),
+                ],
               ),
             ],
           ),

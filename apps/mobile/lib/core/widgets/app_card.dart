@@ -54,7 +54,11 @@ class _AppCardState extends ConsumerState<AppCard> {
       ),
     );
 
-    if (widget.semanticLabel == null || widget.onTap == null) return card;
-    return Semantics(button: true, label: widget.semanticLabel, child: card);
+    if (widget.semanticLabel == null) return card;
+    return Semantics(
+      button: widget.onTap != null,
+      label: widget.semanticLabel,
+      child: card,
+    );
   }
 }
