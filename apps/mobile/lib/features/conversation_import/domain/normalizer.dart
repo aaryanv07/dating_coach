@@ -1,5 +1,5 @@
-import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
+import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversations/domain/saved_conversation.dart';
 
 abstract final class ConversationNormalizer {
@@ -11,30 +11,81 @@ abstract final class ConversationNormalizer {
     required List<ImportSourceMetadata> sources,
     ExtractionMetadata? extractionMetadata,
   }) {
-    if (messages.any(
-      (message) =>
-          !message.isDeleted && message.speaker == MessageSpeaker.unknown,
+    final active = messages.where((event) => !event.isDeleted);
+    if (active.any(
+      (event) => event.speaker == MessageSpeaker.unknown || event.needsReview,
     )) {
-      throw StateError('Every active message needs a confirmed speaker.');
+      throw StateError('Every active event must be reviewed and assigned.');
     }
-    final normalized = messages
-        .where((message) => !message.isDeleted)
+
+    String speakerName(MessageSpeaker speaker) => switch (speaker) {
+      MessageSpeaker.me => 'user',
+      MessageSpeaker.other => 'other',
+      MessageSpeaker.system => 'system',
+      MessageSpeaker.unknown => 'unknown',
+    };
+
+    String normalizedText(String value) =>
+        value.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+    final events = [
+      for (var position = 0; position < messages.length; position++)
+        NormalizedConversationEvent(
+          id: messages[position].id,
+          position: position,
+          eventType: messages[position].eventType,
+          speaker: speakerName(messages[position].speaker),
+          text: normalizedText(messages[position].text).isEmpty
+              ? null
+              : normalizedText(messages[position].text),
+          timestamp: messages[position].timestamp,
+          timestampEstimated: messages[position].timestampEstimated,
+          rawTimestampText: messages[position].visibleTimestampText,
+          sourceImageIndex: messages[position].sourceScreenshotIndex,
+          sourceRegionId: messages[position].sourceRegionId,
+          ocrConfidence: messages[position].ocrConfidence,
+          classificationConfidence: messages[position].classificationConfidence,
+          speakerConfidence: messages[position].speakerConfidence,
+          timestampConfidence: messages[position].timestampConfidence,
+          relationshipConfidence: messages[position].relationshipConfidence,
+          requiresReview: messages[position].needsReview,
+          metadata: Map.unmodifiable(messages[position].metadata),
+          deletedAt: messages[position].deletedAt,
+        ),
+    ];
+    final relationships = <NormalizedConversationEventRelationship>[
+      for (final event in messages)
+        for (final relationship in event.relationships)
+          NormalizedConversationEventRelationship(
+            id: relationship.id,
+            sourceEventId: relationship.sourceEventId,
+            targetEventId: relationship.targetEventId,
+            type: relationship.type,
+            confidence: relationship.confidence,
+            metadata: Map.unmodifiable(relationship.metadata),
+          ),
+    ];
+
+    // Legacy compatibility is a projection only. Reactions and structural
+    // events never become message rows and no dual-write happens implicitly.
+    final normalizedMessages = messages
+        .where(
+          (event) =>
+              !event.isDeleted &&
+              event.eventType.countsAsMessage &&
+              (event.speaker == MessageSpeaker.me ||
+                  event.speaker == MessageSpeaker.other),
+        )
         .map(
-          (message) => NormalizedConversationMessage(
-            id: message.id,
-            speaker: switch (message.speaker) {
-              MessageSpeaker.me => 'user',
-              MessageSpeaker.other => 'other',
-              MessageSpeaker.unknown => throw StateError(
-                'Every active message needs a confirmed speaker.',
-              ),
-            },
-            text: message.text.trim().replaceAll(RegExp(r'\s+'), ' '),
-            timestamp: message.timestamp,
-            timestampEstimated: message.timestampEstimated,
-            ocrConfidence: message.ocrConfidence,
-            sourceScreenshotIndex: message.sourceScreenshotIndex,
-            visibleTimestampText: message.visibleTimestampText,
+          (event) => NormalizedConversationMessage(
+            id: event.id,
+            speaker: speakerName(event.speaker),
+            text: normalizedText(event.text),
+            timestamp: event.timestamp,
+            timestampEstimated: event.timestampEstimated,
+            ocrConfidence: event.ocrConfidence,
+            sourceScreenshotIndex: event.sourceScreenshotIndex,
+            visibleTimestampText: event.visibleTimestampText,
           ),
         )
         .where((message) => message.text.isNotEmpty)
@@ -45,7 +96,9 @@ abstract final class ConversationNormalizer {
       participantName: 'Other person',
       sourceType: importType.name,
       readinessScore: readinessScore,
-      messages: normalized,
+      messages: List.unmodifiable(normalizedMessages),
+      events: List.unmodifiable(events),
+      relationships: List.unmodifiable(relationships),
       sources: [
         for (final source in sources)
           SavedConversationSource(

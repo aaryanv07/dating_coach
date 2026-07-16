@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "fixture_id": "prompt_thread_cropped_long_english",
+  "layout_preset": "prompt_thread",
+  "inspiration": "hinge_style",
+  "theme": "light",
+  "language": "english",
+  "viewport": {"width": 1080, "height": 2200},
+  "traits": [
+    "hinge_style",
+    "light_mode",
+    "english",
+    "long_messages",
+    "cropped_screenshot",
+    "missing_timeline_sections",
+    "large_screen"
+  ],
+  "expected_source_order": [0, 1],
+  "expected_duplicate_ids": [],
+  "expected_warnings": ["screenshotOrderUncertain"],
+  "messages": [
+    {
+      "id": "prompt-1",
+      "speaker": "other",
+      "text": "I still think the best city walks are the ones where nobody checks a map and everyone finds a tiny cafe by accident.",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.96,
+      "requires_manual_review": false
+    },
+    {
+      "id": "prompt-2",
+      "speaker": "me",
+      "text": "Agreed, although my version usually includes one wrong turn and a very confident claim that the station is definitely nearby.",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.95,
+      "requires_manual_review": false
+    },
+    {
+      "id": "prompt-3",
+      "speaker": "other",
+      "text": "That sounds familiar. I once turned a ten minute walk into a full tour of three neighbourhoods, but the bakery at the end saved it.",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.94,
+      "requires_manual_review": false
+    },
+    {
+      "id": "prompt-4",
+      "speaker": "me",
+      "text": "A bakery is strong evidence that the route was intentional. What did you find there?",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": null,
+      "message_ids": ["prompt-1", "prompt-2"],
+      "crop_top_pixels": 250,
+      "low_contrast": false,
+      "reactions": []
+    },
+    {
+      "source_index": 1,
+      "date_label": null,
+      "message_ids": ["prompt-3", "prompt-4"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": []
+    }
+  ]
+}

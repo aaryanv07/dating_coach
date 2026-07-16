@@ -1,5 +1,13 @@
 # AI Scoring Engine
 
+> Scope note: Phase 6A.1 implements conversation-event capture, correction, and
+> persistence only. It does not implement this scoring design. No reaction,
+> event relationship, readiness value, or extraction confidence may be treated
+> as objective relationship health, compatibility, interest, or another
+> person's internal state. A later explicitly authorized analytics phase must
+> apply the inclusion matrix in `Conversation-Event-Spec.md` and re-review every
+> score for evidence, uncertainty, privacy, and product-safety compliance.
+
 ## Vision
 
 ConvoCoach is not an AI that simply generates dating messages.

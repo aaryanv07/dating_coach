@@ -2,7 +2,7 @@
 
 ## Scope
 
-The Phase 5 Flutter application remains mobile-only and uses mock persistence
+The Phase 6A.2 Flutter application remains mobile-only and uses mock persistence
 repositories. It adds real on-device screenshot OCR on Android/iOS while keeping
 paste parsing, the Review Studio, data-quality readiness, normalization, session
 persistence, and reopen behavior.
@@ -59,3 +59,26 @@ store. Sources can be reordered or removed before extraction and are cleared on
 abandon or successful save. Processing-only cancellation retains them for retry.
 `OcrEngine` owns the pipeline contract; `TextRecognitionProvider` isolates the
 Google ML Kit bridge from provider-neutral preprocessing and extraction logic.
+
+Phase 6A qualification code lives under `benchmark/`, `integration_test/`, and
+`test_driver/`; no benchmark route or customer-facing screen is added. Ground
+truth JSON produces temporary original Canvas fixtures. The same `OcrEngine`
+pipeline runs with deterministic reference lines on the host and ML Kit on
+physical devices. Reports export only content-free metrics and fixture IDs.
+
+Phase 6A.2 keeps the customer runtime path unchanged and adds
+qualification-only modules beside it: a strict v2 result/schema boundary,
+session recorder, tool/device capability detector, Android/iOS/common runners,
+and previous/current comparison. The detector never serializes device command
+IDs or user-assigned names. A simulator can assist development but cannot set
+the native quality gate to PASS.
+
+`Conversation-Event-Spec.md` defines the typed-event domain and Review Studio
+behavior. Phase 6A.1 implements the closed event and relationship enums, typed
+normalized records and DTOs, the full event sequence in Riverpod state, and an
+explicit legacy message projection. A replaceable deterministic classifier
+preserves date separators and distinguishes standalone emoji from compact
+reactions. Review Studio renders event-specific icons and labels and supports
+type, target, speaker, timestamp, text, delete/restore, and unknown corrections.
+The 50-snapshot undo/redo boundary remains in place. Native extraction quality
+and performance still require the Phase 6A physical-device suite.

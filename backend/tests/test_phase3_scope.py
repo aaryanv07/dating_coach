@@ -18,5 +18,6 @@ def test_openapi_contains_only_phase_four_product_routes(client: TestClient) -> 
         "/api/v1/conversations/{conversation_id}",
         "/api/v1/conversations/{conversation_id}/messages",
         "/api/v1/conversations/{conversation_id}/confirm",
+        "/api/v1/conversations/{conversation_id}/events",
         "/api/v1/privacy/delete-account",
     }

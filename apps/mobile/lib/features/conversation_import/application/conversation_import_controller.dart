@@ -10,6 +10,7 @@ import 'package:convo_coach/features/conversation_import/data/screenshot_picker.
 import 'package:convo_coach/features/conversation_import/data/temporary_source_store.dart';
 import 'package:convo_coach/features/conversation_import/domain/normalizer.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/ocr_engine.dart';
 import 'package:convo_coach/features/conversation_import/domain/readiness.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
@@ -54,7 +55,8 @@ class ConversationImportState {
     this.importType,
     this.title = 'Imported conversation',
     this.sources = const [],
-    this.messages = const [],
+    List<ReviewMessage> events = const [],
+    List<ReviewMessage>? messages,
     this.past = const [],
     this.future = const [],
     this.progress = 0,
@@ -64,12 +66,13 @@ class ConversationImportState {
     this.extractionWarnings = const [],
     this.extractionMetadata,
     this.errorMessage,
-  });
+  }) : events = messages ?? events;
 
   final ConversationImportType? importType;
   final String title;
   final List<ImportSourceMetadata> sources;
-  final List<ReviewMessage> messages;
+  final List<ReviewMessage> events;
+  List<ReviewMessage> get messages => events;
   final List<List<ReviewMessage>> past;
   final List<List<ReviewMessage>> future;
   final double progress;
@@ -80,7 +83,7 @@ class ConversationImportState {
   final ExtractionMetadata? extractionMetadata;
   final String? errorMessage;
 
-  ReadinessReport get readiness => ConversationReadiness.evaluate(messages);
+  ReadinessReport get readiness => ConversationReadiness.evaluate(events);
   bool get canUndo => past.isNotEmpty;
   bool get canRedo => future.isNotEmpty;
 
@@ -89,6 +92,7 @@ class ConversationImportState {
     String? title,
     List<ImportSourceMetadata>? sources,
     List<ReviewMessage>? messages,
+    List<ReviewMessage>? events,
     List<List<ReviewMessage>>? past,
     List<List<ReviewMessage>>? future,
     double? progress,
@@ -103,7 +107,7 @@ class ConversationImportState {
       importType: importType ?? this.importType,
       title: title ?? this.title,
       sources: sources ?? this.sources,
-      messages: messages ?? this.messages,
+      events: events ?? messages ?? this.events,
       past: past ?? this.past,
       future: future ?? this.future,
       progress: progress ?? this.progress,
@@ -290,7 +294,7 @@ class ConversationImportController extends Notifier<ConversationImportState> {
             cancellationToken: cancellationToken,
           );
       state = state.copyWith(
-        messages: result.messages,
+        events: result.events,
         past: const [],
         future: const [],
         extractionWarnings: result.warnings,
@@ -352,7 +356,7 @@ class ConversationImportController extends Notifier<ConversationImportState> {
     state = state.copyWith(
       importType: ConversationImportType.paste,
       sources: [source],
-      messages: messages,
+      events: List.unmodifiable(messages),
       past: const [],
       future: const [],
       extractionWarnings: const [],
@@ -376,6 +380,101 @@ class ConversationImportController extends Notifier<ConversationImportState> {
       (message) => message.copyWith(
         speaker: speaker,
         status: ReviewMessageStatus.edited,
+        requiresReview: false,
+      ),
+    );
+  }
+
+  void changeEventType(String id, ConversationEventType eventType) {
+    _updateMessage(id, (event) {
+      final relationships = eventType.supportsRelationship
+          ? event.relationships
+          : const <ConversationEventRelationship>[];
+      final resolved =
+          eventType != ConversationEventType.unknown &&
+          (eventType != ConversationEventType.reaction ||
+              relationships.isNotEmpty);
+      return event.copyWith(
+        eventType: eventType,
+        speaker: eventType.isStructural
+            ? MessageSpeaker.system
+            : event.speaker == MessageSpeaker.system
+            ? MessageSpeaker.unknown
+            : event.speaker,
+        relationships: relationships,
+        relationshipConfidence: relationships.isEmpty
+            ? null
+            : event.relationshipConfidence,
+        requiresReview: !resolved,
+        status: ReviewMessageStatus.edited,
+      );
+    });
+  }
+
+  void attachEventRelationship(String sourceId, String targetId) {
+    final source = state.events
+        .where((event) => event.id == sourceId)
+        .firstOrNull;
+    if (source == null ||
+        !source.eventType.supportsRelationship ||
+        sourceId == targetId ||
+        !state.events.any((event) => event.id == targetId)) {
+      return;
+    }
+    _updateMessage(sourceId, (event) {
+      final type = switch (event.eventType) {
+        ConversationEventType.reaction =>
+          ConversationEventRelationshipType.reactionTarget,
+        ConversationEventType.replyReference =>
+          ConversationEventRelationshipType.replyTarget,
+        ConversationEventType.editedMessageMarker =>
+          ConversationEventRelationshipType.editTarget,
+        _ => ConversationEventRelationshipType.systemContext,
+      };
+      return event.copyWith(
+        relationships: [
+          ConversationEventRelationship(
+            id: 'relationship-${event.id}-$targetId',
+            sourceEventId: event.id,
+            targetEventId: targetId,
+            type: type,
+            confidence: 1,
+            metadata: const {'reviewed_by_user': true},
+          ),
+        ],
+        relationshipConfidence: 1.0,
+        requiresReview: event.eventType == ConversationEventType.unknown,
+        status: ReviewMessageStatus.edited,
+      );
+    });
+  }
+
+  void detachEventRelationship(String sourceId) {
+    _updateMessage(
+      sourceId,
+      (event) => event.copyWith(
+        relationships: const [],
+        relationshipConfidence: null,
+        requiresReview: event.eventType.supportsRelationship,
+        status: ReviewMessageStatus.edited,
+      ),
+    );
+  }
+
+  void changeTimestamp(
+    String id, {
+    required DateTime? timestamp,
+    required String? visibleText,
+  }) {
+    _updateMessage(
+      id,
+      (event) => event.copyWith(
+        timestamp: timestamp,
+        visibleTimestampText: visibleText,
+        timestampEstimated: false,
+        timestampConfidence: timestamp == null ? null : 1.0,
+        requiresReview: false,
+        status: ReviewMessageStatus.edited,
       ),
     );
   }
@@ -385,6 +484,7 @@ class ConversationImportController extends Notifier<ConversationImportState> {
     final speaker = switch (message.speaker) {
       MessageSpeaker.me => MessageSpeaker.other,
       MessageSpeaker.other || MessageSpeaker.unknown => MessageSpeaker.me,
+      MessageSpeaker.system => MessageSpeaker.system,
     };
     changeSpeaker(id, speaker);
   }
@@ -400,6 +500,7 @@ class ConversationImportController extends Notifier<ConversationImportState> {
               MessageSpeaker.me => MessageSpeaker.other,
               MessageSpeaker.other => MessageSpeaker.me,
               MessageSpeaker.unknown => MessageSpeaker.unknown,
+              MessageSpeaker.system => MessageSpeaker.system,
             },
             status: ReviewMessageStatus.edited,
           ),
@@ -409,14 +510,18 @@ class ConversationImportController extends Notifier<ConversationImportState> {
   void deleteMessage(String id) {
     _updateMessage(
       id,
-      (message) => message.copyWith(status: ReviewMessageStatus.deleted),
+      (message) => message.copyWith(
+        status: ReviewMessageStatus.deleted,
+        deletedAt: DateTime.now().toUtc(),
+      ),
     );
   }
 
   void restoreMessage(String id) {
     _updateMessage(
       id,
-      (message) => message.copyWith(status: ReviewMessageStatus.edited),
+      (message) =>
+          message.copyWith(status: ReviewMessageStatus.edited, deletedAt: null),
     );
   }
 
@@ -437,6 +542,14 @@ class ConversationImportController extends Notifier<ConversationImportState> {
           sourceScreenshotIndex: original.sourceScreenshotIndex,
           status: ReviewMessageStatus.added,
           visibleTimestampText: original.visibleTimestampText,
+          eventType: original.eventType,
+          classificationConfidence: original.classificationConfidence,
+          speakerConfidence: original.speakerConfidence,
+          timestampConfidence: original.timestampConfidence,
+          relationshipConfidence: null,
+          requiresReview: original.eventType.supportsRelationship,
+          sourceRegionId: original.sourceRegionId,
+          metadata: original.metadata,
         ),
       );
     _commit(next);
@@ -460,7 +573,10 @@ class ConversationImportController extends Notifier<ConversationImportState> {
       text: '${current.text.trim()} ${nextMessage.text.trim()}'.trim(),
       status: ReviewMessageStatus.edited,
     );
-    next[nextIndex] = nextMessage.copyWith(status: ReviewMessageStatus.deleted);
+    next[nextIndex] = nextMessage.copyWith(
+      status: ReviewMessageStatus.deleted,
+      deletedAt: DateTime.now().toUtc(),
+    );
     _commit(next);
   }
 
@@ -502,6 +618,13 @@ class ConversationImportController extends Notifier<ConversationImportState> {
         sourceScreenshotIndex: original.sourceScreenshotIndex,
         status: ReviewMessageStatus.edited,
         visibleTimestampText: original.visibleTimestampText,
+        eventType: original.eventType,
+        classificationConfidence: original.classificationConfidence,
+        speakerConfidence: original.speakerConfidence,
+        timestampConfidence: original.timestampConfidence,
+        requiresReview: false,
+        sourceRegionId: original.sourceRegionId,
+        metadata: original.metadata,
       ),
     );
     _commit(next);
@@ -532,11 +655,23 @@ class ConversationImportController extends Notifier<ConversationImportState> {
     String text = '',
     MessageSpeaker speaker = MessageSpeaker.me,
   }) {
+    addEvent(
+      eventType: ConversationEventType.textMessage,
+      text: text,
+      speaker: speaker,
+    );
+  }
+
+  void addEvent({
+    required ConversationEventType eventType,
+    String text = '',
+    MessageSpeaker speaker = MessageSpeaker.me,
+  }) {
     final next = [
       ...state.messages,
       ReviewMessage(
         id: _nextMessageId('added'),
-        speaker: speaker,
+        speaker: eventType.isStructural ? MessageSpeaker.system : speaker,
         text: text,
         timestamp: null,
         timestampEstimated: false,
@@ -547,6 +682,12 @@ class ConversationImportController extends Notifier<ConversationImportState> {
             ? state.sources.last.index
             : null,
         status: ReviewMessageStatus.added,
+        eventType: eventType,
+        requiresReview:
+            eventType == ConversationEventType.unknown ||
+            eventType.supportsRelationship,
+        classificationConfidence: 1,
+        speakerConfidence: eventType.isStructural ? 1 : null,
       ),
     ];
     _commit(next);
@@ -557,8 +698,8 @@ class ConversationImportController extends Notifier<ConversationImportState> {
     final previous = state.past.last;
     state = state.copyWith(
       messages: previous,
-      past: state.past.sublist(0, state.past.length - 1),
-      future: [state.messages, ...state.future],
+      past: List.unmodifiable(state.past.sublist(0, state.past.length - 1)),
+      future: List.unmodifiable([state.events, ...state.future]),
     );
   }
 
@@ -567,8 +708,8 @@ class ConversationImportController extends Notifier<ConversationImportState> {
     final next = state.future.first;
     state = state.copyWith(
       messages: next,
-      past: [...state.past, state.messages],
-      future: state.future.sublist(1),
+      past: List.unmodifiable([...state.past, state.events]),
+      future: List.unmodifiable(state.future.sublist(1)),
     );
   }
 
@@ -622,12 +763,13 @@ class ConversationImportController extends Notifier<ConversationImportState> {
   }
 
   void _commit(List<ReviewMessage> messages) {
-    final past = [...state.past, state.messages];
+    final past = [...state.past, state.events];
+    final boundedPast = past.length > _historyLimit
+        ? past.sublist(past.length - _historyLimit)
+        : past;
     state = state.copyWith(
       messages: List.unmodifiable(messages),
-      past: past.length > _historyLimit
-          ? past.sublist(past.length - _historyLimit)
-          : past,
+      past: List.unmodifiable(boundedPast),
       future: const [],
       errorMessage: null,
     );

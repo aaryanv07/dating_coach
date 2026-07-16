@@ -1,3 +1,4 @@
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversation_import/domain/timestamp_parser.dart';
@@ -49,19 +50,23 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
               current.first.bounds,
               (value, line) => value.union(line.bounds),
             );
+        final candidate = CandidateMessageRegion(
+          text: text,
+          bounds: bounds,
+          confidence: _averageConfidence(current),
+          sourceIndex: page.sourceIndex,
+          sourceOrder: output.length,
+          speaker: MessageSpeaker.unknown,
+          timestamp: resolveVisibleTimestamp(
+            dateContext: dateContext,
+            timestamp: currentTimestamp,
+          ),
+          visibleTimestampText: currentTimestamp?.rawText,
+          pageWidth: page.width,
+        );
         output.add(
-          CandidateMessageRegion(
-            text: text,
-            bounds: bounds,
-            confidence: _averageConfidence(current),
-            sourceIndex: page.sourceIndex,
-            sourceOrder: output.length,
-            speaker: MessageSpeaker.unknown,
-            timestamp: resolveVisibleTimestamp(
-              dateContext: dateContext,
-              timestamp: currentTimestamp,
-            ),
-            visibleTimestampText: currentTimestamp?.rawText,
+          candidate.copyWith(
+            compactAttachmentHint: _isCompactAttachment(candidate, output),
           ),
         );
       }
@@ -77,6 +82,21 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
         if (timestamp.precision == TimestampPrecision.date ||
             timestamp.precision == TimestampPrecision.dateTime) {
           flush();
+          output.add(
+            CandidateMessageRegion(
+              text: cleanText,
+              bounds: line.bounds,
+              confidence: line.confidence ?? _elementConfidence(line),
+              sourceIndex: page.sourceIndex,
+              sourceOrder: output.length,
+              speaker: MessageSpeaker.system,
+              timestamp: timestamp.value,
+              visibleTimestampText: timestamp.rawText,
+              eventTypeHint: ConversationEventType.dateSeparator,
+              pageWidth: page.width,
+              compactAttachmentHint: false,
+            ),
+          );
           dateContext = timestamp;
           pendingTimestamp = null;
         } else if (current.isNotEmpty) {
@@ -117,6 +137,28 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
             ? previous.bounds.left
             : next.bounds.left);
     return horizontalOverlap > 0 || centerDistance <= width * 0.12;
+  }
+
+  bool _isCompactAttachment(
+    CandidateMessageRegion current,
+    List<CandidateMessageRegion> previous,
+  ) {
+    final target = previous.reversed
+        .where((item) => !(item.eventTypeHint?.isStructural ?? false))
+        .firstOrNull;
+    if (target == null || target.sourceIndex != current.sourceIndex) {
+      return false;
+    }
+    final horizontallyNear =
+        current.bounds.centerX >= target.bounds.left - current.bounds.width &&
+        current.bounds.centerX <= target.bounds.right + current.bounds.width;
+    final verticalGap = (current.bounds.centerY - target.bounds.bottom).abs();
+    final compact =
+        current.bounds.width <= target.bounds.width * 0.45 &&
+        current.bounds.height <= target.bounds.height * 0.9;
+    return horizontallyNear &&
+        compact &&
+        verticalGap <= target.bounds.height.clamp(20, 56);
   }
 
   double? _averageConfidence(List<RecognizedLine> lines) {

@@ -21,7 +21,7 @@ Raw content should be processed ephemerally unless the user explicitly chooses a
 feature that requires storage. Derived data can remain sensitive and must not be
 treated as anonymous merely because names were removed.
 
-## Phase 4 and Phase 5 controls
+## Phase 4 through Phase 6A.2 controls
 
 - Authenticated identities are derived from a verified bearer token, never a
   client-supplied user ID.
@@ -30,7 +30,8 @@ treated as anonymous merely because names were removed.
 - Consent decisions are append-only records containing type, grant/withdrawal,
   policy version, and timestamp.
 - Conversation-list responses include counts and labels but no message bodies.
-- Deleting a conversation immediately removes its participants and messages.
+- Deleting a conversation immediately removes its participants, messages,
+  events, and event relationships.
 - Requesting account deletion removes conversations, consents, preferences, and
   the communication profile; redacts email/display name; blocks re-entry; and
   records pending identity-provider cleanup.
@@ -52,6 +53,29 @@ treated as anonymous merely because names were removed.
 - Backend source rows retain only MIME type, byte size, order, and a mandatory
   `deleted` or `not_stored` status. There is no path, object key, URL, or blob.
 - Readiness is labeled and implemented as data quality only.
+- Phase 6A ground truth and screenshots contain original synthetic conversation
+  content only. Generated images are temporary, and benchmark exports contain no
+  transcript, screenshot, source path, or source hash.
+- Content-free extraction diagnostics are limited to counts, confidence
+  availability, provider versions, and source ordering. They cannot reconstruct
+  a conversation.
+- Phase 6A.2 readiness evidence omits device IDs and user-assigned device names.
+  Benchmark v2 and comparison exports pass exact-field validation and contain
+  only hardware class/version facts, synthetic fixture IDs, safe outcome
+  categories, and aggregate measurements.
+- Phase 6A.3 reran only the original synthetic, content-free qualification
+  workflow. No physical device was available, no native OCR content was
+  produced, and no screenshot, transcript, prompt, device identifier, source
+  path, or source hash was uploaded or added to a report. A clean release bundle
+  passed both benchmark-path and synthetic-corpus artifact scans.
+
+The Phase 6A.1 typed event runtime preserves the same privacy boundary. Media
+bytes remain temporary, voice notes are not transcribed without explicit
+consent, contact and payment metadata is minimized or rejected, unknown content
+is not guessed, and screenshot bytes or paths never reach the backend. Event
+replacement is owner scoped and consent gated; conversation/account deletion
+cascades through both event tables. The existing product export surface still
+needs to expose events before a production release that retains event history.
 
 ## Product safety
 
@@ -63,6 +87,6 @@ interpretation of another person.
 
 Features involving crisis, abuse, self-harm, threats, stalking, minors, or sexual
 coercion require dedicated policy and escalation design before implementation.
-The current phase contains on-device OCR and data-quality readiness. It contains
-no semantic AI, inference about people or relationships, screenshot upload, or
-generated coaching.
+The current phase contains on-device OCR, typed event review, and data-quality
+readiness. It contains no semantic AI, inference about people or relationships,
+screenshot upload, analytics, or generated coaching.

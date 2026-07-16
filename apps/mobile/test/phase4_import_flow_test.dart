@@ -122,7 +122,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel(RegExp(r'Message 1, Other person')),
+        find.bySemanticsLabel(RegExp(r'Event 1, Text message, Other person')),
         findsOneWidget,
       );
       final undoSize = tester.getSize(find.byTooltip('Undo'));

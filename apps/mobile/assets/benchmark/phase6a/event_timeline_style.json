@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "fixture_id": "event_timeline_mixed_language_low_contrast",
+  "layout_preset": "dense_thread",
+  "inspiration": "original_event_timeline_style",
+  "theme": "light",
+  "language": "hinglish",
+  "viewport": {"width": 1080, "height": 2600},
+  "traits": [
+    "original_design",
+    "light_mode",
+    "mixed_english_hinglish",
+    "roman_hindi",
+    "low_contrast_text",
+    "deleted_messages",
+    "media_placeholders",
+    "system_messages",
+    "large_screen"
+  ],
+  "expected_source_order": [0],
+  "expected_duplicate_ids": [],
+  "expected_warnings": [],
+  "messages": [
+    {
+      "id": "timeline-1",
+      "speaker": "other",
+      "text": "Kal coffee ka plan still on hai?",
+      "timestamp": "2026-07-18T17:40:00.000",
+      "visible_timestamp_text": "5:40 PM",
+      "reference_confidence": 0.89,
+      "requires_manual_review": false
+    },
+    {
+      "id": "timeline-2",
+      "speaker": "me",
+      "text": "Yes, same quiet place works for me.",
+      "timestamp": "2026-07-18T17:42:00.000",
+      "visible_timestamp_text": "5:42 PM",
+      "reference_confidence": 0.88,
+      "requires_manual_review": false
+    },
+    {
+      "id": "timeline-photo",
+      "speaker": "other",
+      "text": "Photo",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.92,
+      "requires_manual_review": false,
+      "event_type": "image"
+    },
+    {
+      "id": "timeline-voice",
+      "speaker": "me",
+      "text": "Voice note",
+      "timestamp": null,
+      "visible_timestamp_text": null,
+      "reference_confidence": 0.9,
+      "requires_manual_review": false,
+      "event_type": "voice_note"
+    }
+  ],
+  "events": [
+    {
+      "id": "timeline-deleted",
+      "event_type": "deleted_message",
+      "speaker": "other",
+      "text": "This message was deleted",
+      "requires_manual_review": false
+    },
+    {
+      "id": "timeline-encryption",
+      "event_type": "encryption_notice",
+      "speaker": "system",
+      "text": "Messages and calls are end-to-end encrypted",
+      "requires_manual_review": false
+    },
+    {
+      "id": "timeline-unread",
+      "event_type": "unread_separator",
+      "speaker": "system",
+      "text": "New messages",
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": "18 Jul 2026",
+      "message_ids": [
+        "timeline-1",
+        "timeline-2",
+        "timeline-photo",
+        "timeline-voice"
+      ],
+      "event_ids": [
+        "timeline-deleted",
+        "timeline-encryption",
+        "timeline-unread"
+      ],
+      "crop_top_pixels": 0,
+      "low_contrast": true,
+      "reactions": []
+    }
+  ]
+}

@@ -107,6 +107,10 @@ provenance.
 - Native ML Kit calls cannot be interrupted mid-call. Cancellation prevents
   later stages and discards the result after the native call returns.
 - Bubble grouping is conservative and cannot recover visual bubble backgrounds,
-  reactions, quoted replies, stickers, or every chat application's layout.
-- All screenshots and tests are synthetic. A consented physical-device corpus
-  and correction-rate benchmark remain required before release.
+  reactions, quoted replies, stickers, or every chat application's layout. Phase
+  5 originally emitted review messages only; Phase 6A.1 now classifies the
+  recognized regions into typed review events without changing Phase 5's native
+  OCR limitations.
+- All screenshots and tests are synthetic. Phase 6A provides the original
+  synthetic qualification harness and physical-device entry points; Android and
+  iOS evidence is still required before release.

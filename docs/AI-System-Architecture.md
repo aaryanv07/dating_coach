@@ -20,6 +20,13 @@ It explains how screenshots, pasted conversations, profile data, user preference
 
 This document is the technical source of truth for the ConvoCoach Intelligence Engine.
 
+`Conversation-Event-Spec.md` is the canonical source for the event types,
+relationships, confidence fields, review behavior, analytics inclusion rules and
+persistence direction that feed this engine. Phase 6A.1 implements the typed
+runtime and an explicit message compatibility projection. It does not authorize
+this AI engine, deterministic analytics, scoring, or generation to consume the
+events; native qualification and a later explicit phase remain required.
+
 ---
 
 ## 2. Architecture Principles
@@ -169,20 +176,29 @@ Preferred OCR order:
 3. Backend normalization
 4. Multimodal model fallback when layout is unclear
 
-OCR output should include:
+The OCR and layout-recognition output is a sequence of draft conversation events.
+Phase 6A.1 retains a filtered message projection for older callers, but Review
+Studio and normalization operate on the full typed sequence. Output includes:
 
 ```json
 {
-  "messages": [
+  "events": [
     {
+      "id": "uuid",
       "position": 1,
+      "event_type": "text_message",
       "speaker": "user",
       "text": "How was your weekend?",
       "timestamp": "2026-07-13T19:10:00+05:30",
       "timestamp_is_estimated": false,
-      "reaction": null,
       "source_image_index": 0,
-      "ocr_confidence": 0.94
+      "source_region_id": "region-12",
+      "ocr_confidence": 0.94,
+      "classification_confidence": 0.91,
+      "speaker_confidence": 0.97,
+      "timestamp_confidence": 0.90,
+      "requires_review": false,
+      "metadata": {}
     }
   ]
 }
@@ -198,6 +214,11 @@ The OCR layer must preserve:
 * Deleted-message markers
 * Speaker side
 * Source screenshot index
+
+Reactions, emoji-only messages, media, calls, deleted-message markers, reply
+references, structural events and unknown content remain distinct event types.
+An unknown classification is valid output and must require user review. The
+complete rules are defined in `Conversation-Event-Spec.md`.
 
 ---
 
@@ -769,6 +790,8 @@ Required tests:
 * Ownership tests
 * Background-job tests
 * End-to-end conversation-analysis tests
+* Original synthetic extraction-fixture tests
+* Physical Android and iOS extraction qualification
 
 Use synthetic conversations only.
 
@@ -779,8 +802,10 @@ Use synthetic conversations only.
 The phase labels in this section describe the future AI subsystem sequence, not
 the repository-wide product phases. Repository Phase 5 implements only the real
 conversation extraction engine described in
-`docs/phase-5-conversation-extraction.md`; none of the AI milestones below are
-implemented by that phase.
+`docs/phase-5-conversation-extraction.md`, and repository Phase 6A qualifies that
+engine using the synthetic and physical-device harness in
+`docs/phase-6a-native-extraction-qualification.md`. None of the AI milestones
+below are implemented by those phases.
 
 Phase 1:
 Architecture and data contracts
