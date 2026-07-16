@@ -40,6 +40,14 @@ jobs:
         run: flutter test
         working-directory: apps/mobile
 
+      - name: Run provider-neutral extraction benchmark
+        run: flutter test benchmark/phase6a_reference_benchmark_test.dart
+        working-directory: apps/mobile
+
+      - name: Build release Flutter bundle
+        run: flutter build bundle --release
+        working-directory: apps/mobile
+
   backend-and-infrastructure:
     runs-on: ubuntu-latest
     timeout-minutes: 15

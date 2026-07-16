@@ -1,6 +1,6 @@
 # Backend Architecture
 
-## Phase 5 boundaries
+## Phase 6A.1 boundaries
 
 ```mermaid
 flowchart LR
@@ -42,13 +42,23 @@ and source metadata. Screenshot content is neither accepted nor stored.
 Screenshot confirmation also records validated, content-free extraction provider
 and pipeline versions.
 
+The independent event surface uses `conversation-events.v1`. Event replacement
+requires active history consent and atomically changes only
+`conversation_events` and `conversation_event_relationships`. Existing message
+rows and response contracts are not rewritten. When no events are stored, the
+event GET route returns an explicit read-time `text_message` projection with
+`compatibility_mode: message_projection`; it never persists a hidden second
+copy. Event metadata is depth/size bounded and rejects raw-source paths, bytes,
+prompts, and direct payment/contact identifiers.
+
 The current backend has no Redis, job, object storage, screenshot upload, OCR,
-analytics, relationship scoring, AI-provider, or subscription behavior.
+analytics, relationship scoring, AI-provider, or subscription behavior. Event
+relationships are structural context and are not relationship-health scores.
 
 ## Deletion
 
-Conversation deletion is synchronous and cascades to participants, messages, and
-source-disposal metadata.
+Conversation deletion is synchronous and cascades to participants, messages,
+events, event relationships, and source-disposal metadata.
 Account deletion synchronously removes private child rows, redacts the user,
 blocks future sessions, and creates one pending deletion request. A later hardened
 worker must delete the external auth identity and complete identifier erasure.

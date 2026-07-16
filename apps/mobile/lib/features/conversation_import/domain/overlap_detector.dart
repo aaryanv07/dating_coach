@@ -63,6 +63,12 @@ class BoundaryOverlapDetector implements ScreenshotOverlapStrategy {
     CandidateMessageRegion first,
     CandidateMessageRegion second,
   ) {
+    if (first.eventTypeHint != second.eventTypeHint ||
+        (first.compactAttachmentHint != null &&
+            second.compactAttachmentHint != null &&
+            first.compactAttachmentHint != second.compactAttachmentHint)) {
+      return false;
+    }
     if (first.speaker != second.speaker &&
         first.speaker.name != 'unknown' &&
         second.speaker.name != 'unknown') {

@@ -40,7 +40,8 @@ verification is separate and runs against PostgreSQL.
 Docker Compose provides PostgreSQL 16 and Redis 7 with persistent named volumes,
 container health checks, and loopback-only host ports by default. The API runs on
 the host. PostgreSQL stores identity, consent, profile, normalized conversations,
-message review metadata, and content-free source-disposal metadata. Screenshot
+message review metadata, typed conversation events and relationships, and
+content-free source-disposal metadata. Screenshot
 bytes remain a temporary mobile concern. Redis still has no application data
 contract.
 
@@ -75,6 +76,14 @@ contract.
     overlap detection are separate deterministic strategies.
 14. Keep extraction idempotency in the mobile session and persist only
     content-free provider/pipeline versions, never screenshot fingerprints.
+15. Use `Conversation-Event-Spec.md` as the contract for typed imported events.
+    Phase 6A.1 implements the reversible event runtime beside legacy messages,
+    with bounded metadata, review corrections, owner-scoped v1 contracts, and
+    privacy coverage. Analytics remain deferred until a later explicit phase.
+16. Keep Phase 6A.2 qualification infrastructure outside the customer runtime.
+    Native readiness requires a physical device and complete toolchain; reports
+    use a versioned content-free schema and never serialize device command IDs,
+    user-assigned names, screenshots, transcripts, paths, or hashes.
 
 See `docs/mobile-architecture.md`, `docs/backend-architecture.md`, and
 `docs/database-schema.md` for the current component boundaries.

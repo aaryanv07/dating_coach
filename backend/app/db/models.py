@@ -23,6 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.domain.conversation_events import JsonObject
 
 DeletionStatus = Literal["pending", "completed", "failed"]
 
@@ -163,6 +164,11 @@ class Conversation(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="Message.position",
     )
+    events: Mapped[list[ConversationEvent]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="ConversationEvent.position",
+    )
     sources: Mapped[list[ConversationSource]] = relationship(
         back_populates="conversation",
         cascade="all, delete-orphan",
@@ -274,6 +280,143 @@ class Message(TimestampMixin, Base):
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
     participant: Mapped[ConversationParticipant] = relationship(back_populates="messages")
+
+
+class ConversationEvent(TimestampMixin, Base):
+    """A typed, reviewed conversation item that does not assume every item is a message."""
+
+    __tablename__ = "conversation_events"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "position"),
+        Index("ix_conversation_events_conversation_created", "conversation_id", "created_at"),
+        Index("ix_conversation_events_conversation_type", "conversation_id", "event_type"),
+        CheckConstraint("position >= 0", name="position"),
+        CheckConstraint(
+            "event_type IN ('text_message', 'emoji_message', 'reaction', 'image', 'video', "
+            "'gif', 'sticker', 'voice_note', 'audio', 'document', 'link', 'location', "
+            "'contact_card', 'poll', 'payment_request', 'call_started', 'call_ended', "
+            "'missed_call', 'declined_call', 'deleted_message', 'edited_message_marker', "
+            "'reply_reference', 'system_message', 'date_separator', 'unread_separator', "
+            "'encryption_notice', 'member_event', 'unknown')",
+            name="event_type",
+        ),
+        CheckConstraint("speaker IN ('user', 'other', 'system', 'unknown')", name="speaker"),
+        CheckConstraint(
+            "source_image_index IS NULL OR source_image_index >= 0",
+            name="source_image_index",
+        ),
+        CheckConstraint(
+            "ocr_confidence IS NULL OR (ocr_confidence >= 0 AND ocr_confidence <= 1)",
+            name="ocr_confidence",
+        ),
+        CheckConstraint(
+            "classification_confidence IS NULL OR "
+            "(classification_confidence >= 0 AND classification_confidence <= 1)",
+            name="classification_confidence",
+        ),
+        CheckConstraint(
+            "speaker_confidence IS NULL OR (speaker_confidence >= 0 AND speaker_confidence <= 1)",
+            name="speaker_confidence",
+        ),
+        CheckConstraint(
+            "timestamp_confidence IS NULL OR "
+            "(timestamp_confidence >= 0 AND timestamp_confidence <= 1)",
+            name="timestamp_confidence",
+        ),
+        CheckConstraint(
+            "relationship_confidence IS NULL OR "
+            "(relationship_confidence >= 0 AND relationship_confidence <= 1)",
+            name="relationship_confidence",
+        ),
+        CheckConstraint(
+            "event_type NOT IN ('system_message', 'date_separator', 'unread_separator', "
+            "'encryption_notice', 'member_event') OR speaker = 'system'",
+            name="system_speaker",
+        ),
+        CheckConstraint(
+            "event_type != 'unknown' OR requires_review",
+            name="unknown_requires_review",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    speaker: Mapped[str] = mapped_column(String(16), nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    timestamp_is_estimated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    raw_timestamp_text: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    source_image_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_region_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classification_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    speaker_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    timestamp_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    relationship_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    requires_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    metadata_json: Mapped[JsonObject] = mapped_column(JSON, default=dict, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    conversation: Mapped[Conversation] = relationship(back_populates="events")
+    outgoing_relationships: Mapped[list[ConversationEventRelationship]] = relationship(
+        back_populates="source_event",
+        cascade="all, delete-orphan",
+        foreign_keys="ConversationEventRelationship.source_event_id",
+    )
+    incoming_relationships: Mapped[list[ConversationEventRelationship]] = relationship(
+        back_populates="target_event",
+        cascade="all, delete-orphan",
+        foreign_keys="ConversationEventRelationship.target_event_id",
+    )
+
+
+class ConversationEventRelationship(TimestampMixin, Base):
+    """A directed, typed relationship between two events in the same conversation."""
+
+    __tablename__ = "conversation_event_relationships"
+    __table_args__ = (
+        UniqueConstraint("source_event_id", "target_event_id", "relationship_type"),
+        Index("ix_event_relationships_source", "source_event_id"),
+        Index("ix_event_relationships_target", "target_event_id"),
+        CheckConstraint("source_event_id != target_event_id", name="distinct_events"),
+        CheckConstraint(
+            "relationship_type IN ('reaction_target', 'reply_target', 'edit_target', "
+            "'media_caption', 'call_pair', 'system_context', 'duplicate_of')",
+            name="relationship_type",
+        ),
+        CheckConstraint(
+            "confidence IS NULL OR (confidence >= 0 AND confidence <= 1)",
+            name="confidence",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    source_event_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversation_events.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    target_event_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversation_events.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    relationship_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    metadata_json: Mapped[JsonObject] = mapped_column(JSON, default=dict, nullable=False)
+
+    source_event: Mapped[ConversationEvent] = relationship(
+        back_populates="outgoing_relationships", foreign_keys=[source_event_id]
+    )
+    target_event: Mapped[ConversationEvent] = relationship(
+        back_populates="incoming_relationships", foreign_keys=[target_event_id]
+    )
 
 
 class DeletionRequest(Base):

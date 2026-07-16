@@ -6,7 +6,20 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, Response, status
 
 from app.api.dependencies import CurrentUser, DatabaseSession
-from app.db.models import Conversation, Message
+from app.db.models import (
+    Conversation,
+    ConversationEvent,
+    ConversationEventRelationship,
+    Message,
+)
+from app.domain.conversation_events import (
+    ConfirmedConversationEvent,
+    ConfirmedConversationEventRelationship,
+    ConfirmedConversationEventSequence,
+    ConversationEventRelationshipType,
+    ConversationEventSpeaker,
+    ConversationEventType,
+)
 from app.domain.conversation_import import (
     ConfirmedConversation,
     ConfirmedExtractionMetadata,
@@ -15,6 +28,12 @@ from app.domain.conversation_import import (
 )
 from app.repositories.conversations import ConversationRepository
 from app.repositories.users import ConsentRepository
+from app.schemas.conversation_events import (
+    ConversationEventRead,
+    ConversationEventRelationshipRead,
+    ConversationEventSequenceRead,
+    ConversationEventSequenceReplace,
+)
 from app.schemas.conversations import (
     ConversationConfirm,
     ConversationCreate,
@@ -72,6 +91,92 @@ def _to_detail(conversation: Conversation) -> ConversationDetailRead:
         ),
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+    )
+
+
+def _stored_event_to_read(event: ConversationEvent) -> ConversationEventRead:
+    return ConversationEventRead(
+        id=event.id,
+        conversation_id=event.conversation_id,
+        position=event.position,
+        event_type=ConversationEventType(event.event_type),
+        speaker=ConversationEventSpeaker(event.speaker),
+        text=event.text,
+        timestamp=event.timestamp,
+        timestamp_is_estimated=event.timestamp_is_estimated,
+        raw_timestamp_text=event.raw_timestamp_text,
+        source_image_index=event.source_image_index,
+        source_region_id=event.source_region_id,
+        ocr_confidence=event.ocr_confidence,
+        classification_confidence=event.classification_confidence,
+        speaker_confidence=event.speaker_confidence,
+        timestamp_confidence=event.timestamp_confidence,
+        relationship_confidence=event.relationship_confidence,
+        requires_review=event.requires_review,
+        metadata=event.metadata_json,
+        created_at=event.created_at,
+        updated_at=event.updated_at,
+        deleted_at=event.deleted_at,
+    )
+
+
+def _project_message_to_event(message: Message) -> ConversationEventRead:
+    """Project legacy messages at read time without persisting an undocumented copy."""
+    return ConversationEventRead(
+        id=message.id,
+        conversation_id=message.conversation_id,
+        position=message.position,
+        event_type=ConversationEventType.TEXT_MESSAGE,
+        speaker=ConversationEventSpeaker(message.speaker),
+        text=message.body,
+        timestamp=message.sent_at,
+        timestamp_is_estimated=message.timestamp_estimated,
+        raw_timestamp_text=message.visible_timestamp_text,
+        source_image_index=message.source_screenshot_index,
+        source_region_id=None,
+        ocr_confidence=message.ocr_confidence,
+        classification_confidence=None,
+        speaker_confidence=None,
+        timestamp_confidence=None,
+        relationship_confidence=None,
+        requires_review=False,
+        metadata={"provenance": "legacy_message_projection"},
+        created_at=message.created_at,
+        updated_at=message.updated_at,
+        deleted_at=None,
+    )
+
+
+def _relationship_to_read(
+    relationship: ConversationEventRelationship,
+) -> ConversationEventRelationshipRead:
+    return ConversationEventRelationshipRead(
+        id=relationship.id,
+        source_event_id=relationship.source_event_id,
+        target_event_id=relationship.target_event_id,
+        relationship_type=ConversationEventRelationshipType(relationship.relationship_type),
+        confidence=relationship.confidence,
+        metadata=relationship.metadata_json,
+        created_at=relationship.created_at,
+        updated_at=relationship.updated_at,
+    )
+
+
+async def _to_event_sequence(
+    conversation: Conversation,
+    repository: ConversationRepository,
+) -> ConversationEventSequenceRead:
+    if not conversation.events:
+        return ConversationEventSequenceRead(
+            compatibility_mode="message_projection",
+            events=[_project_message_to_event(message) for message in conversation.messages],
+            relationships=[],
+        )
+    relationships = await repository.list_event_relationships(conversation.id)
+    return ConversationEventSequenceRead(
+        compatibility_mode="persisted_events",
+        events=[_stored_event_to_read(event) for event in conversation.events],
+        relationships=[_relationship_to_read(item) for item in relationships],
     )
 
 
@@ -140,6 +245,86 @@ async def create_message(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     await session.commit()
     return message
+
+
+@router.get("/{conversation_id}/events", response_model=ConversationEventSequenceRead)
+async def read_conversation_events(
+    conversation_id: UUID,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> ConversationEventSequenceRead:
+    """Read persisted events or an explicit, non-persisted legacy projection."""
+    repository = ConversationRepository(session)
+    conversation = await repository.get_owned(user.id, conversation_id)
+    if conversation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    return await _to_event_sequence(conversation, repository)
+
+
+@router.put("/{conversation_id}/events", response_model=ConversationEventSequenceRead)
+async def replace_conversation_events(
+    conversation_id: UUID,
+    payload: ConversationEventSequenceReplace,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> ConversationEventSequenceRead:
+    """Persist one reviewed v1 sequence without modifying the legacy message API."""
+    repository = ConversationRepository(session)
+    owned = await repository.get_owned(user.id, conversation_id)
+    if owned is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    has_consent = await ConsentRepository(session).has_active(user.id, "save_conversation_history")
+    if not has_consent:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Saving conversation history requires active consent",
+        )
+
+    replacement = ConfirmedConversationEventSequence(
+        schema_version=payload.schema_version,
+        events=tuple(
+            ConfirmedConversationEvent(
+                id=event.id,
+                position=event.position,
+                event_type=event.event_type,
+                speaker=event.speaker,
+                text=event.text,
+                timestamp=event.timestamp,
+                timestamp_is_estimated=event.timestamp_is_estimated,
+                raw_timestamp_text=event.raw_timestamp_text,
+                source_image_index=event.source_image_index,
+                source_region_id=event.source_region_id,
+                ocr_confidence=event.ocr_confidence,
+                classification_confidence=event.classification_confidence,
+                speaker_confidence=event.speaker_confidence,
+                timestamp_confidence=event.timestamp_confidence,
+                relationship_confidence=event.relationship_confidence,
+                requires_review=event.requires_review,
+                metadata=event.metadata,
+                deleted_at=event.deleted_at,
+            )
+            for event in payload.events
+        ),
+        relationships=tuple(
+            ConfirmedConversationEventRelationship(
+                id=relationship.id,
+                source_event_id=relationship.source_event_id,
+                target_event_id=relationship.target_event_id,
+                relationship_type=relationship.relationship_type,
+                confidence=relationship.confidence,
+                metadata=relationship.metadata,
+            )
+            for relationship in payload.relationships
+        ),
+    )
+    conversation = await repository.replace_events(user.id, conversation_id, replacement)
+    if conversation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    await session.commit()
+    refreshed = await repository.get_owned(user.id, conversation_id)
+    if refreshed is None:  # pragma: no cover - ownership cannot change in this transaction
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    return await _to_event_sequence(refreshed, repository)
 
 
 @router.post("/{conversation_id}/confirm", response_model=ConversationDetailRead)

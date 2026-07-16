@@ -1,3 +1,4 @@
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:flutter/foundation.dart';
 
@@ -18,6 +19,8 @@ class OcrBounds {
   double get width => right - left;
   double get height => bottom - top;
   double get centerX => (left + right) / 2;
+  double get centerY => (top + bottom) / 2;
+  double get area => width * height;
 
   OcrBounds union(OcrBounds other) => OcrBounds(
     left: left < other.left ? left : other.left,
@@ -125,6 +128,9 @@ class CandidateMessageRegion {
     required this.speaker,
     this.timestamp,
     this.visibleTimestampText,
+    this.eventTypeHint,
+    this.pageWidth,
+    this.compactAttachmentHint,
   });
 
   final String text;
@@ -135,11 +141,16 @@ class CandidateMessageRegion {
   final MessageSpeaker speaker;
   final DateTime? timestamp;
   final String? visibleTimestampText;
+  final ConversationEventType? eventTypeHint;
+  final int? pageWidth;
+  final bool? compactAttachmentHint;
 
   CandidateMessageRegion copyWith({
     MessageSpeaker? speaker,
     DateTime? timestamp,
     String? visibleTimestampText,
+    ConversationEventType? eventTypeHint,
+    bool? compactAttachmentHint,
   }) {
     return CandidateMessageRegion(
       text: text,
@@ -150,6 +161,10 @@ class CandidateMessageRegion {
       speaker: speaker ?? this.speaker,
       timestamp: timestamp ?? this.timestamp,
       visibleTimestampText: visibleTimestampText ?? this.visibleTimestampText,
+      eventTypeHint: eventTypeHint ?? this.eventTypeHint,
+      pageWidth: pageWidth,
+      compactAttachmentHint:
+          compactAttachmentHint ?? this.compactAttachmentHint,
     );
   }
 }
@@ -161,6 +176,7 @@ enum ExtractionWarningCode {
   timelineGap,
   duplicateOverlapRemoved,
   unknownSpeaker,
+  eventReviewRequired,
 }
 
 @immutable
@@ -189,16 +205,40 @@ class ExtractionMetadata {
 }
 
 @immutable
+class ExtractionDiagnostics {
+  const ExtractionDiagnostics({
+    this.processedScreenshotCount = 0,
+    this.candidateMessageCount = 0,
+    this.duplicateMessagesRemoved = 0,
+    this.unknownSpeakerCount = 0,
+    this.orderedSourceIndices = const [],
+  });
+
+  final int processedScreenshotCount;
+  final int candidateMessageCount;
+  final int duplicateMessagesRemoved;
+  final int unknownSpeakerCount;
+  final List<int> orderedSourceIndices;
+}
+
+@immutable
 class OcrExtractionResult {
   const OcrExtractionResult({
     required this.messages,
     required this.warnings,
     required this.metadata,
-  });
+    List<ReviewMessage>? events,
+    this.diagnostics = const ExtractionDiagnostics(),
+  }) : events = events ?? messages;
 
+  /// Compatibility projection containing only event types that count as messages.
   final List<ReviewMessage> messages;
+
+  /// Full typed review sequence, including structural items and relationships.
+  final List<ReviewMessage> events;
   final List<ExtractionWarning> warnings;
   final ExtractionMetadata metadata;
+  final ExtractionDiagnostics diagnostics;
 }
 
 class ExtractionCancellationToken {

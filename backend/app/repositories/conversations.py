@@ -9,11 +9,14 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models import (
     Conversation,
+    ConversationEvent,
+    ConversationEventRelationship,
     ConversationParticipant,
     ConversationSource,
     Message,
     utc_now,
 )
+from app.domain.conversation_events import ConfirmedConversationEventSequence
 from app.domain.conversation_import import ConfirmedConversation
 
 
@@ -40,6 +43,7 @@ class ConversationRepository:
         ]
         conversation.messages = []
         conversation.sources = []
+        conversation.events = []
         self._session.add(conversation)
         await self._session.flush()
         return conversation
@@ -71,6 +75,7 @@ class ConversationRepository:
                     selectinload(Conversation.participants),
                     selectinload(Conversation.messages),
                     selectinload(Conversation.sources),
+                    selectinload(Conversation.events),
                 )
             ),
         )
@@ -176,6 +181,80 @@ class ConversationRepository:
         conversation.updated_at = utc_now()
         await self._session.flush()
         return conversation
+
+    async def replace_events(
+        self,
+        owner_id: UUID,
+        conversation_id: UUID,
+        payload: ConfirmedConversationEventSequence,
+    ) -> Conversation | None:
+        """Atomically replace only the event sequence, leaving legacy messages untouched."""
+        conversation = await self.get_owned(owner_id, conversation_id)
+        if conversation is None:
+            return None
+
+        conversation.events.clear()
+        await self._session.flush()
+
+        events_by_id: dict[UUID, ConversationEvent] = {}
+        for event in payload.events:
+            stored = ConversationEvent(
+                id=event.id,
+                position=event.position,
+                event_type=event.event_type.value,
+                speaker=event.speaker.value,
+                text=event.text,
+                timestamp=event.timestamp,
+                timestamp_is_estimated=event.timestamp_is_estimated,
+                raw_timestamp_text=event.raw_timestamp_text,
+                source_image_index=event.source_image_index,
+                source_region_id=event.source_region_id,
+                ocr_confidence=event.ocr_confidence,
+                classification_confidence=event.classification_confidence,
+                speaker_confidence=event.speaker_confidence,
+                timestamp_confidence=event.timestamp_confidence,
+                relationship_confidence=event.relationship_confidence,
+                requires_review=event.requires_review,
+                metadata_json=event.metadata,
+                deleted_at=event.deleted_at,
+            )
+            conversation.events.append(stored)
+            events_by_id[event.id] = stored
+
+        await self._session.flush()
+        for relationship in payload.relationships:
+            self._session.add(
+                ConversationEventRelationship(
+                    id=relationship.id,
+                    source_event=events_by_id[relationship.source_event_id],
+                    target_event=events_by_id[relationship.target_event_id],
+                    relationship_type=relationship.relationship_type.value,
+                    confidence=relationship.confidence,
+                    metadata_json=relationship.metadata,
+                )
+            )
+
+        conversation.updated_at = utc_now()
+        await self._session.flush()
+        return conversation
+
+    async def list_event_relationships(
+        self, conversation_id: UUID
+    ) -> list[ConversationEventRelationship]:
+        """Load relationships after ownership has already been established."""
+        relationships = await self._session.scalars(
+            select(ConversationEventRelationship)
+            .join(
+                ConversationEvent,
+                ConversationEventRelationship.source_event_id == ConversationEvent.id,
+            )
+            .where(ConversationEvent.conversation_id == conversation_id)
+            .order_by(
+                ConversationEventRelationship.created_at,
+                ConversationEventRelationship.id,
+            )
+        )
+        return list(relationships)
 
     async def delete_owned(self, owner_id: UUID, conversation_id: UUID) -> bool:
         conversation = await self.get_owned(owner_id, conversation_id)

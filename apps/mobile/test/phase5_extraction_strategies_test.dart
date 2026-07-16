@@ -1,3 +1,4 @@
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
 import 'package:convo_coach/features/conversation_import/domain/message_region_grouper.dart';
 import 'package:convo_coach/features/conversation_import/domain/overlap_detector.dart';
@@ -49,11 +50,16 @@ void main() {
           locale: 'en_GB',
         );
 
-        expect(regions, hasLength(2));
-        expect(regions.first.text, 'Hey 👋 still free?');
-        expect(regions.first.timestamp, DateTime(2026, 7, 14, 9, 30));
-        expect(regions.first.visibleTimestampText, '9:30 AM');
-        expect(regions.first.confidence, closeTo(0.9, 0.03));
+        expect(regions, hasLength(3));
+        expect(
+          regions.first.eventTypeHint,
+          ConversationEventType.dateSeparator,
+        );
+        expect(regions.first.text, '14/07/2026');
+        expect(regions[1].text, 'Hey 👋 still free?');
+        expect(regions[1].timestamp, DateTime(2026, 7, 14, 9, 30));
+        expect(regions[1].visibleTimestampText, '9:30 AM');
+        expect(regions[1].confidence, closeTo(0.9, 0.03));
         expect(regions.last.text, 'Yes, absolutely');
       },
     );

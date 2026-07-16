@@ -8,6 +8,7 @@ import 'package:convo_coach/core/widgets/app_overlays.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:convo_coach/features/conversation_import/application/conversation_import_controller.dart';
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/readiness.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,9 @@ enum _MessageAction {
   duplicate,
   moveUp,
   moveDown,
+  editTimestamp,
+  attachRelationship,
+  detachRelationship,
   delete,
 }
 
@@ -50,7 +54,11 @@ class ConversationReviewStudio extends ConsumerWidget {
                     initialValue: speaker,
                     decoration: const InputDecoration(labelText: 'Speaker'),
                     items: MessageSpeaker.values
-                        .where((value) => value != MessageSpeaker.unknown)
+                        .where(
+                          (value) =>
+                              value != MessageSpeaker.unknown &&
+                              value != MessageSpeaker.system,
+                        )
                         .map(
                           (value) => DropdownMenuItem(
                             value: value,
@@ -164,9 +172,9 @@ class ConversationReviewStudio extends ConsumerWidget {
               ),
             ],
           ),
-          body: state.messages.isEmpty
+          body: state.events.isEmpty
               ? const AppErrorState(
-                  title: 'No messages to review',
+                  title: 'No conversation events to review',
                   message: 'Return to import and add a conversation first.',
                 )
               : ResponsiveContent(
@@ -235,7 +243,8 @@ class ConversationReviewStudio extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              '${state.messages.where((message) => !message.isDeleted).length} message blocks',
+                              '${state.events.where((event) => !event.isDeleted).length} events · '
+                              '${state.events.where((event) => event.countsAsMessage).length} messages',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -250,12 +259,12 @@ class ConversationReviewStudio extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.sm),
                       for (
                         var index = 0;
-                        index < state.messages.length;
+                        index < state.events.length;
                         index++
                       ) ...[
                         _ReviewMessageBlock(
-                          key: ValueKey(state.messages[index].id),
-                          message: state.messages[index],
+                          key: ValueKey(state.events[index].id),
+                          message: state.events[index],
                           position: index,
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -275,7 +284,7 @@ class ConversationReviewStudio extends ConsumerWidget {
                             controller.setSaveConsent(value ?? false),
                         title: const Text('Save this reviewed conversation'),
                         subtitle: const Text(
-                          'Only normalized message text and source-deletion metadata are kept.',
+                          'Only the reviewed event sequence, normalized message projection, and source-deletion metadata are kept.',
                         ),
                         controlAffinity: ListTileControlAffinity.leading,
                       ),
@@ -441,6 +450,12 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
         controller.moveMessage(widget.message.id, -1);
       case _MessageAction.moveDown:
         controller.moveMessage(widget.message.id, 1);
+      case _MessageAction.editTimestamp:
+        await _showTimestampDialog();
+      case _MessageAction.attachRelationship:
+        await _showRelationshipDialog();
+      case _MessageAction.detachRelationship:
+        controller.detachEventRelationship(widget.message.id);
       case _MessageAction.delete:
         controller.deleteMessage(widget.message.id);
     }
@@ -505,6 +520,137 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
     }
   }
 
+  Future<void> _showTimestampDialog() async {
+    final visibleController = TextEditingController(
+      text: widget.message.visibleTimestampText ?? '',
+    );
+    DateTime? timestamp = widget.message.timestamp;
+    final result = await showDialog<(DateTime?, String?)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Correct timestamp'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: visibleController,
+                decoration: const InputDecoration(
+                  labelText: 'Visible timestamp text',
+                  hintText: 'For example, 8:20 PM',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      timestamp == null
+                          ? 'No resolved date and time'
+                          : timestamp!.toLocal().toString(),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final selectedDate = await showDatePicker(
+                        context: dialogContext,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        initialDate: timestamp?.toLocal() ?? DateTime.now(),
+                      );
+                      if (selectedDate == null || !dialogContext.mounted) {
+                        return;
+                      }
+                      final selectedTime = await showTimePicker(
+                        context: dialogContext,
+                        initialTime: timestamp == null
+                            ? TimeOfDay.now()
+                            : TimeOfDay.fromDateTime(timestamp!.toLocal()),
+                      );
+                      if (selectedTime == null) return;
+                      setDialogState(() {
+                        timestamp = DateTime(
+                          selectedDate.year,
+                          selectedDate.month,
+                          selectedDate.day,
+                          selectedTime.hour,
+                          selectedTime.minute,
+                        ).toUtc();
+                      });
+                    },
+                    child: const Text('Choose'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop((null, null)),
+              child: const Text('Clear'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop((
+                timestamp,
+                visibleController.text.trim().isEmpty
+                    ? null
+                    : visibleController.text.trim(),
+              )),
+              child: const Text('Apply'),
+            ),
+          ],
+        ),
+      ),
+    );
+    visibleController.dispose();
+    if (result != null) {
+      ref
+          .read(conversationImportProvider.notifier)
+          .changeTimestamp(
+            widget.message.id,
+            timestamp: result.$1,
+            visibleText: result.$2,
+          );
+    }
+  }
+
+  Future<void> _showRelationshipDialog() async {
+    final state = ref.read(conversationImportProvider);
+    final targets = state.events
+        .where(
+          (event) =>
+              event.id != widget.message.id &&
+              !event.isDeleted &&
+              !event.eventType.isStructural &&
+              event.eventType != ConversationEventType.reaction,
+        )
+        .toList(growable: false);
+    if (targets.isEmpty) return;
+    final targetId = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Attach to event'),
+        children: [
+          for (final target in targets)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(target.id),
+              child: Text(
+                '${target.eventType.label}: '
+                '${target.text.trim().isEmpty ? 'No visible text' : target.text}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+      ),
+    );
+    if (targetId != null) {
+      ref
+          .read(conversationImportProvider.notifier)
+          .attachEventRelationship(widget.message.id, targetId);
+    }
+  }
+
   Future<void> _viewOriginal() async {
     final sourceIndex = widget.message.sourceScreenshotIndex;
     if (sourceIndex == null) return;
@@ -552,7 +698,7 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Deleted message: ${message.text}',
+                'Deleted ${message.eventType.label.toLowerCase()}: ${message.text}',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -571,75 +717,86 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
 
     return AppCard(
       semanticLabel:
-          'Message ${widget.position + 1}, ${message.speaker.label}${message.needsReview ? ', needs review' : ''}',
+          'Event ${widget.position + 1}, ${message.eventType.label}, '
+          '${message.speaker.label}${message.needsReview ? ', needs review' : ''}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Icon(_eventIcon(message.eventType), size: AppSizes.iconSmall),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<MessageSpeaker>(
-                    key: Key('speaker-${message.id}'),
-                    value: message.speaker,
-                    isExpanded: true,
-                    items: MessageSpeaker.values
-                        .map(
-                          (speaker) => DropdownMenuItem(
-                            value: speaker,
-                            child: Text(speaker.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (speaker) {
-                      if (speaker != null) {
-                        ref
-                            .read(conversationImportProvider.notifier)
-                            .changeSpeaker(message.id, speaker);
-                      }
-                    },
-                  ),
+                child: Text(
+                  message.eventType.label,
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
+              if (!message.eventType.countsAsMessage)
+                const Chip(label: Text('Not counted as a message')),
               PopupMenuButton<_MessageAction>(
-                tooltip: 'Edit message actions',
+                tooltip: 'Edit event actions',
                 onSelected: (action) => unawaited(_performAction(action)),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: _MessageAction.merge,
-                    child: Text('Merge with next'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.split,
-                    child: Text('Split message'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.swapSpeaker,
-                    child: Text('Swap speaker'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.duplicate,
-                    child: Text('Duplicate'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.moveUp,
-                    child: Text('Move up'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.moveDown,
-                    child: Text('Move down'),
-                  ),
-                  PopupMenuItem(
-                    value: _MessageAction.delete,
-                    child: Text('Delete'),
-                  ),
-                ],
+                itemBuilder: (context) => _actionItems(message),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<ConversationEventType>(
+                  key: Key('event-type-${message.id}'),
+                  initialValue: message.eventType,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Event type'),
+                  items: ConversationEventType.values
+                      .map(
+                        (type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (type) {
+                    if (type != null) {
+                      ref
+                          .read(conversationImportProvider.notifier)
+                          .changeEventType(message.id, type);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: DropdownButtonFormField<MessageSpeaker>(
+                  key: Key('speaker-${message.id}'),
+                  initialValue: message.speaker,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Speaker'),
+                  items: MessageSpeaker.values
+                      .map(
+                        (speaker) => DropdownMenuItem(
+                          value: speaker,
+                          child: Text(speaker.label),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (speaker) {
+                    if (speaker != null) {
+                      ref
+                          .read(conversationImportProvider.notifier)
+                          .changeSpeaker(message.id, speaker);
+                    }
+                  },
+                ),
               ),
             ],
           ),
           if (message.needsReview)
             Semantics(
-              label: 'Needs review because OCR confidence is below 80 percent',
+              label:
+                  'Needs review because event type, speaker, relationship, or extraction evidence is uncertain',
               child: Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Row(
@@ -650,7 +807,13 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
                       color: context.appColors.caution,
                     ),
                     const SizedBox(width: AppSpacing.xs),
-                    const Expanded(child: Text('Needs review')),
+                    Expanded(
+                      child: Text(
+                        message.eventType == ConversationEventType.unknown
+                            ? 'Unknown item — choose an event type'
+                            : 'Needs review',
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -662,11 +825,12 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
             minLines: 1,
             maxLines: null,
             textCapitalization: TextCapitalization.sentences,
+            enabled: message.eventType.supportsTextEditing,
             onSubmitted: (text) => ref
                 .read(conversationImportProvider.notifier)
                 .editMessage(message.id, text),
             decoration: const InputDecoration(
-              labelText: 'Message text',
+              labelText: 'Visible event text',
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
@@ -674,6 +838,18 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
               contentPadding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
             ),
           ),
+          if (message.relationshipTargetId != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Semantics(
+                label:
+                    '${message.eventType.label} attached to event ${message.relationshipTargetId}',
+                child: Chip(
+                  avatar: const Icon(Icons.link_rounded),
+                  label: Text('Attached to ${message.relationshipTargetId}'),
+                ),
+              ),
+            ),
           Row(
             children: [
               if (message.timestamp != null)
@@ -717,3 +893,74 @@ class _OriginalUnavailable extends StatelessWidget {
     );
   }
 }
+
+List<PopupMenuEntry<_MessageAction>> _actionItems(ReviewMessage event) {
+  return [
+    if (event.eventType == ConversationEventType.textMessage) ...const [
+      PopupMenuItem(
+        value: _MessageAction.merge,
+        child: Text('Merge with next'),
+      ),
+      PopupMenuItem(value: _MessageAction.split, child: Text('Split event')),
+    ],
+    const PopupMenuItem(
+      value: _MessageAction.swapSpeaker,
+      child: Text('Swap speaker'),
+    ),
+    const PopupMenuItem(
+      value: _MessageAction.editTimestamp,
+      child: Text('Correct timestamp'),
+    ),
+    if (event.eventType.supportsRelationship)
+      const PopupMenuItem(
+        value: _MessageAction.attachRelationship,
+        child: Text('Attach to event'),
+      ),
+    if (event.relationships.isNotEmpty)
+      const PopupMenuItem(
+        value: _MessageAction.detachRelationship,
+        child: Text('Detach relationship'),
+      ),
+    const PopupMenuItem(
+      value: _MessageAction.duplicate,
+      child: Text('Duplicate'),
+    ),
+    const PopupMenuItem(value: _MessageAction.moveUp, child: Text('Move up')),
+    const PopupMenuItem(
+      value: _MessageAction.moveDown,
+      child: Text('Move down'),
+    ),
+    const PopupMenuItem(value: _MessageAction.delete, child: Text('Delete')),
+  ];
+}
+
+IconData _eventIcon(ConversationEventType type) => switch (type) {
+  ConversationEventType.textMessage => Icons.chat_bubble_outline_rounded,
+  ConversationEventType.emojiMessage => Icons.emoji_emotions_outlined,
+  ConversationEventType.reaction => Icons.favorite_outline_rounded,
+  ConversationEventType.image => Icons.image_outlined,
+  ConversationEventType.video => Icons.videocam_outlined,
+  ConversationEventType.gif => Icons.gif_box_outlined,
+  ConversationEventType.sticker => Icons.sticky_note_2_outlined,
+  ConversationEventType.voiceNote => Icons.mic_none_rounded,
+  ConversationEventType.audio => Icons.audio_file_outlined,
+  ConversationEventType.document => Icons.description_outlined,
+  ConversationEventType.link => Icons.link_rounded,
+  ConversationEventType.location => Icons.location_on_outlined,
+  ConversationEventType.contactCard => Icons.contact_page_outlined,
+  ConversationEventType.poll => Icons.poll_outlined,
+  ConversationEventType.paymentRequest => Icons.payments_outlined,
+  ConversationEventType.callStarted => Icons.call_outlined,
+  ConversationEventType.callEnded => Icons.call_end_outlined,
+  ConversationEventType.missedCall => Icons.phone_missed_outlined,
+  ConversationEventType.declinedCall => Icons.phone_disabled_outlined,
+  ConversationEventType.deletedMessage => Icons.comments_disabled_outlined,
+  ConversationEventType.editedMessageMarker => Icons.edit_note_rounded,
+  ConversationEventType.replyReference => Icons.reply_rounded,
+  ConversationEventType.systemMessage => Icons.info_outline_rounded,
+  ConversationEventType.dateSeparator => Icons.calendar_today_outlined,
+  ConversationEventType.unreadSeparator => Icons.mark_chat_unread_outlined,
+  ConversationEventType.encryptionNotice => Icons.lock_outline_rounded,
+  ConversationEventType.memberEvent => Icons.group_outlined,
+  ConversationEventType.unknown => Icons.help_outline_rounded,
+};

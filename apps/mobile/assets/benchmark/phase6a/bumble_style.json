@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "fixture_id": "first_move_emoji_reaction_english",
+  "layout_preset": "first_move",
+  "inspiration": "bumble_style",
+  "theme": "dark",
+  "language": "english",
+  "viewport": {"width": 720, "height": 1400},
+  "traits": [
+    "bumble_style",
+    "dark_mode",
+    "english",
+    "emoji_only_messages",
+    "reactions",
+    "compact_screen"
+  ],
+  "expected_source_order": [0],
+  "expected_duplicate_ids": [],
+  "expected_warnings": ["unknownSpeaker"],
+  "messages": [
+    {
+      "id": "first-1",
+      "speaker": "other",
+      "text": "Your book answer made me laugh.",
+      "timestamp": "2026-07-16T20:20:00.000",
+      "visible_timestamp_text": "8:20 PM",
+      "reference_confidence": 0.98,
+      "requires_manual_review": false
+    },
+    {
+      "id": "first-2",
+      "speaker": "me",
+      "text": "That was the highly edited version.",
+      "timestamp": "2026-07-16T20:22:00.000",
+      "visible_timestamp_text": "8:22 PM",
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    },
+    {
+      "id": "first-3",
+      "speaker": "other",
+      "text": "😂😂",
+      "timestamp": "2026-07-16T20:23:00.000",
+      "visible_timestamp_text": "8:23 PM",
+      "reference_confidence": 0.93,
+      "requires_manual_review": false,
+      "event_type": "emoji_message"
+    },
+    {
+      "id": "first-4",
+      "speaker": "me",
+      "text": "What are you reading now?",
+      "timestamp": "2026-07-16T20:24:00.000",
+      "visible_timestamp_text": "8:24 PM",
+      "reference_confidence": 0.98,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": "16 Jul 2026",
+      "message_ids": ["first-1", "first-2", "first-3", "first-4"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": [
+        {
+          "message_id": "first-2",
+          "text": "❤",
+          "recognize_as_text": true
+        }
+      ]
+    }
+  ]
+}

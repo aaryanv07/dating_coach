@@ -476,13 +476,66 @@ After upload:
 The user must be able to:
 
 * Swap speakers
-* Edit message text
-* Delete extracted messages
-* Add missing messages
-* Reorder messages
+* Edit participant-event text
+* Delete and restore extracted events
+* Add missing participant events
+* Reorder events
 * Mark timestamps as unavailable
 * Add context
 * Cancel and delete uploaded data
+
+CANONICAL CONVERSATION-EVENT MODEL
+
+`docs/Conversation-Event-Spec.md` is the source of truth for everything that can
+appear inside an imported conversation. Extraction must produce typed draft
+events before normalization instead of forcing every recognized item into a text
+message.
+
+The canonical model distinguishes:
+
+* Text messages
+* Emoji-only messages
+* Reactions attached to target events
+* Images, videos, GIFs, stickers, voice notes, audio and documents
+* Links, locations, contact cards, polls and payment requests
+* Calls, missed calls and declined calls
+* Deleted-message and edited-message markers
+* Reply references
+* System events, date separators, unread separators and encryption notices
+* Unknown events that require user review
+
+Every draft event must preserve its order, speaker, visible or unresolved
+timestamp, source provenance, OCR confidence, classification confidence, speaker
+confidence, timestamp confidence, relationship confidence where applicable,
+review state and type-specific metadata. The system must not guess a speaker,
+timestamp, deleted content, media content or unsupported event type.
+
+Reactions, reply references, edit markers, system notices and separators must not
+be counted as independent participant messages. An emoji in its own message row
+remains an `emoji_message`; a visually attached reaction remains a `reaction`.
+When the evidence is insufficient, use `unknown` and require review.
+
+Review Studio must render each event type distinctly and allow the user to
+correct event type, relationship, speaker and timestamp before confirmation. No
+analytics, scoring or generation may run on unconfirmed events. Deterministic
+analytics must follow the inclusion matrix in the event specification, and
+conversation readiness must describe data quality only.
+
+Phase 6A.1 implements the event runtime beside the message-only database. The
+backward-compatible, reversible migration retains every message row and adds
+owner-scoped event and relationship tables, bounded metadata contracts, privacy
+deletion, and versioned APIs. Legacy messages are projected to events at read
+time only; there is no undocumented dual write. Cross-platform native extraction
+qualification remains required before later intelligence consumes these events.
+
+Phase 6A.2 implements the native-device qualification infrastructure without
+changing the extraction or event runtime: Android/iOS/common runners,
+tool-and-physical-device readiness detection, content-free benchmark sessions,
+a strict versioned result schema, explicit PASS/BLOCKED gates, regression
+comparison, and expanded original typed-event fixtures. Host and simulator
+results cannot satisfy the physical gate. No analytics, AI, scoring, coaching,
+payment, subscription, cloud sync, migration, or API behavior is authorized by
+Phase 6A.2.
 
 The analysis engine must use two layers.
 
@@ -2196,6 +2249,7 @@ README.md
 AGENTS.md
 
 docs/
+Conversation-Event-Spec.md
 product-vision.md
 product-requirements.md
 user-personas.md
@@ -2235,6 +2289,15 @@ Include Mermaid diagrams for:
 =========================
 
 Do not attempt to implement the complete application in one uncontrolled pass.
+
+The phase labels below are the original product roadmap. Explicit phase requests
+and the phase documents in `docs/` control the repository's implemented scope
+when they differ. Phase 6A.2 is the authorized native-readiness scope following
+the Phase 6A.1 conversation-event runtime foundation. It adds only repeatable
+qualification evidence and does not authorize the original roadmap's Phase 5
+analytics or Phase 6 dashboard.
+Physical Android and iOS extraction qualification remains a release gate before
+any later intelligence feature consumes conversation events.
 
 PHASE 0:
 DISCOVERY AND PLANNING
@@ -2303,7 +2366,9 @@ CONVERSATION IMPORT
 * Paste conversation
 * OCR abstraction
 * Mock OCR
-* Review and correction
+* Canonical conversation-event draft classification
+* Event relationship and unknown-event fallback
+* Review and correction by event type
 * Speaker assignment
 * Confirmation
 * Mobile/API integration
@@ -2312,6 +2377,7 @@ PHASE 5:
 ANALYSIS ENGINE
 
 * Deterministic metrics
+* Conversation-event analytics inclusion matrix
 * Response-time analytics
 * Balance analytics
 * Question analytics

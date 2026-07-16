@@ -34,7 +34,10 @@ void main() {
       expect(result.messages.first.needsReview, isTrue);
       expect(result.messages.last.needsReview, isFalse);
       expect(result.metadata.provider, 'synthetic_provider');
-      expect(result.metadata.extractionVersion, 'conversation-extraction-v1');
+      expect(
+        result.metadata.extractionVersion,
+        'conversation-extraction-v2-events',
+      );
     },
   );
 
