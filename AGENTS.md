@@ -69,6 +69,9 @@ not quietly advance into a later phase.
   that fails before the fix when practical.
 - Keep tests deterministic and independent of live networks, external AI models,
   real user content, and shared mutable services.
+- Extraction qualification fixtures must be original and synthetic. Benchmark
+  reports may contain metrics and fixture IDs, but never screenshot bytes,
+  transcripts, source paths, or source hashes.
 - Test privacy and safety boundaries, error states, empty states, theme behavior,
   accessibility semantics, and reduced motion as those surfaces are introduced.
 - Backend changes must pass formatting, linting, static typing, and tests. Flutter
@@ -98,6 +101,10 @@ not quietly advance into a later phase.
 - Do not invoke analysis, scoring, or generation on imported conversation data
   until the user has corrected and explicitly confirmed the normalized message
   sequence. OCR adapters and analysis adapters must remain separate boundaries.
+- Preserve the versioned conversation-event boundary. Reactions, structural
+  items, deleted markers, and unknown events must not be projected as ordinary
+  messages, and event persistence must not introduce an undocumented dual write
+  with the legacy message tables.
 
 ## Repository map
 
@@ -135,6 +142,11 @@ not quietly advance into a later phase.
 - Infrastructure: `docker compose --env-file .env.example config --quiet`.
 - Migrations: from `backend/`, run `alembic upgrade head` and `alembic check`
   against PostgreSQL. Verify downgrade behavior for every new revision.
+- Phase 6A reference benchmark: from `apps/mobile/`, run
+  `flutter test benchmark/phase6a_reference_benchmark_test.dart`.
+- Native extraction qualification is not complete until the documented Android
+  and iOS physical-device suites have produced content-free reports and passed
+  every required gate.
 
 ## Documentation rules
 

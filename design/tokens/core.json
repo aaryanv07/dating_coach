@@ -12,8 +12,9 @@
   },
   "radius": {
     "none": { "$type": "dimension", "$value": "0px" },
-    "small": { "$type": "dimension", "$value": "4px" },
-    "medium": { "$type": "dimension", "$value": "8px" },
+    "small": { "$type": "dimension", "$value": "8px" },
+    "medium": { "$type": "dimension", "$value": "14px" },
+    "large": { "$type": "dimension", "$value": "22px" },
     "full": { "$type": "dimension", "$value": "999px" }
   },
   "size": {
@@ -32,7 +33,8 @@
       "caption": { "$type": "dimension", "$value": "12px" },
       "body": { "$type": "dimension", "$value": "16px" },
       "title": { "$type": "dimension", "$value": "20px" },
-      "headline": { "$type": "dimension", "$value": "28px" }
+      "headline": { "$type": "dimension", "$value": "30px" },
+      "display": { "$type": "dimension", "$value": "38px" }
     },
     "lineHeight": {
       "caption": { "$type": "number", "$value": 1.4 },

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:flutter/foundation.dart';
 
@@ -36,7 +37,10 @@ class ReadinessReport {
 
 abstract final class ConversationReadiness {
   static ReadinessReport evaluate(List<ReviewMessage> messages) {
-    final active = messages.where((message) => !message.isDeleted).toList();
+    final activeEvents = messages.where((event) => !event.isDeleted).toList();
+    final active = activeEvents
+        .where((event) => event.eventType.countsAsMessage)
+        .toList();
     final checks = <ReadinessCheck>[];
 
     final enoughMessages = active.length >= 2;
@@ -51,7 +55,14 @@ abstract final class ConversationReadiness {
 
     final noEmptyMessages =
         active.isNotEmpty &&
-        active.every((message) => message.text.trim().isNotEmpty);
+        active.every(
+          (message) =>
+              !{
+                ConversationEventType.textMessage,
+                ConversationEventType.emojiMessage,
+              }.contains(message.eventType) ||
+              message.text.trim().isNotEmpty,
+        );
     checks.add(
       ReadinessCheck(
         label: 'Empty messages',
@@ -63,8 +74,15 @@ abstract final class ConversationReadiness {
 
     final speakersAssigned =
         active.isNotEmpty &&
-        active.every((message) => message.speaker != MessageSpeaker.unknown) &&
-        active.map((message) => message.speaker).toSet().length >= 2;
+        active.every(
+          (message) =>
+              message.speaker == MessageSpeaker.me ||
+              message.speaker == MessageSpeaker.other,
+        ) &&
+        active.map((message) => message.speaker).toSet().containsAll({
+          MessageSpeaker.me,
+          MessageSpeaker.other,
+        });
     checks.add(
       ReadinessCheck(
         label: 'Speaker assignment',
@@ -94,7 +112,11 @@ abstract final class ConversationReadiness {
     );
 
     final normalizedTexts = active
-        .map((message) => message.text.trim().toLowerCase())
+        .map(
+          (message) =>
+              '${message.eventType.wireName}:${message.speaker.name}:'
+              '${message.text.trim().toLowerCase()}',
+        )
         .where((text) => text.isNotEmpty)
         .toList();
     final noDuplicates =
@@ -122,8 +144,11 @@ abstract final class ConversationReadiness {
       ),
     );
 
-    final reviewedConfidence = active.map((message) {
-      final confidence = message.ocrConfidence ?? 1;
+    final reviewedConfidence = activeEvents.map((message) {
+      final confidence = math.min(
+        message.ocrConfidence ?? 1,
+        message.classificationConfidence ?? 1,
+      );
       if (message.status == ReviewMessageStatus.edited ||
           message.status == ReviewMessageStatus.added) {
         return math.max(confidence, 0.9);
@@ -138,7 +163,7 @@ abstract final class ConversationReadiness {
     checks.add(
       ReadinessCheck(
         label: 'OCR confidence',
-        passed: active.every((message) => !message.needsReview),
+        passed: activeEvents.every((message) => !message.needsReview),
         points: confidencePoints,
         maximum: 30,
       ),

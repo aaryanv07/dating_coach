@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "fixture_id": "match_stream_low_contrast_roman_hindi",
+  "layout_preset": "match_stream",
+  "inspiration": "tinder_style",
+  "theme": "light",
+  "language": "roman_hindi",
+  "viewport": {"width": 1080, "height": 2200},
+  "traits": [
+    "tinder_style",
+    "light_mode",
+    "roman_hindi",
+    "low_contrast_text",
+    "large_screen"
+  ],
+  "expected_source_order": [0],
+  "expected_duplicate_ids": [],
+  "expected_warnings": ["eventReviewRequired"],
+  "messages": [
+    {
+      "id": "match-1",
+      "speaker": "other",
+      "text": "Tum usually Sunday ko kya karte ho?",
+      "timestamp": "2026-07-16T10:10:00.000",
+      "visible_timestamp_text": "10:10 AM",
+      "reference_confidence": 0.88,
+      "requires_manual_review": false
+    },
+    {
+      "id": "match-2",
+      "speaker": "me",
+      "text": "Subah cricket, phir ghar pe aaram.",
+      "timestamp": "2026-07-16T10:12:00.000",
+      "visible_timestamp_text": "10:12 AM",
+      "reference_confidence": 0.86,
+      "requires_manual_review": false
+    },
+    {
+      "id": "match-3",
+      "speaker": "other",
+      "text": "Accha, main toh late uthti hoon 😄",
+      "timestamp": "2026-07-16T10:15:00.000",
+      "visible_timestamp_text": "10:15 AM",
+      "reference_confidence": 0.72,
+      "requires_manual_review": true
+    },
+    {
+      "id": "match-4",
+      "speaker": "me",
+      "text": "Toh brunch ka plan tumhare liye perfect hai.",
+      "timestamp": "2026-07-16T10:17:00.000",
+      "visible_timestamp_text": "10:17 AM",
+      "reference_confidence": 0.84,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": "16 Jul 2026",
+      "message_ids": ["match-1", "match-2", "match-3", "match-4"],
+      "crop_top_pixels": 0,
+      "low_contrast": true,
+      "reactions": []
+    }
+  ]
+}

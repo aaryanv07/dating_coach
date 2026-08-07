@@ -1,5 +1,6 @@
 import 'package:convo_coach/core/config/app_config.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/widgets/app_gradient_text.dart';
 import 'package:flutter/material.dart';
 
 class ConvoMark extends StatelessWidget {
@@ -19,6 +20,7 @@ class ConvoMark extends StatelessWidget {
           painter: _ConvoMarkPainter(
             primary: scheme.primary,
             secondary: scheme.secondary,
+            accent: scheme.tertiary,
           ),
         ),
       ),
@@ -39,13 +41,18 @@ class BrandLockup extends StatelessWidget {
         ConvoMark(size: compact ? 30 : 40),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
-          child: Text(
+          child: AppGradientText(
             AppConfig.name,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: compact
-                ? Theme.of(context).textTheme.titleMedium
-                : Theme.of(context).textTheme.titleLarge,
+                ? Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                  )
+                : Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
           ),
         ),
       ],
@@ -54,10 +61,15 @@ class BrandLockup extends StatelessWidget {
 }
 
 class _ConvoMarkPainter extends CustomPainter {
-  const _ConvoMarkPainter({required this.primary, required this.secondary});
+  const _ConvoMarkPainter({
+    required this.primary,
+    required this.secondary,
+    required this.accent,
+  });
 
   final Color primary;
   final Color secondary;
+  final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -68,9 +80,10 @@ class _ConvoMarkPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final secondaryPaint = Paint()
-      ..color = secondary
-      ..style = PaintingStyle.fill;
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke * 0.74
+      ..strokeCap = StrokeCap.round;
 
     final bubble = RRect.fromRectAndRadius(
       Rect.fromLTWH(
@@ -93,20 +106,51 @@ class _ConvoMarkPainter extends CustomPainter {
       );
     canvas.drawPath(tail, primaryPaint);
 
+    final upperWave = Path()
+      ..moveTo(size.width * 0.28, size.height * 0.42)
+      ..cubicTo(
+        size.width * 0.38,
+        size.height * 0.33,
+        size.width * 0.46,
+        size.height * 0.51,
+        size.width * 0.57,
+        size.height * 0.42,
+      )
+      ..cubicTo(
+        size.width * 0.64,
+        size.height * 0.36,
+        size.width * 0.69,
+        size.height * 0.4,
+        size.width * 0.72,
+        size.height * 0.43,
+      );
+    wavePaint.color = accent;
+    canvas.drawPath(upperWave, wavePaint);
+
+    final lowerWave = Path()
+      ..moveTo(size.width * 0.3, size.height * 0.54)
+      ..cubicTo(
+        size.width * 0.4,
+        size.height * 0.45,
+        size.width * 0.5,
+        size.height * 0.63,
+        size.width * 0.61,
+        size.height * 0.54,
+      );
+    wavePaint.color = secondary;
+    canvas.drawPath(lowerWave, wavePaint);
+
     canvas.drawCircle(
-      Offset(size.width * 0.36, size.height * 0.43),
-      size.width * 0.055,
-      secondaryPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.56, size.height * 0.43),
-      size.width * 0.055,
-      secondaryPaint,
+      Offset(size.width * 0.57, size.height * 0.29),
+      size.width * 0.052,
+      Paint()..color = secondary,
     );
   }
 
   @override
   bool shouldRepaint(_ConvoMarkPainter oldDelegate) {
-    return primary != oldDelegate.primary || secondary != oldDelegate.secondary;
+    return primary != oldDelegate.primary ||
+        secondary != oldDelegate.secondary ||
+        accent != oldDelegate.accent;
   }
 }

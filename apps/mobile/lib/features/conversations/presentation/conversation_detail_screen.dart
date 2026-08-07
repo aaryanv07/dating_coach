@@ -1,11 +1,14 @@
 import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
+import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_skeleton.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:convo_coach/features/conversations/application/conversation_detail_provider.dart';
+import 'package:convo_coach/features/conversation_coach/application/conversation_coach_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ConversationDetailScreen extends ConsumerWidget {
   const ConversationDetailScreen({required this.conversationId, super.key});
@@ -15,6 +18,9 @@ class ConversationDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversation = ref.watch(conversationDetailProvider(conversationId));
+    final coachPreviewAvailable = ref.watch(
+      conversationCoachEntryAvailableProvider,
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Saved conversation')),
       body: conversation.when(
@@ -83,6 +89,29 @@ class ConversationDetailScreen extends ConsumerWidget {
                 ],
                 Text(
                   'Original screenshots were deleted after confirmation.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppButton(
+                  label: coachPreviewAvailable
+                      ? 'Open Conversation Coach'
+                      : 'Conversation Coach unavailable',
+                  icon: Icons.psychology_alt_outlined,
+                  variant: AppButtonVariant.secondary,
+                  semanticLabel: coachPreviewAvailable
+                      ? 'Open Conversation Coach'
+                      : 'Conversation Coach unavailable',
+                  onPressed: coachPreviewAvailable
+                      ? () => context.push(
+                          '/conversations/$conversationId/coach-preview',
+                        )
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  coachPreviewAvailable
+                      ? 'External AI processing requires separate, informed consent before reviewed message text is sent.'
+                      : 'Coaching is disabled in the current configuration.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

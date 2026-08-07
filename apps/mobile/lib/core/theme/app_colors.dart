@@ -15,24 +15,24 @@ class AppColors extends ThemeExtension<AppColors> {
 
   static const AppColors light = AppColors(
     surfaceRaised: Color(0xFFFFFFFF),
-    textMuted: Color(0xFF5D636F),
-    border: Color(0xFFD7DAE0),
-    success: Color(0xFF25743A),
-    caution: Color(0xFF8A5400),
+    textMuted: Color(0xFF4A6770),
+    border: Color(0xFFB9D8D7),
+    success: Color(0xFF087B57),
+    caution: Color(0xFF855200),
     risk: Color(0xFFB3261E),
-    info: Color(0xFF006B8F),
-    focus: Color(0xFF006B8F),
+    info: Color(0xFF006E75),
+    focus: Color(0xFF5740C8),
   );
 
   static const AppColors dark = AppColors(
-    surfaceRaised: Color(0xFF272B30),
-    textMuted: Color(0xFFB5BAC3),
-    border: Color(0xFF444950),
-    success: Color(0xFF77D38B),
+    surfaceRaised: Color(0xFF0D2C34),
+    textMuted: Color(0xFFB7D0D3),
+    border: Color(0xFF315861),
+    success: Color(0xFF73DDB4),
     caution: Color(0xFFF0B45A),
     risk: Color(0xFFFFB4AB),
-    info: Color(0xFF78D1F0),
-    focus: Color(0xFF78D1F0),
+    info: Color(0xFF78E0E4),
+    focus: Color(0xFFC2B5FF),
   );
 
   final Color surfaceRaised;

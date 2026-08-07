@@ -23,7 +23,13 @@ def test_readiness_reports_configured_dependencies(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "status": "ready",
-        "checks": {"database": "configured", "redis": "configured"},
+        "checks": {
+            "configuration": "valid",
+            "lifecycle": "ready",
+            "database": "not_checked",
+            "migrations": "not_checked",
+            "redis": "not_checked",
+        },
     }
 
 
@@ -36,7 +42,13 @@ def test_readiness_fails_closed_without_required_urls() -> None:
     assert response.status_code == 503
     assert response.json() == {
         "status": "not_ready",
-        "checks": {"database": "missing", "redis": "missing"},
+        "checks": {
+            "configuration": "incomplete",
+            "lifecycle": "ready",
+            "database": "missing",
+            "migrations": "not_checked",
+            "redis": "missing",
+        },
     }
 
 

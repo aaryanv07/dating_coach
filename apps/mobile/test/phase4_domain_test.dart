@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:convo_coach/features/conversation_import/application/conversation_import_controller.dart';
 import 'package:convo_coach/features/conversation_import/data/temporary_source_store.dart';
@@ -7,12 +8,14 @@ import 'package:convo_coach/features/conversation_import/domain/readiness.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversations/application/conversation_list_controller.dart';
 import 'package:convo_coach/features/conversations/data/conversation_api_client.dart';
+import 'package:convo_coach/features/conversations/data/saved_conversation_dto.dart';
+import 'package:convo_coach/features/conversations/domain/saved_conversation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   ProviderContainer createContainer({
-    MockConversationApiClient? conversationClient,
+    ConversationApiClient? conversationClient,
     InMemoryTemporarySourceStore? sourceStore,
   }) {
     final container = ProviderContainer(
@@ -238,6 +241,41 @@ void main() {
       expect((await client.listConversations()).single.id, saved.id);
     },
   );
+
+  test('save failure explains iPhone local-network recovery', () async {
+    final container = createContainer(
+      conversationClient: _OfflineConversationApiClient(),
+    );
+    final controller = container.read(conversationImportProvider.notifier);
+    await controller.start(ConversationImportType.paste);
+    expect(
+      controller.parsePaste(
+        'Other: First synthetic message\nMe: Second synthetic message',
+      ),
+      isTrue,
+    );
+    controller.setSaveConsent(true);
+
+    expect(await controller.save(), isNull);
+    expect(
+      container.read(conversationImportProvider).errorMessage,
+      allOf(
+        contains('Settings > Privacy & Security > Local Network'),
+        contains('same Wi-Fi'),
+      ),
+    );
+  });
+}
+
+class _OfflineConversationApiClient extends MockConversationApiClient {
+  _OfflineConversationApiClient() : super(conversations: []);
+
+  @override
+  Future<SavedConversationDto> saveConversation(
+    SavedConversationInput input,
+  ) async {
+    throw const SocketException('Synthetic offline failure');
+  }
 }
 
 ReviewMessage _message(

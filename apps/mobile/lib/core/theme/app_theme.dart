@@ -8,13 +8,16 @@ abstract final class AppTheme {
   static ThemeData light() {
     return _build(
       brightness: Brightness.light,
-      background: const Color(0xFFF7F8FA),
+      background: const Color(0xFFF2FBFB),
       surface: const Color(0xFFFFFFFF),
-      text: const Color(0xFF17191D),
-      primary: const Color(0xFF425582),
+      text: const Color(0xFF092C36),
+      primary: const Color(0xFF5740C8),
       onPrimary: const Color(0xFFFFFFFF),
-      secondary: const Color(0xFF006B60),
-      tertiary: const Color(0xFFA93D58),
+      primaryContainer: const Color(0xFFE4DFFF),
+      secondary: const Color(0xFFB83273),
+      secondaryContainer: const Color(0xFFFFDDEA),
+      tertiary: const Color(0xFF006E75),
+      tertiaryContainer: const Color(0xFFC5F4EF),
       appColors: AppColors.light,
     );
   }
@@ -22,13 +25,16 @@ abstract final class AppTheme {
   static ThemeData dark() {
     return _build(
       brightness: Brightness.dark,
-      background: const Color(0xFF121416),
-      surface: const Color(0xFF1C1F23),
-      text: const Color(0xFFF3F4F6),
-      primary: const Color(0xFFB8C8F5),
-      onPrimary: const Color(0xFF16203A),
-      secondary: const Color(0xFF71D6C8),
-      tertiary: const Color(0xFFFF9DB2),
+      background: const Color(0xFF03171D),
+      surface: const Color(0xFF08242C),
+      text: const Color(0xFFF2FCFC),
+      primary: const Color(0xFFC2B5FF),
+      onPrimary: const Color(0xFF24125F),
+      primaryContainer: const Color(0xFF382D72),
+      secondary: const Color(0xFFFF90BE),
+      secondaryContainer: const Color(0xFF642644),
+      tertiary: const Color(0xFF69E3D8),
+      tertiaryContainer: const Color(0xFF0B4B50),
       appColors: AppColors.dark,
     );
   }
@@ -40,8 +46,11 @@ abstract final class AppTheme {
     required Color text,
     required Color primary,
     required Color onPrimary,
+    required Color primaryContainer,
     required Color secondary,
+    required Color secondaryContainer,
     required Color tertiary,
+    required Color tertiaryContainer,
     required AppColors appColors,
   }) {
     final colorScheme =
@@ -52,8 +61,11 @@ abstract final class AppTheme {
         ).copyWith(
           primary: primary,
           onPrimary: onPrimary,
+          primaryContainer: primaryContainer,
           secondary: secondary,
+          secondaryContainer: secondaryContainer,
           tertiary: tertiary,
+          tertiaryContainer: tertiaryContainer,
           error: appColors.risk,
           outline: appColors.border,
           surface: surface,
@@ -87,7 +99,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.hero,
           side: BorderSide(color: appColors.border),
         ),
       ),
@@ -112,27 +124,67 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: surface,
-        indicatorColor: primary.withValues(alpha: 0.16),
+        backgroundColor: brightness == Brightness.light
+            ? text
+            : const Color(0xFF020F14),
+        indicatorColor: primary.withValues(alpha: 0.32),
         elevation: 0,
-        height: 72,
-        labelTextStyle: WidgetStatePropertyAll(textTheme.labelMedium),
+        height: 76,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          return IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? const Color(0xFFFFFFFF)
+                : const Color(0xFFA9C5CA),
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          return textTheme.labelMedium?.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? const Color(0xFFFFFFFF)
+                : const Color(0xFFA9C5CA),
+            fontWeight: FontWeight.w800,
+          );
+        }),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: surface,
         modalBackgroundColor: surface,
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.large),
+          ),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: surface,
-        shape: const RoundedRectangleBorder(borderRadius: AppRadii.card),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadii.hero),
       ),
       dividerTheme: DividerThemeData(color: appColors.border, thickness: 1),
       checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.small),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: text,
+          side: BorderSide(color: appColors.border, width: 1.4),
+          backgroundColor: surface.withValues(alpha: 0.82),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "fixture_id": "dense_thread_overlap_hinglish",
+  "layout_preset": "dense_thread",
+  "inspiration": "whatsapp_style",
+  "theme": "dark",
+  "language": "hinglish",
+  "viewport": {"width": 720, "height": 1400},
+  "traits": [
+    "whatsapp_style",
+    "dark_mode",
+    "hinglish",
+    "overlapping_screenshots",
+    "compact_screen"
+  ],
+  "expected_source_order": [0, 1],
+  "expected_duplicate_ids": ["dense-2", "dense-3"],
+  "expected_warnings": [
+    "duplicateOverlapRemoved",
+    "screenshotOrderUncertain"
+  ],
+  "messages": [
+    {
+      "id": "dense-1",
+      "speaker": "other",
+      "text": "Aaj ka scene kya hai?",
+      "timestamp": null,
+      "visible_timestamp_text": "6:05 PM",
+      "reference_confidence": 0.98,
+      "requires_manual_review": false
+    },
+    {
+      "id": "dense-2",
+      "speaker": "me",
+      "text": "Bas kaam wrap kar raha hoon 😅",
+      "timestamp": null,
+      "visible_timestamp_text": "6:06 PM",
+      "reference_confidence": 0.96,
+      "requires_manual_review": false
+    },
+    {
+      "id": "dense-3",
+      "speaker": "other",
+      "text": "Coffee chalein, around 7?",
+      "timestamp": null,
+      "visible_timestamp_text": "6:07 PM",
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    },
+    {
+      "id": "dense-4",
+      "speaker": "me",
+      "text": "Haan, CP wala quiet cafe?",
+      "timestamp": null,
+      "visible_timestamp_text": "6:08 PM",
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    },
+    {
+      "id": "dense-5",
+      "speaker": "other",
+      "text": "Done, main metro se aa jaungi.",
+      "timestamp": null,
+      "visible_timestamp_text": "6:10 PM",
+      "reference_confidence": 0.98,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": null,
+      "message_ids": ["dense-1", "dense-2", "dense-3"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": []
+    },
+    {
+      "source_index": 1,
+      "date_label": null,
+      "message_ids": ["dense-2", "dense-3", "dense-4", "dense-5"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": []
+    }
+  ]
+}

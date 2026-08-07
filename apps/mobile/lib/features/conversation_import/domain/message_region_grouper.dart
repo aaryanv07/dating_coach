@@ -1,3 +1,4 @@
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversation_import/domain/timestamp_parser.dart';
@@ -28,10 +29,12 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
             ? vertical
             : a.bounds.left.compareTo(b.bounds.left);
       });
+    final lines = _coalesceHorizontalFragments(sorted, page.width);
     final output = <CandidateMessageRegion>[];
     final current = <RecognizedLine>[];
     ParsedTimestamp? dateContext;
     ParsedTimestamp? pendingTimestamp;
+    RecognizedLine? pendingTimestampLine;
     ParsedTimestamp? currentTimestamp;
 
     void flush() {
@@ -49,19 +52,23 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
               current.first.bounds,
               (value, line) => value.union(line.bounds),
             );
+        final candidate = CandidateMessageRegion(
+          text: text,
+          bounds: bounds,
+          confidence: _averageConfidence(current),
+          sourceIndex: page.sourceIndex,
+          sourceOrder: output.length,
+          speaker: MessageSpeaker.unknown,
+          timestamp: resolveVisibleTimestamp(
+            dateContext: dateContext,
+            timestamp: currentTimestamp,
+          ),
+          visibleTimestampText: currentTimestamp?.rawText,
+          pageWidth: page.width,
+        );
         output.add(
-          CandidateMessageRegion(
-            text: text,
-            bounds: bounds,
-            confidence: _averageConfidence(current),
-            sourceIndex: page.sourceIndex,
-            sourceOrder: output.length,
-            speaker: MessageSpeaker.unknown,
-            timestamp: resolveVisibleTimestamp(
-              dateContext: dateContext,
-              timestamp: currentTimestamp,
-            ),
-            visibleTimestampText: currentTimestamp?.rawText,
+          candidate.copyWith(
+            compactAttachmentHint: _isCompactAttachment(candidate, output),
           ),
         );
       }
@@ -69,7 +76,32 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
       currentTimestamp = null;
     }
 
-    for (final line in sorted) {
+    void addVisualPlaceholder(
+      ParsedTimestamp timestamp,
+      RecognizedLine timestampLine,
+    ) {
+      output.add(
+        CandidateMessageRegion(
+          text: '\uFFFC',
+          bounds: timestampLine.bounds,
+          confidence: null,
+          sourceIndex: page.sourceIndex,
+          sourceOrder: output.length,
+          speaker: MessageSpeaker.unknown,
+          timestamp: resolveVisibleTimestamp(
+            dateContext: dateContext,
+            timestamp: timestamp,
+          ),
+          visibleTimestampText: timestamp.rawText,
+          eventTypeHint: ConversationEventType.emojiMessage,
+          pageWidth: page.width,
+          compactAttachmentHint: false,
+          visualPlaceholder: true,
+        ),
+      );
+    }
+
+    for (final line in lines) {
       final cleanText = line.text.trim();
       if (cleanText.isEmpty) continue;
       final timestamp = timestampParser.parse(cleanText, locale: locale);
@@ -77,13 +109,30 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
         if (timestamp.precision == TimestampPrecision.date ||
             timestamp.precision == TimestampPrecision.dateTime) {
           flush();
+          output.add(
+            CandidateMessageRegion(
+              text: cleanText,
+              bounds: line.bounds,
+              confidence: line.confidence ?? _elementConfidence(line),
+              sourceIndex: page.sourceIndex,
+              sourceOrder: output.length,
+              speaker: MessageSpeaker.system,
+              timestamp: timestamp.value,
+              visibleTimestampText: timestamp.rawText,
+              eventTypeHint: ConversationEventType.dateSeparator,
+              pageWidth: page.width,
+              compactAttachmentHint: false,
+            ),
+          );
           dateContext = timestamp;
           pendingTimestamp = null;
+          pendingTimestampLine = null;
         } else if (current.isNotEmpty) {
           currentTimestamp = timestamp;
           flush();
         } else {
           pendingTimestamp = timestamp;
+          pendingTimestampLine = line;
         }
         continue;
       }
@@ -92,19 +141,103 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
         flush();
       }
       if (current.isEmpty && pendingTimestamp != null) {
-        currentTimestamp = pendingTimestamp;
+        if (_isOrphanedVisualTimestamp(
+          pendingTimestampLine!,
+          next: line,
+          pageWidth: page.width,
+          pageHeight: page.height,
+        )) {
+          addVisualPlaceholder(pendingTimestamp, pendingTimestampLine);
+        } else {
+          currentTimestamp = pendingTimestamp;
+        }
         pendingTimestamp = null;
+        pendingTimestampLine = null;
       }
       current.add(line);
     }
     flush();
+    if (pendingTimestamp != null &&
+        _isOrphanedVisualTimestamp(
+          pendingTimestampLine!,
+          pageWidth: page.width,
+          pageHeight: page.height,
+        )) {
+      addVisualPlaceholder(pendingTimestamp, pendingTimestampLine);
+    }
     return output;
+  }
+
+  List<RecognizedLine> _coalesceHorizontalFragments(
+    List<RecognizedLine> sorted,
+    int pageWidth,
+  ) {
+    final output = <RecognizedLine>[];
+    for (final line in sorted) {
+      if (output.isEmpty || !_sameRowFragment(output.last, line, pageWidth)) {
+        output.add(line);
+        continue;
+      }
+      final previous = output.removeLast();
+      output.add(
+        RecognizedLine(
+          text: '${previous.text.trim()} ${line.text.trim()}',
+          bounds: previous.bounds.union(line.bounds),
+          confidence: _averageConfidence([previous, line]),
+          elements: List.unmodifiable([...previous.elements, ...line.elements]),
+        ),
+      );
+    }
+    return output;
+  }
+
+  bool _sameRowFragment(
+    RecognizedLine previous,
+    RecognizedLine next,
+    int pageWidth,
+  ) {
+    if (pageWidth <= 0 || next.bounds.left < previous.bounds.right) {
+      return false;
+    }
+    final overlap =
+        (previous.bounds.bottom < next.bounds.bottom
+            ? previous.bounds.bottom
+            : next.bounds.bottom) -
+        (previous.bounds.top > next.bounds.top
+            ? previous.bounds.top
+            : next.bounds.top);
+    final minimumHeight = previous.bounds.height < next.bounds.height
+        ? previous.bounds.height
+        : next.bounds.height;
+    final horizontalGap = next.bounds.left - previous.bounds.right;
+    return minimumHeight > 0 &&
+        overlap >= minimumHeight * 0.6 &&
+        horizontalGap <= pageWidth * 0.035;
+  }
+
+  bool _isOrphanedVisualTimestamp(
+    RecognizedLine timestampLine, {
+    RecognizedLine? next,
+    required int pageWidth,
+    required int pageHeight,
+  }) {
+    if (pageWidth <= 0 || pageHeight <= 0) return false;
+    final center = timestampLine.bounds.centerX / pageWidth;
+    final alignedToBubbleEdge = center <= 0.4 || center >= 0.6;
+    if (!alignedToBubbleEdge) return false;
+    if (next == null) return true;
+    final verticalGap = next.bounds.top - timestampLine.bounds.bottom;
+    final minimumGap = (pageHeight * 0.035).clamp(36, 96);
+    return verticalGap > minimumGap;
   }
 
   bool _belongsWith(RecognizedLine previous, RecognizedLine next, int width) {
     final verticalGap = next.bounds.top - previous.bounds.bottom;
-    final maximumGap = (previous.bounds.height + next.bounds.height) * 0.75;
-    if (verticalGap < -2 || verticalGap > maximumGap.clamp(12, 48)) {
+    // Native OCR may return loose vertical boxes for a partially cropped
+    // wrapped line. Keep a bounded tolerance that still stays well below the
+    // normal gap between separate chat bubbles.
+    final maximumGap = (previous.bounds.height + next.bounds.height) * 1.1;
+    if (verticalGap < -2 || verticalGap > maximumGap.clamp(12, 72)) {
       return false;
     }
     final centerDistance = (previous.bounds.centerX - next.bounds.centerX)
@@ -117,6 +250,28 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
             ? previous.bounds.left
             : next.bounds.left);
     return horizontalOverlap > 0 || centerDistance <= width * 0.12;
+  }
+
+  bool _isCompactAttachment(
+    CandidateMessageRegion current,
+    List<CandidateMessageRegion> previous,
+  ) {
+    final target = previous.reversed
+        .where((item) => !(item.eventTypeHint?.isStructural ?? false))
+        .firstOrNull;
+    if (target == null || target.sourceIndex != current.sourceIndex) {
+      return false;
+    }
+    final horizontallyNear =
+        current.bounds.centerX >= target.bounds.left - current.bounds.width &&
+        current.bounds.centerX <= target.bounds.right + current.bounds.width;
+    final verticalGap = (current.bounds.centerY - target.bounds.bottom).abs();
+    final compact =
+        current.bounds.width <= target.bounds.width * 0.45 &&
+        current.bounds.height <= target.bounds.height * 0.9;
+    return horizontallyNear &&
+        compact &&
+        verticalGap <= target.bounds.height.clamp(20, 56);
   }
 
   double? _averageConfidence(List<RecognizedLine> lines) {

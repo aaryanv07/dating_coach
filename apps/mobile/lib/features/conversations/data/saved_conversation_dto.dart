@@ -10,6 +10,8 @@ class SavedConversationDto {
     required this.messages,
     required this.sources,
     required this.updatedAt,
+    this.events = const [],
+    this.relationships = const [],
     this.extractionMetadata,
   });
 
@@ -28,6 +30,8 @@ class SavedConversationDto {
       sources: input.sources,
       updatedAt: updatedAt,
       extractionMetadata: input.extractionMetadata,
+      events: List.unmodifiable(input.events),
+      relationships: List.unmodifiable(input.relationships),
     );
   }
 
@@ -40,6 +44,8 @@ class SavedConversationDto {
   final List<SavedConversationSource> sources;
   final DateTime updatedAt;
   final SavedExtractionMetadata? extractionMetadata;
+  final List<NormalizedConversationEvent> events;
+  final List<NormalizedConversationEventRelationship> relationships;
 
   SavedConversation toDomain() {
     return SavedConversation(
@@ -52,6 +58,8 @@ class SavedConversationDto {
       sources: List.unmodifiable(sources),
       updatedAt: updatedAt,
       extractionMetadata: extractionMetadata,
+      events: List.unmodifiable(events),
+      relationships: List.unmodifiable(relationships),
     );
   }
 }

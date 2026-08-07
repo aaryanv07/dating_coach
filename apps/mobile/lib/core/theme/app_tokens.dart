@@ -11,14 +11,17 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadii {
-  static const double small = 4;
-  static const double medium = 8;
+  static const double small = 8;
+  static const double medium = 14;
+  static const double large = 22;
+  static const double pill = 999;
   static const BorderRadius card = BorderRadius.all(Radius.circular(medium));
+  static const BorderRadius hero = BorderRadius.all(Radius.circular(large));
 }
 
 abstract final class AppSizes {
   static const double minimumTouchTarget = 44;
-  static const double buttonHeight = 52;
+  static const double buttonHeight = 56;
   static const double iconSmall = 18;
   static const double iconMedium = 24;
   static const double maxContentWidth = 640;

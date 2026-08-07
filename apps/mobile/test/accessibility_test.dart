@@ -60,7 +60,8 @@ void main() {
 
     await pumpConvoCoach(tester);
 
-    expect(find.text('Understand every conversation.'), findsOneWidget);
+    expect(find.text('START WITH\nYOUR VOICE'), findsOneWidget);
+    expect(find.text('Start exploring'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

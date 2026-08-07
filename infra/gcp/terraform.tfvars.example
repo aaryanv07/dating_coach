@@ -1,0 +1,14 @@
+project_id                = "convocoach-production"
+region                    = "asia-south1"
+api_domain                = "api.example.com"
+backend_image             = "asia-south1-docker.pkg.dev/convocoach-production/convocoach-backend/api@sha256:replace-with-image-digest"
+authentication_issuer     = "https://example-region.auth0.com/"
+authentication_audience   = "convocoach-api"
+authentication_jwks_url   = "https://example-region.auth0.com/.well-known/jwks.json"
+apple_app_store_id        = 1234567890
+alert_email               = "operations@example.com"
+minimum_instances         = 1
+maximum_instances         = 5
+ai_coaching_enabled       = false
+external_ai_processing_approved = false
+ai_safety_evaluation_approved   = false

@@ -6,7 +6,7 @@ from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.verifier import AuthClaims
+from app.auth.contracts import AuthClaims
 from app.db.models import (
     CommunicationProfile,
     ConsentRecord,
@@ -29,6 +29,7 @@ class UserRepository:
         self._session = session
 
     async def get_or_create(self, claims: AuthClaims) -> User:
+        claims.validate_structure()
         user = await self._session.scalar(select(User).where(User.auth_subject == claims.subject))
         if user is not None:
             if user.deleted_at is not None:
@@ -37,7 +38,7 @@ class UserRepository:
 
         user = User(
             auth_subject=claims.subject,
-            email=claims.email,
+            email=claims.email if claims.email_verified else None,
             display_name=claims.display_name,
         )
         self._session.add(user)
@@ -138,15 +139,21 @@ class ConsentRepository:
         )
         return list(records)
 
-    async def has_active(self, user_id: UUID, consent_type: str) -> bool:
+    async def has_active(
+        self,
+        user_id: UUID,
+        consent_type: str,
+        *,
+        policy_version: str | None = None,
+    ) -> bool:
+        statement = select(ConsentRecord).where(
+            ConsentRecord.user_id == user_id,
+            ConsentRecord.consent_type == consent_type,
+        )
+        if policy_version is not None:
+            statement = statement.where(ConsentRecord.policy_version == policy_version)
         latest = await self._session.scalar(
-            select(ConsentRecord)
-            .where(
-                ConsentRecord.user_id == user_id,
-                ConsentRecord.consent_type == consent_type,
-            )
-            .order_by(ConsentRecord.recorded_at.desc(), ConsentRecord.id.desc())
-            .limit(1)
+            statement.order_by(ConsentRecord.recorded_at.desc(), ConsentRecord.id.desc()).limit(1)
         )
         return latest is not None and latest.granted
 

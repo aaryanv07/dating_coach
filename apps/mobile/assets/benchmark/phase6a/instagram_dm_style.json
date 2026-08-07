@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "fixture_id": "social_dm_out_of_order_hinglish",
+  "layout_preset": "social_dm",
+  "inspiration": "instagram_dm_style",
+  "theme": "dark",
+  "language": "hinglish",
+  "viewport": {"width": 1080, "height": 2200},
+  "traits": [
+    "instagram_dm_style",
+    "dark_mode",
+    "hinglish",
+    "reactions",
+    "out_of_order_screenshots",
+    "missing_timeline_section",
+    "large_screen"
+  ],
+  "expected_source_order": [1, 0],
+  "expected_duplicate_ids": [],
+  "expected_warnings": ["screenshotOrderAdjusted", "timelineGap"],
+  "messages": [
+    {
+      "id": "social-1",
+      "speaker": "other",
+      "text": "Kal wali playlist ka link bhejna.",
+      "timestamp": "2026-07-15T21:10:00.000",
+      "visible_timestamp_text": "9:10 PM",
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    },
+    {
+      "id": "social-2",
+      "speaker": "me",
+      "text": "Haan, office se nikalte hi bhejta hoon.",
+      "timestamp": "2026-07-15T21:12:00.000",
+      "visible_timestamp_text": "9:12 PM",
+      "reference_confidence": 0.96,
+      "requires_manual_review": false
+    },
+    {
+      "id": "social-3",
+      "speaker": "other",
+      "text": "Playlist solid thi, especially last track.",
+      "timestamp": "2026-07-17T08:40:00.000",
+      "visible_timestamp_text": "8:40 AM",
+      "reference_confidence": 0.95,
+      "requires_manual_review": false
+    },
+    {
+      "id": "social-4",
+      "speaker": "me",
+      "text": "Wahi mera favourite hai. Live version bhi sunna.",
+      "timestamp": "2026-07-17T08:43:00.000",
+      "visible_timestamp_text": "8:43 AM",
+      "reference_confidence": 0.97,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": "17 Jul 2026",
+      "message_ids": ["social-3", "social-4"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": []
+    },
+    {
+      "source_index": 1,
+      "date_label": "15 Jul 2026",
+      "message_ids": ["social-1", "social-2"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": [
+        {
+          "message_id": "social-2",
+          "text": "🔥",
+          "recognize_as_text": false
+        }
+      ]
+    }
+  ]
+}

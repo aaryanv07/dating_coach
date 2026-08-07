@@ -3,7 +3,7 @@
 from fastapi.testclient import TestClient
 
 
-def test_openapi_contains_only_phase_four_product_routes(client: TestClient) -> None:
+def test_openapi_contains_only_authorized_product_routes(client: TestClient) -> None:
     paths = set(client.get("/openapi.json").json()["paths"])
 
     assert paths == {
@@ -18,5 +18,12 @@ def test_openapi_contains_only_phase_four_product_routes(client: TestClient) -> 
         "/api/v1/conversations/{conversation_id}",
         "/api/v1/conversations/{conversation_id}/messages",
         "/api/v1/conversations/{conversation_id}/confirm",
+        "/api/v1/conversations/{conversation_id}/events",
+        "/api/v1/conversations/{conversation_id}/coach-preview",
+        "/api/v1/subscription/status",
+        "/api/v1/subscription/purchase-context",
+        "/api/v1/subscription/verify",
+        "/api/v1/subscription/notifications/apple",
+        "/api/v1/subscription/notifications/google",
         "/api/v1/privacy/delete-account",
     }

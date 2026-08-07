@@ -7,8 +7,12 @@ from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.verifier import (
+from app.auth.contracts import (
+    MAX_BEARER_TOKEN_LENGTH,
     AuthClaims,
+    AuthClaimValidationError,
+)
+from app.auth.verifier import (
     AuthenticationError,
     AuthenticationVerifier,
 )
@@ -50,10 +54,24 @@ async def get_verified_claims(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    token = credentials.credentials
+    if (
+        not token
+        or len(token) > MAX_BEARER_TOKEN_LENGTH
+        or any(character.isspace() or ord(character) < 32 for character in token)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     verifier = cast(AuthenticationVerifier, request.app.state.auth_verifier)
     try:
-        return await verifier.verify(credentials.credentials)
-    except AuthenticationError as error:
+        claims = await verifier.verify(token)
+        claims.validate_structure()
+        return claims
+    except (AuthenticationError, AuthClaimValidationError) as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",

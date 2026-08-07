@@ -7,6 +7,10 @@ from pydantic import BaseModel
 
 from app import __version__
 from app.core.config import Settings
+from app.core.lifecycle import (
+    ApplicationLifecycleState,
+    OperationalReadinessSnapshot,
+)
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -20,10 +24,13 @@ class LivenessResponse(BaseModel):
 
 
 class DependencyChecks(BaseModel):
-    """Configuration-level dependency checks."""
+    """Content-free configuration and dependency states."""
 
-    database: Literal["configured", "missing"]
-    redis: Literal["configured", "missing"]
+    configuration: Literal["valid", "incomplete"]
+    lifecycle: Literal["created", "starting", "ready", "stopping", "stopped"]
+    database: Literal["ready", "not_ready", "not_checked", "missing"]
+    migrations: Literal["compatible", "incompatible", "not_checked"]
+    redis: Literal["ready", "not_ready", "not_checked", "missing"]
 
 
 class ReadinessResponse(BaseModel):
@@ -51,20 +58,40 @@ def liveness(settings: SettingsDependency) -> LivenessResponse:
     response_model=ReadinessResponse,
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": ReadinessResponse}},
 )
-def readiness(response: Response, settings: SettingsDependency) -> ReadinessResponse:
-    """Fail closed when required dependency locations are not configured."""
-    database_status: Literal["configured", "missing"] = (
-        "configured" if settings.database_url.strip() else "missing"
+def readiness(
+    request: Request,
+    response: Response,
+    settings: SettingsDependency,
+) -> ReadinessResponse:
+    """Report actual lifecycle/dependency state without performing side effects."""
+    lifecycle = cast(
+        ApplicationLifecycleState,
+        request.app.state.lifecycle,
     )
-    redis_status: Literal["configured", "missing"] = (
-        "configured" if settings.redis_url.strip() else "missing"
+    snapshot = cast(
+        OperationalReadinessSnapshot,
+        request.app.state.operational_readiness,
     )
-    is_ready = settings.dependencies_configured
+    checks_required = settings.operational_checks_enabled or settings.app_environment in {
+        "staging",
+        "production",
+    }
+    is_ready = (
+        lifecycle == ApplicationLifecycleState.READY
+        and settings.dependencies_configured
+        and (snapshot.ready if checks_required else True)
+    )
 
     if not is_ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
 
     return ReadinessResponse(
         status="ready" if is_ready else "not_ready",
-        checks=DependencyChecks(database=database_status, redis=redis_status),
+        checks=DependencyChecks(
+            configuration=("valid" if settings.dependencies_configured else "incomplete"),
+            lifecycle=lifecycle.value,
+            database=(snapshot.database.value if settings.database_url.strip() else "missing"),
+            migrations=snapshot.migrations.value,
+            redis=snapshot.redis.value if settings.redis_url.strip() else "missing",
+        ),
     )

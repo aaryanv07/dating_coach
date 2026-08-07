@@ -35,7 +35,7 @@ class _AppCardState extends ConsumerState<AppCard> {
       child: Material(
         color: context.appColors.surfaceRaised,
         shape: RoundedRectangleBorder(
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.hero,
           side: BorderSide(color: context.appColors.border),
         ),
         clipBehavior: Clip.antiAlias,

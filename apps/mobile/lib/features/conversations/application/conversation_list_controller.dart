@@ -1,12 +1,26 @@
+import 'package:convo_coach/core/config/app_config.dart';
+import 'package:convo_coach/features/authentication/application/authentication_providers.dart';
 import 'package:convo_coach/features/conversations/data/api_conversation_repository.dart';
 import 'package:convo_coach/features/conversations/data/conversation_api_client.dart';
+import 'package:convo_coach/features/conversations/data/http_conversation_api_client.dart';
 import 'package:convo_coach/features/conversations/domain/conversation_repository.dart';
 import 'package:convo_coach/features/conversations/domain/conversation_summary.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final conversationApiClientProvider = Provider<ConversationApiClient>(
-  (ref) => MockConversationApiClient(),
-);
+final conversationApiClientProvider = Provider<ConversationApiClient>((ref) {
+  final baseUri = Uri.tryParse(AppConfig.apiBaseUrl);
+  if (AppConfig.runtime.authenticatedApiConfigured &&
+      baseUri != null &&
+      baseUri.hasScheme &&
+      baseUri.hasAuthority) {
+    final tokens = ref.watch(authenticationAccessTokenProvider);
+    return HttpConversationApiClient(
+      baseUri: baseUri,
+      accessTokenProvider: tokens.accessToken,
+    );
+  }
+  return MockConversationApiClient();
+});
 
 final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
   return ApiConversationRepository(ref.watch(conversationApiClientProvider));
