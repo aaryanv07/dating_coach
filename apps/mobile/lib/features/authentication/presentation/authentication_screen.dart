@@ -6,12 +6,16 @@ import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_input.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:convo_coach/features/authentication/application/mock_auth_controller.dart';
+import 'package:convo_coach/features/authentication/application/authentication_providers.dart';
+import 'package:convo_coach/features/authentication/domain/authentication_contracts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class AuthenticationScreen extends ConsumerStatefulWidget {
-  const AuthenticationScreen({super.key});
+  const AuthenticationScreen({this.previewAuthenticationEnabled, super.key});
+
+  final bool? previewAuthenticationEnabled;
 
   @override
   ConsumerState<AuthenticationScreen> createState() =>
@@ -21,6 +25,16 @@ class AuthenticationScreen extends ConsumerStatefulWidget {
 class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _emailLooksValid = false;
+  bool _authenticating = false;
+  String? _authenticationError;
+
+  bool get _previewAuthenticationEnabled =>
+      widget.previewAuthenticationEnabled ??
+      AppConfig.runtime.previewAuthenticationEnabled;
+
+  bool get _oidcAuthenticationEnabled =>
+      widget.previewAuthenticationEnabled == null &&
+      AppConfig.runtime.oidcAuthenticationEnabled;
 
   @override
   void dispose() {
@@ -29,13 +43,142 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
   }
 
   void _continue(MockAuthMethod method) {
+    if (!_previewAuthenticationEnabled) {
+      return;
+    }
     ref.read(mockAuthProvider.notifier).signIn(method);
     ref.read(hapticsProvider).success();
     context.go('/home');
   }
 
+  Future<void> _continueSecurely(MobileAuthenticationMethod method) async {
+    if (_authenticating) return;
+    setState(() {
+      _authenticating = true;
+      _authenticationError = null;
+    });
+    final result = await ref.read(authenticationGatewayProvider).signIn(method);
+    if (!mounted) return;
+    if (result is MobileAuthenticationSucceeded) {
+      context.go('/home');
+      return;
+    }
+    setState(() {
+      _authenticating = false;
+      _authenticationError =
+          'Secure sign-in did not finish. No account data was saved.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_oidcAuthenticationEnabled) {
+      return Scaffold(
+        appBar: AppBar(leading: const BackButton()),
+        body: ResponsiveContent(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+            children: [
+              Text(
+                'Sign in securely.',
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Continue to the protected sign-in page. ConvoCoach uses authorization code with PKCE and stores session credentials in your device keychain.',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              AppButton(
+                key: const Key('production-google-sign-in'),
+                label: _authenticating
+                    ? 'Signing in…'
+                    : AppConfig.runtime.googleSignInEnabled
+                    ? 'Continue with Google'
+                    : 'Continue securely',
+                icon: AppConfig.runtime.googleSignInEnabled
+                    ? Icons.public_rounded
+                    : Icons.lock_outline_rounded,
+                onPressed: _authenticating
+                    ? null
+                    : () => _continueSecurely(
+                        AppConfig.runtime.googleSignInEnabled
+                            ? MobileAuthenticationMethod.google
+                            : MobileAuthenticationMethod.oidc,
+                      ),
+              ),
+              if (AppConfig.runtime.appleSignInEnabled) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  key: const Key('production-apple-sign-in'),
+                  label: 'Continue with Apple',
+                  icon: Icons.apple,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: _authenticating
+                      ? null
+                      : () =>
+                            _continueSecurely(MobileAuthenticationMethod.apple),
+                ),
+              ],
+              if (_authenticationError case final message?) ...[
+                const SizedBox(height: AppSpacing.md),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    message,
+                    style: TextStyle(color: context.appColors.risk),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Your identity provider may offer Apple, Google, or email sign-in. ConvoCoach never receives your provider password.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!_previewAuthenticationEnabled) {
+      return Scaffold(
+        appBar: AppBar(leading: const BackButton()),
+        body: ResponsiveContent(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+            children: [
+              Text(
+                'Secure sign-in is not available yet.',
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'This qualification build does not include a production identity provider. No preview account or network session will be created.',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    color: context.appColors.info,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Release remains blocked until production authentication is implemented and independently qualified.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(leading: const BackButton()),
       body: ResponsiveContent(

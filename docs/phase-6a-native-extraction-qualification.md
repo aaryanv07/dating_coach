@@ -220,10 +220,16 @@ the fixture is rerun, and the reason is documented.
 - Phase 6A.3 is `BLOCKED`. There are zero qualifying Android runs and zero
   qualifying iOS runs, so the required repeated native reports, physical
   accessibility smoke checks, and cross-run comparisons do not exist.
-- Flutter 3.44.6 now detects a complete Android SDK and CocoaPods. No physical
-  mobile device or full Xcode is available, so no native ML Kit result is
-  claimed. Android APK preflight also exposes an existing CargoKit/Gradle 9.1
-  compatibility defect that remains outside the authorized production scope.
+- Flutter 3.44.6 detects the complete Android SDK, Xcode 26.6, and CocoaPods
+  1.17.0. Android builds on AGP 8.13.2 and Gradle 8.13 with application minSdk
+  24. Two unchanged Android 16 ARM64 emulator ML Kit runs completed all seven
+  fixtures and compared as `NO_REGRESSION`, but their native accuracy gates did
+  not all pass and an emulator cannot satisfy physical qualification. An iOS
+  simulator compile succeeds but produces an x86_64-only artifact that the
+  Apple-silicon iOS 26.5 simulator cannot install. Unsigned arm64 device debug
+  and release targets compile. Xcode has an Apple account and Personal Team
+  configured, but physical signing, installation, and native evidence remain
+  outstanding.
 - The current ML Kit adapter bundles only the Latin recognizer. Hinglish and
   Roman Hindi are covered; native-script Hindi remains deferred.
 - Phase 6A.1 now represents recognized reactions as typed events with reviewable

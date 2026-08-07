@@ -18,6 +18,8 @@ def test_phase_four_tables_are_registered() -> None:
         "conversation_events",
         "conversation_event_relationships",
         "messages",
+        "subscription_entitlements",
+        "ai_usage_records",
         "deletion_requests",
     }
 
@@ -82,3 +84,28 @@ def test_event_runtime_has_bounded_content_free_columns() -> None:
     for table in (events, relationships):
         assert "screenshot_bytes" not in table.columns
         assert "source_path" not in table.columns
+
+
+def test_ai_usage_tables_are_content_free_and_owner_cascaded() -> None:
+    entitlements = Base.metadata.tables["subscription_entitlements"]
+    usage = Base.metadata.tables["ai_usage_records"]
+
+    assert {
+        "allowance_kind",
+        "idempotency_key",
+        "request_fingerprint",
+        "status",
+        "input_tokens",
+        "output_tokens",
+        "cost_microusd",
+    }.issubset(usage.columns.keys())
+    assert not {
+        "message",
+        "prompt",
+        "response",
+        "screenshot",
+        "content",
+    }.intersection(usage.columns.keys())
+    for table in (entitlements, usage):
+        user_fk = next(key for key in table.foreign_keys if key.column.table.name == "users")
+        assert user_fk.ondelete == "CASCADE"

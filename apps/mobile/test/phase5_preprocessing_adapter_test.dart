@@ -125,6 +125,7 @@ void main() {
       final left = processed.getPixel(5, 5).r;
       final right = processed.getPixel(30, 5).r;
 
+      expect(const SafeConversationImagePreprocessor().version, 'image-v2');
       expect((right - left).abs(), greaterThan(10));
     });
   });

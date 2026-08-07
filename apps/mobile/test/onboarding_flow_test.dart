@@ -32,6 +32,7 @@ void main() {
 
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
-    expect(find.text('Clarity for your next conversation.'), findsOneWidget);
+    expect(find.text('Upload a chat.\nKeep the reply yours.'), findsOneWidget);
+    expect(find.byKey(const Key('app-vibrant-backdrop')), findsOneWidget);
   });
 }

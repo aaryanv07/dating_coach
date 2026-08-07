@@ -162,18 +162,23 @@ The qualification output under `build\phase6a-readiness` and
 commit device reports, screenshot bytes, transcripts, source paths, or source
 hashes.
 
-## Known Android build blocker
+## Android build compatibility baseline
 
-The last macOS preflight reached Android dependency compilation and failed in
-`irondash_engine_context` `0.5.5`: its CargoKit Gradle script calls the removed
-`Project.exec()` API under Gradle `9.1`. Moving to Windows does not prove that
-this compatibility defect is resolved.
+The source-controlled Android baseline now uses AGP `8.13.2` and Gradle `8.13`.
+It aligns the released `irondash_engine_context` and
+`super_native_extensions` library projects to compile SDK 36 because their
+current AndroidX dependencies require API 34 or later. The application minimum
+SDK is explicitly 24, which is required by the selected
+`image_picker_android` release. Because the app instantiates only the bundled
+Latin ML Kit recognizer, its release shrinker ignores only the absent optional
+Chinese, Devanagari, Japanese, and Korean recognizer namespaces. macOS debug APK
+and release AAB builds pass with this configuration.
 
-Do not silently change the application's minimum SDK, downgrade or replace
-dependencies, or patch generated package-cache files. A backward-compatible,
-source-controlled fix requires separate phase-scoped authorization, focused
-tests, and documentation. Until that fix and the two required physical-device
-runs pass, Android qualification remains incomplete.
+Windows must still rerun the complete mobile gate and produce two passing
+physical-device reports. Do not silently alter these tool versions, lower the
+minimum SDK, weaken the quality gates, or patch generated package-cache files.
+The current nonqualifying Android emulator reports expose extraction-quality
+gaps that also require focused correction before qualification can close.
 
 ## iOS handback
 

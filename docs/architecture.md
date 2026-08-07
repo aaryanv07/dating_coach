@@ -29,11 +29,12 @@ Current endpoints:
 | Endpoint | Meaning | Dependency behavior |
 | --- | --- | --- |
 | `GET /health/live` | The API process can serve HTTP | No external check |
-| `GET /health/ready` | Required service URLs are configured | No live probe |
+| `GET /health/ready` | Lifecycle and required dependency readiness | Uses the startup snapshot |
 
-Configuration readiness remains narrower than operational readiness. A live
-PostgreSQL/Redis probe is still required before production deployment; migration
-verification is separate and runs against PostgreSQL.
+Phase 13 production startup checks PostgreSQL connectivity, exact Alembic head
+compatibility, and Redis connectivity before serving. The check is read-only and
+never applies a migration. Local/test readiness reports `not_checked` rather
+than claiming dependency availability.
 
 ## Local infrastructure
 
@@ -84,6 +85,19 @@ contract.
     Native readiness requires a physical device and complete toolchain; reports
     use a versioned content-free schema and never serialize device command IDs,
     user-assigned names, screenshots, transcripts, paths, or hashes.
+17. Validate production configuration before application startup, keep liveness
+    dependency-free, and require an immutable operational-readiness snapshot for
+    production traffic.
+18. Correlate requests with opaque UUIDs and log only allowlisted content-free
+    operational fields. Never log raw paths, queries, bodies, tokens, prompts,
+    screenshots, or exceptions.
+19. Keep schema migration as an explicit operator action. Startup may read the
+    current revision and fail closed but may never upgrade or downgrade it.
+20. Keep production identity verification provider-neutral and fail closed
+    until a separately authorized adapter exists. Aggregate release evidence
+    through strict offline contracts; no gate record may override missing
+    authentication, signing, physical-device, source-provenance, or launch
+    authorization.
 
 See `docs/mobile-architecture.md`, `docs/backend-architecture.md`, and
 `docs/database-schema.md` for the current component boundaries.

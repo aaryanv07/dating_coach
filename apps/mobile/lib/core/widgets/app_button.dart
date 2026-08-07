@@ -1,11 +1,12 @@
 import 'package:convo_coach/core/haptics/app_haptics.dart';
+import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppButtonVariant { primary, secondary, quiet }
 
-class AppButton extends ConsumerWidget {
+class AppButton extends ConsumerStatefulWidget {
   const AppButton({
     required this.label,
     required this.onPressed,
@@ -26,26 +27,39 @@ class AppButton extends ConsumerWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final callback = onPressed == null || isLoading
+  ConsumerState<AppButton> createState() => _AppButtonState();
+}
+
+class _AppButtonState extends ConsumerState<AppButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool pressed) {
+    if (_pressed == pressed) return;
+    setState(() => _pressed = pressed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final callback = widget.onPressed == null || widget.isLoading
         ? null
         : () {
             ref.read(hapticsProvider).confirmation();
-            onPressed!();
+            widget.onPressed!();
           };
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (isLoading)
+        if (widget.isLoading)
           const SizedBox.square(
             dimension: AppSizes.iconSmall,
             child: CircularProgressIndicator(strokeWidth: 2),
           )
-        else if (icon != null)
-          Icon(icon, size: AppSizes.iconSmall),
-        if (isLoading || icon != null) const SizedBox(width: AppSpacing.sm),
-        Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+        else if (widget.icon != null)
+          Icon(widget.icon, size: AppSizes.iconSmall),
+        if (widget.isLoading || widget.icon != null)
+          const SizedBox(width: AppSpacing.sm),
+        Flexible(child: Text(widget.label, overflow: TextOverflow.ellipsis)),
       ],
     );
     final style = ButtonStyle(
@@ -56,11 +70,11 @@ class AppButton extends ConsumerWidget {
         EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       ),
       shape: const WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: AppRadii.card),
+        RoundedRectangleBorder(borderRadius: AppRadii.hero),
       ),
     );
 
-    final button = switch (variant) {
+    final button = switch (widget.variant) {
       AppButtonVariant.primary => FilledButton(
         onPressed: callback,
         style: style,
@@ -80,17 +94,31 @@ class AppButton extends ConsumerWidget {
 
     final sized = SizedBox(
       height: AppSizes.buttonHeight,
-      width: expand ? double.infinity : null,
+      width: widget.expand ? double.infinity : null,
       child: button,
     );
-    if (semanticLabel == null) return sized;
+    final semanticButton = widget.semanticLabel == null
+        ? sized
+        : Semantics(
+            button: true,
+            enabled: callback != null,
+            label: widget.semanticLabel,
+            excludeSemantics: true,
+            child: sized,
+          );
 
-    return Semantics(
-      button: true,
-      enabled: callback != null,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: sized,
+    final enabled = callback != null;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: enabled ? (_) => _setPressed(true) : null,
+      onPointerUp: enabled ? (_) => _setPressed(false) : null,
+      onPointerCancel: enabled ? (_) => _setPressed(false) : null,
+      child: AnimatedScale(
+        scale: enabled && _pressed ? 0.98 : 1,
+        duration: AppMotion.duration(context, AppMotionSpeed.fast),
+        curve: AppMotion.springCurve,
+        child: semanticButton,
+      ),
     );
   }
 }

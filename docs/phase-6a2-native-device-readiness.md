@@ -8,11 +8,13 @@ customer feature, analytics, AI/GPT integration, scoring, coaching, payment,
 subscription, cloud sync, migration, or API change. The production OCR, event,
 review, normalization, and persistence boundaries remain unchanged.
 
-The repository is ready to run the complete synthetic suite on a supported
-physical Android or iOS device. The current workstation is still `BLOCKED` for
-both platforms because it has no Android SDK or physical Android device, and no
-complete Xcode, CocoaPods, or physical iOS device. That is deferred physical
-evidence, not a benchmark failure and not a release qualification.
+The qualification harness is ready, but Phase 6A.3 remains `BLOCKED`. Android
+SDK/ADB, Xcode 26.6, the iOS 26.5 runtime, and CocoaPods 1.17.0 are installed.
+Android now builds on AGP 8.13.2 and Gradle 8.13 with application minSdk 24, but
+still needs a supported physical device and native quality-gate closure. Xcode
+has an Apple account and Personal Team configured, but iOS still needs a
+supported physical iPhone to verify signing and installation. This is deferred
+qualification evidence, not a release qualification.
 
 ## Qualification architecture
 
@@ -129,11 +131,17 @@ committed.
 - The seven-fixture provider-neutral reference run passes every
   platform-independent gate. It does not invoke ML Kit and cannot satisfy the
   native-device gate.
-- The local capability report detects Flutter 3.44.6 and no qualifying mobile
-  device. Android is blocked by missing Android SDK and physical device. iOS is
-  blocked by incomplete Xcode, missing CocoaPods, and physical device.
-- ML Kit OCR accuracy, native latency, native memory behavior, and classifier
-  quality remain unverified until the documented physical suites run.
+- The latest local capability report detects Flutter 3.44.6, the Android SDK,
+  Xcode 26.6, and CocoaPods 1.17.0, but no qualifying mobile device. Its only
+  readiness reason codes are `physical_android_device_unavailable` and
+  `physical_ios_device_unavailable`.
+- Two unchanged Android 16/API 36 ARM64 emulator reports completed all seven
+  ML Kit fixtures and compared as `NO_REGRESSION`. They provide nonqualifying
+  development measurements only: the physical-device gate remains false and
+  several native extraction-quality gates are below target.
+- Physical ML Kit OCR accuracy, native latency, native memory behavior, and
+  classifier quality remain unverified until the documented physical suites
+  run.
 - RSS is process-level sampling, not a substitute for Android Studio or Xcode
   profiling.
 - Original synthetic fixtures qualify defined geometry and text cases; they do
@@ -144,7 +152,8 @@ committed.
 
 ## Verification on this workstation
 
-The completed Phase 6A.2 verification pass produced these results:
+The completed Phase 6A.2 verification pass and the 2026-07-21 readiness rerun
+produced these results:
 
 - Dart formatting check and `flutter analyze`: passed with no findings;
 - `flutter test`: all 82 tests passed;
@@ -159,8 +168,8 @@ The completed Phase 6A.2 verification pass produced these results:
 - Docker Compose configuration, CI YAML, fixture/schema JSON, and
   `git diff --check`: passed;
 - self-comparison of the v2 reference report: `NO_REGRESSION`; and
-- native readiness command: expected exit 2, with both platform reports
-  `BLOCKED` only by the missing toolchain/device reason codes listed above.
+- latest native readiness rerun: expected exit 2, with only
+  `physical_android_device_unavailable` and `physical_ios_device_unavailable`.
 
 ## Phase 6A.3 execution outcome
 
@@ -168,11 +177,16 @@ The unchanged readiness workflow was executed again for Phase 6A.3 on
 2026-07-15. The initial run found no native toolchain. Android Studio, the
 required Android SDK/ADB packages and licenses, and CocoaPods were then
 installed. The current capability result blocks Android only on the missing
-physical Android device and iOS on missing complete Xcode and a physical iOS
-device. An Android APK preflight also found an existing
-`irondash_engine_context`/Gradle 9.1 incompatibility; it remains unfixed pending
-separate authorization. No native benchmark was attempted, no production or
-benchmark code was changed, and Phase 6B did not start.
+physical Android device. A 2026-07-21 follow-up installed and selected Xcode
+26.6 with the iOS 26.5 runtime; iOS is now also blocked only on its missing
+physical device. A 2026-07-22 follow-up replaced the incompatible AGP 9.0.1 and
+Gradle 9.1 pairing with AGP 8.13.2 and Gradle 8.13, aligned the two affected
+legacy library subprojects to compile SDK 36, and raised application minSdk to
+24 as required by `image_picker_android`. The debug APK now builds. Two Android
+emulator ML Kit reports completed and compared without regression, but their
+quality status remains `BLOCKED`; no physical benchmark was attempted and Phase
+6B did not start. CocoaPods generated the standard iOS workspace integration
+and lockfile needed to compile the existing plugins.
 
 The full content-free evidence, platform-independent regression results,
 unperformed native checks, and next prerequisites are recorded in

@@ -131,6 +131,7 @@ class CandidateMessageRegion {
     this.eventTypeHint,
     this.pageWidth,
     this.compactAttachmentHint,
+    this.visualPlaceholder = false,
   });
 
   final String text;
@@ -144,6 +145,7 @@ class CandidateMessageRegion {
   final ConversationEventType? eventTypeHint;
   final int? pageWidth;
   final bool? compactAttachmentHint;
+  final bool visualPlaceholder;
 
   CandidateMessageRegion copyWith({
     MessageSpeaker? speaker,
@@ -151,6 +153,7 @@ class CandidateMessageRegion {
     String? visibleTimestampText,
     ConversationEventType? eventTypeHint,
     bool? compactAttachmentHint,
+    bool? visualPlaceholder,
   }) {
     return CandidateMessageRegion(
       text: text,
@@ -165,6 +168,7 @@ class CandidateMessageRegion {
       pageWidth: pageWidth,
       compactAttachmentHint:
           compactAttachmentHint ?? this.compactAttachmentHint,
+      visualPlaceholder: visualPlaceholder ?? this.visualPlaceholder,
     );
   }
 }

@@ -324,7 +324,7 @@ const _environment = BenchmarkSessionEnvironment(
   osVersion: 'Android 16',
   flutterVersion: '3.41.0',
   mlKitVersion: 'text-recognition-v2/plugin-0.16.0',
-  extractionVersion: 'conversation-extraction-v2-events',
+  extractionVersion: 'conversation-extraction-v3-visual-events',
 );
 
 final _readyCapability = DeviceCapabilityReport(

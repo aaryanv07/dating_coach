@@ -2,7 +2,8 @@
 
 **Version:** 1.0
 
-**Status:** Phase 6A.1 runtime implemented; native qualification outstanding
+**Status:** Phase 6A.1 runtime and Phase 6B deterministic analytics implemented;
+native qualification outstanding
 
 **Owner:** ConvoCoach Engineering
 
@@ -11,7 +12,9 @@
 **Related documents:** `master-build-prompt.md`, `AI-System-Architecture.md`,
 `AI-Scoring-Engine.md`, `phase-5-conversation-extraction.md`,
 `phase-6a-native-extraction-qualification.md`,
-`phase-6a1-conversation-event-runtime-foundation.md`
+`phase-6a1-conversation-event-runtime-foundation.md`,
+`Analytics-Specification.md`,
+`phase-6b-deterministic-analytics-foundation.md`
 
 ## 1. Purpose
 
@@ -581,6 +584,12 @@ The analytics engine must follow this matrix. Here, engagement means only an
 observable contribution category; it is not a score of interest, compatibility,
 relationship health, or likely success.
 
+Phase 6B implements the bounded deterministic catalog, exact formulas,
+duplicate/review/timeline rules, structural evidence, and unsupported-quality
+semantics in `Analytics-Specification.md`. That specification controls where
+this earlier summary matrix is less detailed. No semantic analysis, score,
+dashboard, advice, or generation is authorized by the deterministic catalog.
+
 ## 34. Review Studio Behavior
 
 The Review Studio displays each type distinctly:
@@ -809,6 +818,7 @@ The conversation-event architecture baseline is complete when:
 
 Phase 6A.1 delivers the schema, migration, contracts, extraction and
 normalization behavior, Review Studio behavior, privacy lifecycle, and host
-tests. Analytics changes are deliberately absent. Physical Android/iOS
-qualification remains outstanding, so this foundation must not be described as
-native event-classification qualification or used to authorize Phase 6B.
+tests. Phase 6B now consumes accepted reviewed events through a separate pure
+domain engine without changing this event model. Physical Android/iOS
+qualification remains outstanding, so neither foundation may be described as
+native event-classification qualification or production release evidence.

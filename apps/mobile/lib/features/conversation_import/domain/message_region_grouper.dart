@@ -29,10 +29,12 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
             ? vertical
             : a.bounds.left.compareTo(b.bounds.left);
       });
+    final lines = _coalesceHorizontalFragments(sorted, page.width);
     final output = <CandidateMessageRegion>[];
     final current = <RecognizedLine>[];
     ParsedTimestamp? dateContext;
     ParsedTimestamp? pendingTimestamp;
+    RecognizedLine? pendingTimestampLine;
     ParsedTimestamp? currentTimestamp;
 
     void flush() {
@@ -74,7 +76,32 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
       currentTimestamp = null;
     }
 
-    for (final line in sorted) {
+    void addVisualPlaceholder(
+      ParsedTimestamp timestamp,
+      RecognizedLine timestampLine,
+    ) {
+      output.add(
+        CandidateMessageRegion(
+          text: '\uFFFC',
+          bounds: timestampLine.bounds,
+          confidence: null,
+          sourceIndex: page.sourceIndex,
+          sourceOrder: output.length,
+          speaker: MessageSpeaker.unknown,
+          timestamp: resolveVisibleTimestamp(
+            dateContext: dateContext,
+            timestamp: timestamp,
+          ),
+          visibleTimestampText: timestamp.rawText,
+          eventTypeHint: ConversationEventType.emojiMessage,
+          pageWidth: page.width,
+          compactAttachmentHint: false,
+          visualPlaceholder: true,
+        ),
+      );
+    }
+
+    for (final line in lines) {
       final cleanText = line.text.trim();
       if (cleanText.isEmpty) continue;
       final timestamp = timestampParser.parse(cleanText, locale: locale);
@@ -99,11 +126,13 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
           );
           dateContext = timestamp;
           pendingTimestamp = null;
+          pendingTimestampLine = null;
         } else if (current.isNotEmpty) {
           currentTimestamp = timestamp;
           flush();
         } else {
           pendingTimestamp = timestamp;
+          pendingTimestampLine = line;
         }
         continue;
       }
@@ -112,19 +141,103 @@ class GeometryMessageRegionGrouper implements MessageRegionGroupingStrategy {
         flush();
       }
       if (current.isEmpty && pendingTimestamp != null) {
-        currentTimestamp = pendingTimestamp;
+        if (_isOrphanedVisualTimestamp(
+          pendingTimestampLine!,
+          next: line,
+          pageWidth: page.width,
+          pageHeight: page.height,
+        )) {
+          addVisualPlaceholder(pendingTimestamp, pendingTimestampLine);
+        } else {
+          currentTimestamp = pendingTimestamp;
+        }
         pendingTimestamp = null;
+        pendingTimestampLine = null;
       }
       current.add(line);
     }
     flush();
+    if (pendingTimestamp != null &&
+        _isOrphanedVisualTimestamp(
+          pendingTimestampLine!,
+          pageWidth: page.width,
+          pageHeight: page.height,
+        )) {
+      addVisualPlaceholder(pendingTimestamp, pendingTimestampLine);
+    }
     return output;
+  }
+
+  List<RecognizedLine> _coalesceHorizontalFragments(
+    List<RecognizedLine> sorted,
+    int pageWidth,
+  ) {
+    final output = <RecognizedLine>[];
+    for (final line in sorted) {
+      if (output.isEmpty || !_sameRowFragment(output.last, line, pageWidth)) {
+        output.add(line);
+        continue;
+      }
+      final previous = output.removeLast();
+      output.add(
+        RecognizedLine(
+          text: '${previous.text.trim()} ${line.text.trim()}',
+          bounds: previous.bounds.union(line.bounds),
+          confidence: _averageConfidence([previous, line]),
+          elements: List.unmodifiable([...previous.elements, ...line.elements]),
+        ),
+      );
+    }
+    return output;
+  }
+
+  bool _sameRowFragment(
+    RecognizedLine previous,
+    RecognizedLine next,
+    int pageWidth,
+  ) {
+    if (pageWidth <= 0 || next.bounds.left < previous.bounds.right) {
+      return false;
+    }
+    final overlap =
+        (previous.bounds.bottom < next.bounds.bottom
+            ? previous.bounds.bottom
+            : next.bounds.bottom) -
+        (previous.bounds.top > next.bounds.top
+            ? previous.bounds.top
+            : next.bounds.top);
+    final minimumHeight = previous.bounds.height < next.bounds.height
+        ? previous.bounds.height
+        : next.bounds.height;
+    final horizontalGap = next.bounds.left - previous.bounds.right;
+    return minimumHeight > 0 &&
+        overlap >= minimumHeight * 0.6 &&
+        horizontalGap <= pageWidth * 0.035;
+  }
+
+  bool _isOrphanedVisualTimestamp(
+    RecognizedLine timestampLine, {
+    RecognizedLine? next,
+    required int pageWidth,
+    required int pageHeight,
+  }) {
+    if (pageWidth <= 0 || pageHeight <= 0) return false;
+    final center = timestampLine.bounds.centerX / pageWidth;
+    final alignedToBubbleEdge = center <= 0.4 || center >= 0.6;
+    if (!alignedToBubbleEdge) return false;
+    if (next == null) return true;
+    final verticalGap = next.bounds.top - timestampLine.bounds.bottom;
+    final minimumGap = (pageHeight * 0.035).clamp(36, 96);
+    return verticalGap > minimumGap;
   }
 
   bool _belongsWith(RecognizedLine previous, RecognizedLine next, int width) {
     final verticalGap = next.bounds.top - previous.bounds.bottom;
-    final maximumGap = (previous.bounds.height + next.bounds.height) * 0.75;
-    if (verticalGap < -2 || verticalGap > maximumGap.clamp(12, 48)) {
+    // Native OCR may return loose vertical boxes for a partially cropped
+    // wrapped line. Keep a bounded tolerance that still stays well below the
+    // normal gap between separate chat bubbles.
+    final maximumGap = (previous.bounds.height + next.bounds.height) * 1.1;
+    if (verticalGap < -2 || verticalGap > maximumGap.clamp(12, 72)) {
       return false;
     }
     final centerDistance = (previous.bounds.centerX - next.bounds.centerX)

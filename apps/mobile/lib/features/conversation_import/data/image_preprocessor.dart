@@ -31,7 +31,7 @@ class SafeConversationImagePreprocessor
   final int maximumDimension;
 
   @override
-  String get version => 'image-v1';
+  String get version => 'image-v2';
 
   @override
   Future<PreprocessedImage> process(
@@ -131,12 +131,16 @@ PreprocessedImage _preprocess(Uint8List bytes, _PreprocessingConfig config) {
   }
 
   final contrast = _normalizedContrast(image);
-  image = img.adjustColor(image, contrast: contrast);
+  if (contrast != 1) {
+    image = img.adjustColor(image, contrast: contrast);
+  }
   image
     ..exif = img.ExifData()
     ..textData = null
     ..iccProfile = null;
-  final encoded = Uint8List.fromList(img.encodePng(image, level: 6));
+  // PNG level 1 remains lossless and metadata-free while avoiding the large
+  // CPU cost of high-compression output on multi-page phone screenshots.
+  final encoded = Uint8List.fromList(img.encodePng(image, level: 1));
   return PreprocessedImage(
     sourceIndex: config.sourceIndex,
     bytes: encoded,
@@ -173,5 +177,5 @@ double _normalizedContrast(img.Image image) {
   final deviation = math.sqrt(variance);
   if (deviation < 0.12) return 1.24;
   if (deviation < 0.2) return 1.12;
-  return 1.04;
+  return 1;
 }

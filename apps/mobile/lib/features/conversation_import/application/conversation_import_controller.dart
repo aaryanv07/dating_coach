@@ -15,6 +15,7 @@ import 'package:convo_coach/features/conversation_import/domain/ocr_engine.dart'
 import 'package:convo_coach/features/conversation_import/domain/readiness.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:convo_coach/features/conversations/application/conversation_list_controller.dart';
+import 'package:convo_coach/features/conversations/data/http_conversation_api_client.dart';
 import 'package:convo_coach/features/conversations/domain/saved_conversation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -741,6 +742,24 @@ class ConversationImportController extends Notifier<ConversationImportState> {
       ref.invalidate(conversationListProvider);
       state = state.copyWith(isBusy: false);
       return saved;
+    } on ConversationApiException catch (error) {
+      state = state.copyWith(
+        isBusy: false,
+        errorMessage: _conversationSaveApiMessage(error),
+      );
+      return null;
+    } on SocketException {
+      state = state.copyWith(
+        isBusy: false,
+        errorMessage: _localConversationSaveMessage,
+      );
+      return null;
+    } on HttpException {
+      state = state.copyWith(
+        isBusy: false,
+        errorMessage: _localConversationSaveMessage,
+      );
+      return null;
     } on Object {
       state = state.copyWith(
         isBusy: false,
@@ -811,3 +830,27 @@ final conversationImportProvider =
     NotifierProvider<ConversationImportController, ConversationImportState>(
       ConversationImportController.new,
     );
+
+const _localConversationSaveMessage =
+    'The development server could not be reached. On iPhone, open Settings > '
+    'Privacy & Security > Local Network and enable ConvoCoach, then keep the '
+    'iPhone and Mac on the same Wi-Fi and try again.';
+
+String _conversationSaveApiMessage(ConversationApiException error) {
+  if (error.code == 'authentication_required' ||
+      error.statusCode == HttpStatus.unauthorized ||
+      error.statusCode == HttpStatus.forbidden) {
+    return 'The local development session is no longer authorized. Reinstall '
+        'the current development build and try again.';
+  }
+  if (error.code == 'request_timed_out') {
+    return 'The development server did not respond in time. Keep the iPhone '
+        'and Mac on the same Wi-Fi and try again.';
+  }
+  if (error.code == 'review_incomplete') {
+    return 'Some reviewed message data is still incomplete. Resolve every '
+        'highlighted event and try again.';
+  }
+  return 'The reviewed conversation was rejected by the development server. '
+      'Try again; if it continues, restart the local server.';
+}

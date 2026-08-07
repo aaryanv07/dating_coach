@@ -1,0 +1,31 @@
+{
+  "schema_version": "phase6a-native-evidence.v1",
+  "evidence_id": "phase6a-ios-physical-20260730",
+  "generated_at": "2026-07-30T17:49:17.772893Z",
+  "platform": "ios",
+  "device_model": "iPhone 13 Pro Max",
+  "os_version": "iOS 26.5.2",
+  "native_device_run": true,
+  "fixture_count": 7,
+  "completed_count": 7,
+  "failed_count": 0,
+  "cancelled_count": 0,
+  "cancellation_probe_passed": true,
+  "cleanup_success_rate": 1.0,
+  "p95_latency_ms": 1191,
+  "maximum_peak_rss_delta_bytes": 73138176,
+  "message_extraction_accuracy": 0.9714285714285714,
+  "event_classification_accuracy": 0.9476190476190477,
+  "minimum_fixture_message_extraction_accuracy": 0.8,
+  "required_quality_gates_pass": false,
+  "quality_gate_status": "BLOCKED",
+  "failed_required_gate_ids": [
+    "event_classification_accuracy",
+    "minimum_fixture_message_extraction_accuracy"
+  ],
+  "content_free": true,
+  "contains_screenshots": false,
+  "contains_transcripts": false,
+  "contains_source_paths": false,
+  "contains_source_hashes": false
+}

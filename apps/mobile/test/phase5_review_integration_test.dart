@@ -25,19 +25,30 @@ void main() {
         ocrEngine: const _SyntheticEngine(),
       );
 
-      await tester.tap(find.text('Choose screenshots'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Extract conversation'));
+      await tester.scrollUntilVisible(
+        find.text('Upload screenshots'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Upload screenshots'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Review studio'), findsOneWidget);
-      expect(find.text('Extraction review notes'), findsOneWidget);
+      expect(find.text('Review conversation'), findsOneWidget);
+      expect(find.byKey(const Key('app-vibrant-backdrop')), findsOneWidget);
+      expect(find.byKey(const Key('premium-review-intro')), findsOneWidget);
+      expect(find.byKey(const Key('premium-readiness-panel')), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('A few things need your check'),
+        180,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('A few things need your check'), findsOneWidget);
       expect(
-        find.text('Confirm the speaker for the centered message.'),
+        find.text('Confirm who sent the highlighted messages.'),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel(RegExp(r'Extraction review notes')),
+        find.bySemanticsLabel(RegExp(r'Items to check before analysis')),
         findsOneWidget,
       );
       await tester.scrollUntilVisible(
@@ -46,6 +57,19 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('Needs review'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('confirm-save-button')),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Check highlighted messages'), findsWidgets);
+      await tester.tap(find.byKey(const Key('confirm-save-button')));
+      await tester.pump();
+      expect(
+        find.textContaining('Check these items before analyzing'),
+        findsWidgets,
+      );
+      expect(find.byKey(const Key('review-save-feedback')), findsOneWidget);
       semantics.dispose();
     },
   );

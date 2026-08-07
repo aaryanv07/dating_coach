@@ -36,7 +36,7 @@ class RealConversationOcrEngine implements OcrEngine {
   String get providerVersion => textRecognitionProvider.providerVersion;
 
   @override
-  String get extractionVersion => 'conversation-extraction-v2-events';
+  String get extractionVersion => 'conversation-extraction-v3-visual-events';
 
   @override
   Future<OcrExtractionResult> extract(

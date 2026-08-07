@@ -51,6 +51,7 @@ void main() {
 
     expect(metrics.characterAccuracy, lessThan(1));
     expect(metrics.wordAccuracy, lessThan(1));
+    expect(metrics.eventClassificationAccuracy, 1);
     expect(metrics.corrections.text, 1);
     expect(metrics.corrections.speaker, 1);
     expect(metrics.corrections.timestamp, 1);
@@ -93,12 +94,109 @@ void main() {
       expect(metrics.warningAccuracy, 1);
     },
   );
+
+  test(
+    'confidence-unavailable warning covers the same review-required category',
+    () async {
+      final fixtures = await BenchmarkFixtureCatalog.load();
+      final fixture = fixtures.firstWhere(
+        (item) => item.id == 'match_stream_low_contrast_roman_hindi',
+      );
+      final metrics = const ExtractionBenchmarkEvaluator().evaluate(
+        fixture,
+        _resultFor(
+          fixture,
+          confidenceAvailable: false,
+          warningCodes: const {ExtractionWarningCode.confidenceUnavailable},
+        ),
+      );
+
+      expect(metrics.warningAccuracy, 1);
+    },
+  );
+
+  test(
+    'visual placeholder preserves message segmentation without hiding OCR loss',
+    () async {
+      final fixtures = await BenchmarkFixtureCatalog.load();
+      final fixture = fixtures.firstWhere(
+        (item) => item.id == 'first_move_emoji_reaction_english',
+      );
+      final expected = fixture.messages.firstWhere(
+        (message) => message.eventType == ConversationEventType.emojiMessage,
+      );
+      final base = _resultFor(fixture);
+      final placeholder = ReviewMessage(
+        id: expected.id,
+        speaker: expected.speaker,
+        text: '\uFFFC',
+        timestamp: expected.timestamp,
+        timestampEstimated: false,
+        ocrConfidence: null,
+        sourceScreenshotIndex: fixture.sourceIndexForMessage(expected.id),
+        status: ReviewMessageStatus.extracted,
+        visibleTimestampText: expected.visibleTimestampText,
+        eventType: ConversationEventType.emojiMessage,
+        classificationConfidence: 0.45,
+        requiresReview: true,
+        metadata: const {'visual_placeholder': true},
+      );
+      final result = OcrExtractionResult(
+        messages: [
+          for (final message in base.messages)
+            if (message.id == expected.id) placeholder else message,
+        ],
+        events: [
+          for (final event in base.events)
+            if (event.id == expected.id) placeholder else event,
+        ],
+        warnings: base.warnings,
+        metadata: base.metadata,
+        diagnostics: base.diagnostics,
+      );
+      final metrics = const ExtractionBenchmarkEvaluator().evaluate(
+        fixture,
+        result,
+      );
+
+      expect(metrics.messageExtractionAccuracy, 1);
+      expect(metrics.characterAccuracy, lessThan(1));
+      expect(metrics.corrections.text, 1);
+    },
+  );
+
+  test('event classification metric detects a wrong event type', () async {
+    final fixture = (await BenchmarkFixtureCatalog.load()).first;
+    final base = _resultFor(fixture);
+    final first = base.messages.first;
+    final incorrectlyTyped = first.copyWith(
+      eventType: ConversationEventType.image,
+    );
+    final result = OcrExtractionResult(
+      messages: [incorrectlyTyped, ...base.messages.skip(1)],
+      events: [
+        incorrectlyTyped,
+        ...base.events.where((event) => event.id != first.id),
+      ],
+      warnings: base.warnings,
+      metadata: base.metadata,
+      diagnostics: base.diagnostics,
+    );
+
+    final metrics = const ExtractionBenchmarkEvaluator().evaluate(
+      fixture,
+      result,
+    );
+
+    expect(metrics.eventClassificationAccuracy, lessThan(1));
+  });
 }
 
 OcrExtractionResult _resultFor(
   BenchmarkFixture fixture, {
   bool confidenceAvailable = true,
   Map<String, _MessageOverride> overrides = const {},
+  Set<ExtractionWarningCode>? warningCodes,
 }) {
   final messages = [
     for (final expected in fixture.messages)
@@ -109,9 +207,9 @@ OcrExtractionResult _resultFor(
         confidenceAvailable: confidenceAvailable,
       ),
   ];
-  final warningCodes = {...fixture.expectedWarnings};
+  final effectiveWarningCodes = {...(warningCodes ?? fixture.expectedWarnings)};
   if (!confidenceAvailable) {
-    warningCodes.add(ExtractionWarningCode.confidenceUnavailable);
+    effectiveWarningCodes.add(ExtractionWarningCode.confidenceUnavailable);
   }
   return OcrExtractionResult(
     messages: messages,
@@ -158,7 +256,7 @@ OcrExtractionResult _resultFor(
             ),
     ],
     warnings: [
-      for (final code in warningCodes)
+      for (final code in effectiveWarningCodes)
         ExtractionWarning(code: code, message: 'Synthetic benchmark warning.'),
     ],
     metadata: ExtractionMetadata(

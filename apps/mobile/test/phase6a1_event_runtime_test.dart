@@ -47,6 +47,29 @@ void main() {
     expect(events[2].countsAsMessage, isTrue);
   });
 
+  test('classifier keeps visual placeholders explicit and review-required', () {
+    const classifier = DeterministicConversationEventClassifier();
+    final events = classifier.classify([
+      CandidateMessageRegion(
+        text: '\uFFFC',
+        bounds: const OcrBounds(left: 40, top: 100, right: 90, bottom: 125),
+        confidence: null,
+        sourceIndex: 0,
+        sourceOrder: 0,
+        speaker: MessageSpeaker.other,
+        eventTypeHint: ConversationEventType.emojiMessage,
+        pageWidth: 400,
+        visualPlaceholder: true,
+      ),
+    ]);
+
+    expect(events.single.eventType, ConversationEventType.emojiMessage);
+    expect(events.single.speaker, MessageSpeaker.other);
+    expect(events.single.classificationConfidence, 0.45);
+    expect(events.single.needsReview, isTrue);
+    expect(events.single.metadata['visual_placeholder'], isTrue);
+  });
+
   test('overlap deduplication keeps reaction and emoji roles distinct', () {
     const detector = BoundaryOverlapDetector();
     final result = detector.removeDuplicates([

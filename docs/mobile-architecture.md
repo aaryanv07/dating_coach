@@ -6,8 +6,10 @@ The Phase 6A.2 Flutter application remains mobile-only and uses mock persistence
 repositories. It adds real on-device screenshot OCR on Android/iOS while keeping
 paste parsing, the Review Studio, data-quality readiness, normalization, session
 persistence, and reopen behavior.
-It still has no network client, durable device persistence, real authentication,
-AI analysis, payment, or subscription logic.
+The original Phase 6A.2 path had no network client or real authentication. Phase
+17 now adds authenticated conversation transport and OIDC session handling while
+preserving the reviewed-event and screenshot-disposal boundaries. Billing
+purchase UI and receipt handling remain absent.
 
 ## Structure
 
@@ -48,17 +50,62 @@ can be preserved. The central Create destination opens the Phase 4 import
 chooser. Import routes sit outside the bottom-navigation shell so review stays
 focused while the shell retains its branch state.
 
-The mock API clients are replaceable contracts and use synthetic preview data.
-No bearer-token storage or HTTP implementation is included in Phase 4. The
-visible product name is compiled from `CONVOCOACH_APP_NAME`. No provider key,
-token, real user identifier, or private content exists in the mobile bundle.
+The mock API clients remain replaceable contracts and use synthetic preview
+data. `HttpConversationApiClient` is selected only for an authenticated API
+configuration and retrieves the current access token per request. The visible
+product name is compiled from `CONVOCOACH_APP_NAME`. No provider key, OpenAI
+credential, real user identifier, or private fixture exists in the mobile
+bundle.
+
+Phase 13 validates compiled release configuration before `runApp`. Release mode
+requires production environment, an HTTPS API base URL, disabled mock and Coach
+preview flags, and an empty compiled access token. Android release builds may
+use a complete operator-supplied signing property set but do not fall back to
+the debug key. These gates add no production transport or authentication
+provider.
+
+Phase 14 adds provider-neutral mobile authentication domain contracts. Session
+projections expose only lifecycle, method, and an optional server-opaque account
+reference; tokens and credential bytes are deliberately absent. Phase 17
+implements Authorization Code with PKCE through the system browser, a registered
+custom callback, refresh-on-demand, and platform secure storage. The ID token is
+not retained. Debug preview sign-in remains available only when both mock mode
+and `CONVOCOACH_AUTHENTICATION_MODE=mock` are active. Release configuration
+requires `oidc` and rejects a compiled access token.
+
+Phase 15 adds a Settings plan preview with compile-time explanatory catalog copy.
+It cannot activate, restore, renew, cancel, or enforce a subscription and states
+that no payment information is collected. The displayed INR amounts are not
+trusted purchase prices; a later live flow must use localized Apple or Google
+storefront data and server-owned entitlements.
+
+Phase 16 extends only the existing default-off Conversation Coach HTTP feature.
+Its strict transport accepts the historical mock preview plus exact
+`conversation-coach.v1` and Phase 17 `conversation-coach.v2` Terra responses.
+Before a Terra request, the screen
+shows a separate external-processing disclosure and records the user's consent
+through the existing consent API. Live sections render summary, evidence-linked
+observations, uncertainty, alternative interpretations, next steps, user-editable
+reply drafts, safety notices, and limitations. The client cannot select the
+provider, cannot access an OpenAI key, and does not persist provider output.
+
+Phase 17 adds the server allowance snapshot to the live result and renders
+explicit exhausted, rate-limited, and budget-guard states. The client creates
+one canonical UUID idempotency key per pending analysis attempt, reuses it after
+transport failures, and clears it only after success. It cannot set a plan,
+allowance, model, price, or provider.
 
 JPG, PNG, and WebP sources are capped at 10 images, 10 MB each, and 50 MB total.
 The multi-image picker and cross-platform drop region feed an in-memory temporary
-store. Sources can be reordered or removed before extraction and are cleared on
-abandon or successful save. Processing-only cancellation retains them for retry.
-`OcrEngine` owns the pipeline contract; `TextRecognitionProvider` isolates the
-Google ML Kit bridge from provider-neutral preprocessing and extraction logic.
+store and immediately start preparation. The presentation layer exposes one
+Upload → Review → Analyze path while the application layer owns extraction,
+speaker suggestions, ordering, normalization, save orchestration, and the direct
+route to Conversation Coach. Optional source-order and removal controls appear
+only as recovery details and are disabled while preparation is active. Sources
+are cleared on abandon or successful save; processing-only cancellation retains
+them for retry. `OcrEngine` owns the pipeline contract;
+`TextRecognitionProvider` isolates the Google ML Kit bridge from
+provider-neutral preprocessing and extraction logic.
 
 Phase 6A qualification code lives under `benchmark/`, `integration_test/`, and
 `test_driver/`; no benchmark route or customer-facing screen is added. Ground
@@ -82,3 +129,11 @@ reactions. Review Studio renders event-specific icons and labels and supports
 type, target, speaker, timestamp, text, delete/restore, and unknown corrections.
 The 50-snapshot undo/redo boundary remains in place. Native extraction quality
 and performance still require the Phase 6A physical-device suite.
+
+Phase 19 wraps the routed application in a lifecycle privacy shield that hides
+private UI outside the resumed state and respects the shared semantic theme.
+Android release manifests disable backup, device transfer, and cleartext
+traffic while debug retains local development HTTP. iOS packages a privacy
+manifest and applies complete default data protection through configuration-
+specific entitlements. These platform controls are statically tested and do not
+change the user-confirmed import or AI-consent boundaries.

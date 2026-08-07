@@ -23,9 +23,47 @@ This document is the technical source of truth for the ConvoCoach Intelligence E
 `Conversation-Event-Spec.md` is the canonical source for the event types,
 relationships, confidence fields, review behavior, analytics inclusion rules and
 persistence direction that feed this engine. Phase 6A.1 implements the typed
-runtime and an explicit message compatibility projection. It does not authorize
-this AI engine, deterministic analytics, scoring, or generation to consume the
-events; native qualification and a later explicit phase remain required.
+runtime and an explicit message compatibility projection. Phase 6B now
+implements only the deterministic analytics boundary documented in
+`Analytics-Specification.md`. Phase 7 implements a read-only Flutter dashboard
+projection of supplied Phase 6B results. It does not authorize semantic AI,
+scoring, recommendations, generation, analytics transport, or persistence.
+Phase 8 implements only the disabled, provider-neutral foundation documented in
+`AI-Coaching-Architecture.md`. Its evidence is structural and content-minimized,
+its prompt template is a descriptor without prompt text, and its only provider
+is an injectable deterministic mock. It adds no customer AI capability.
+
+### Phase 8 implemented boundary
+
+All future provider calls must pass through `AIOrchestrator`; route handlers
+must not invoke a provider directly. The orchestrator checks a default-off
+feature flag before building evidence, validates reviewed canonical input and
+deterministic analytics, builds immutable requests, invokes an injected provider,
+and strictly parses structured responses. Provider and parsing failures return
+content-safe stable codes.
+
+Phase 8 never packages screenshots, OCR, image bytes, raw extraction, message
+text, participant names, device logs, deleted/edited/unknown/pending events, or
+source metadata. There is no external provider, network client, persistence,
+queue, route, database migration, or UI. Later transports must preserve the
+existing repository and orchestration abstractions.
+
+Phase 9 defines only the structured response boundary above this architecture.
+`AI-Coaching-Response-Schema.md` owns the immutable sections, closed capability
+registry, evidence-link model, safety and explanation placeholders, version
+negotiation, strict codec, validation, deterministic mock, and content-free
+renderer projection. Phase 9 does not invoke the Phase 8 provider protocol and
+does not create coaching, advice, recommendations, prompt execution, transport,
+persistence, or UI.
+
+Phase 10 connects those already bounded components through the internal
+default-off coordinator documented in `AI-Execution-Pipeline.md`. It is the only
+complete execution sequence and enforces analytics, evidence, safety, request,
+mock provider, both parsers, response validation, and projection ordering.
+Lifecycle IDs and diagnostics are deterministic and content-free. This
+integration still exposes no public API, persistence, external provider, prompt
+execution, coaching, or customer feature.
+Physical native qualification remains an outstanding production release gate.
 
 ---
 
@@ -267,32 +305,49 @@ Canonical speaker values:
 
 ## 10. Deterministic Analytics Engine
 
-This engine uses normal Python code.
+Phase 6B implements this boundary as pure normal Python domain code. Its exact
+authorized catalog, formulas, inclusion/exclusion matrix, unsupported cases,
+evidence contract, and deterministic quality semantics are defined in
+`Analytics-Specification.md`.
 
-It calculates:
+The current catalog covers accepted communication/message/media counts,
+descriptive participant shares and runs, mechanical session starts, exact
+response-latency aggregates, literal-question and explicit-reply structure,
+reaction structure, duplicates, unknowns, and timeline gaps. It does not add the
+older planning concepts of word/character trends, topic initiation or closure,
+double-texting labels, engagement, momentum, or semantic interpretation. Those
+concepts require a later explicit phase and specification review.
 
-* Message count per speaker
-* Word count per speaker
-* Character count per speaker
-* Average message length
-* Median message length
-* Question count
-* Follow-up question count
-* Consecutive messages
-* Double-texting frequency
-* Conversation initiation ratio
-* Topic initiation ratio
-* Reply-time average
-* Reply-time median
-* Reply-time trend
-* Longest response gap
-* Emoji frequency
-* Message-length trend
-* Participation ratio
-* Last-message author
-* Topic closure frequency
+Every metric returns an immutable v1 value with content-free event/relationship
+evidence and explicit data quality. Missing or estimated timestamps are not
+filled, missing speakers are not guessed, pending/rejected events do not
+contribute, and relationships are not repaired heuristically. These values must
+never be produced or changed by a language model.
 
-These values must never be produced by the language model.
+### 10.1 Phase 7 read-only dashboard boundary
+
+Phase 7 adds a Flutter presentation consumer after the deterministic engine:
+
+```mermaid
+flowchart LR
+    A["Canonical events"] --> B["Phase 6B deterministic engine"]
+    B --> C["conversation-analytics.v1"]
+    C --> D["Read-only repository boundary"]
+    D --> E["Version-aware dashboard mapper"]
+    E --> F["Accessible conversation-data UI"]
+```
+
+The mobile projection validates the result, calculation, and event schema
+versions and rejects missing, duplicate, contradictory, or mistyped metrics.
+It formats engine-supplied values and keeps unsupported metrics visible with
+their engine-supplied reasons. It does not reproduce formulas or derive a score,
+interpretation, recommendation, or relationship-health label.
+
+No public or internal analytics API is introduced in Phase 7. The default
+repository therefore returns no result, and the customer UI shows an honest
+empty state. A later authorized transport may supply the immutable projection
+without changing calculation ownership. The dashboard does not store, export,
+cache, report, or log analytics or structural evidence.
 
 ---
 
@@ -795,6 +850,20 @@ Required tests:
 
 Use synthetic conversations only.
 
+The implemented Phase 6B deterministic engine additionally requires exact
+metric, unsupported-state, duplicate, reaction, relationship, timeline-gap,
+immutability, version, privacy, repeatability, and content-free benchmark tests.
+Its tests run without a database, network, OCR provider, or AI model. Physical
+native extraction qualification remains a separate production gate and is not
+represented by these analytics tests.
+
+The Phase 7 presentation additionally requires loading, empty,
+unsupported-version, missing-contract, unsupported-metric, timeline-gap,
+developer-evidence, screen-reader, dynamic-text, immutable-mapping, and version
+compatibility tests. Test snapshots are synthetic and content-free. They are
+injected through the read-only repository boundary and never imply a live
+analytics API.
+
 ---
 
 ## 30. Implementation Phases
@@ -814,7 +883,8 @@ Phase 2:
 Conversation upload and review
 
 Phase 3:
-Deterministic analytics
+Deterministic analytics (implemented by repository Phase 6B for the bounded
+catalog in `Analytics-Specification.md`)
 
 Phase 4:
 Semantic AI analysis
@@ -946,3 +1016,45 @@ git add docs/AI-System-Architecture.md
 git commit -m "Document ConvoCoach AI system architecture"
 git push origin main
 ````
+
+## Phase 11 implemented vertical-slice constraint
+
+Phase 11 does not activate the aspirational production components in this
+document. Its only provider is an in-process deterministic mock, its API result
+is not stored, and its Flutter screen renders structural placeholders only.
+The exact implemented boundary is documented in
+`Conversation-Coach-Vertical-Slice.md`.
+
+## Phase 12 implemented provider-abstraction constraint
+
+Phase 12 adds only an internal registry, immutable metadata and configuration,
+deterministic compatibility selection, structural health, and a factory. The
+default registry contains exactly the existing deterministic mock. Registration
+rules require all future production metadata to remain inactive, and the
+factory independently rejects every non-mock provider.
+
+The Phase 10 execution coordinator now resolves the Phase 11 service's provider
+through this closed factory path. No external adapter, SDK, endpoint, key,
+secret, transport, live probe, prompt execution, API change, persistence,
+migration, customer setting, coaching, generation, summary, or score exists.
+See `AI-Provider-Architecture.md`.
+
+## Phase 13 operational constraint
+
+Production runtime configuration rejects AI execution and mock execution.
+Startup performs only read-only infrastructure checks; it does not initialize a
+production AI adapter, contact a model endpoint, execute a prompt, or apply a
+migration. Request correlation and operational logging are content-free.
+Flutter release configuration disables the mock Coach preview. The only
+executable provider remains `mock-ai-provider.v1`, and it is disabled by
+default. See `Production-Readiness-and-Operational-Hardening.md`.
+
+## Phase 14 release-qualification constraint
+
+Phase 14 does not add AI behavior. Production and mock execution remain false,
+the registry still contains only executable `mock-ai-provider.v1`, and mobile
+release mode keeps the Coach preview disabled. Release-gate aggregation checks
+these facts independently and blocks any candidate that enables either flag.
+Authentication and artifact qualification data contains no conversation
+evidence, prompt, response, or provider payload. See
+`Release-Gate-Specification.md`.

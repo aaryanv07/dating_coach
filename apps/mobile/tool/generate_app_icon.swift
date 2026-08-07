@@ -39,8 +39,17 @@ NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = graphicsContext
 
 let canvas = NSRect(x: 0, y: 0, width: pixels, height: pixels)
-color(18, 20, 22).setFill()
-NSBezierPath(rect: canvas).fill()
+let oceanGradient = NSGradient(colors: [
+    color(3, 23, 29),
+    color(13, 58, 68),
+    color(56, 45, 114),
+])!
+oceanGradient.draw(in: canvas, angle: -42)
+
+color(105, 227, 216).withAlphaComponent(0.16).setFill()
+NSBezierPath(ovalIn: NSRect(x: -150, y: -110, width: 620, height: 620)).fill()
+color(255, 144, 190).withAlphaComponent(0.12).setFill()
+NSBezierPath(ovalIn: NSRect(x: 630, y: 650, width: 520, height: 520)).fill()
 
 let bubble = NSBezierPath(
     roundedRect: NSRect(x: 150, y: 285, width: 724, height: 510),
@@ -50,7 +59,7 @@ let bubble = NSBezierPath(
 bubble.lineWidth = 70
 bubble.lineCapStyle = .round
 bubble.lineJoinStyle = .round
-color(184, 200, 245).setStroke()
+color(194, 181, 255).setStroke()
 bubble.stroke()
 
 let tail = NSBezierPath()
@@ -63,12 +72,44 @@ tail.curve(
 tail.lineWidth = 70
 tail.lineCapStyle = .round
 tail.lineJoinStyle = .round
-color(184, 200, 245).setStroke()
+color(194, 181, 255).setStroke()
 tail.stroke()
 
-color(113, 214, 200).setFill()
-NSBezierPath(ovalIn: NSRect(x: 340, y: 500, width: 92, height: 92)).fill()
-NSBezierPath(ovalIn: NSRect(x: 570, y: 500, width: 92, height: 92)).fill()
+let upperWave = NSBezierPath()
+upperWave.move(to: NSPoint(x: 285, y: 555))
+upperWave.curve(
+    to: NSPoint(x: 520, y: 555),
+    controlPoint1: NSPoint(x: 365, y: 635),
+    controlPoint2: NSPoint(x: 440, y: 475)
+)
+upperWave.curve(
+    to: NSPoint(x: 735, y: 555),
+    controlPoint1: NSPoint(x: 595, y: 635),
+    controlPoint2: NSPoint(x: 665, y: 485)
+)
+upperWave.lineWidth = 40
+upperWave.lineCapStyle = .round
+color(105, 227, 216).setStroke()
+upperWave.stroke()
+
+let lowerWave = NSBezierPath()
+lowerWave.move(to: NSPoint(x: 305, y: 435))
+lowerWave.curve(
+    to: NSPoint(x: 650, y: 435),
+    controlPoint1: NSPoint(x: 420, y: 525),
+    controlPoint2: NSPoint(x: 535, y: 345)
+)
+lowerWave.lineWidth = 36
+lowerWave.lineCapStyle = .round
+color(255, 144, 190).setStroke()
+lowerWave.stroke()
+
+color(255, 255, 255).setFill()
+NSBezierPath(ovalIn: NSRect(x: 580, y: 650, width: 86, height: 86)).fill()
+let pearlOutline = NSBezierPath(ovalIn: NSRect(x: 580, y: 650, width: 86, height: 86))
+pearlOutline.lineWidth = 12
+color(255, 144, 190).withAlphaComponent(0.72).setStroke()
+pearlOutline.stroke()
 
 graphicsContext.flushGraphics()
 NSGraphicsContext.restoreGraphicsState()

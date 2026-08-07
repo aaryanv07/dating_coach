@@ -36,7 +36,7 @@ void main() {
       expect(result.metadata.provider, 'synthetic_provider');
       expect(
         result.metadata.extractionVersion,
-        'conversation-extraction-v2-events',
+        'conversation-extraction-v3-visual-events',
       );
     },
   );

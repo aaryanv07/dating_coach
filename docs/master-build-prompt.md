@@ -973,6 +973,51 @@ Allow users to manually update relationship stage.
 Never silently infer that a relationship exists.
 
 =================================================================
+13A. FREEMIUM AND SUBSCRIPTION MODEL
+====================================
+
+Use a permanent, useful Free plan and one ConvoCoach Plus plan at launch.
+
+Approved prices:
+
+* ConvoCoach Plus monthly: INR 999
+* ConvoCoach Plus annual: INR 8,999
+* No weekly subscription
+* No unlimited-AI claim
+
+The first 30 days provide a welcome allowance without a payment method or
+automatic paid conversion:
+
+* 5 conversation analyses
+* 25 reply-generation actions
+* 5 first-message generations
+* 1 progress insight per week
+
+The ongoing Free plan provides each month:
+
+* 2 conversation analyses
+* 10 reply-generation actions
+* 3 first-message generations
+* 1 progress insight
+
+ConvoCoach Plus provides each billing month:
+
+* 12 conversation analyses
+* 80 reply-generation actions
+* 10 first-message generations
+* 1 progress insight per week
+
+Viewing stored dashboards, editing generated drafts, privacy controls, safety
+guidance, export, and deletion do not consume usage and must never require Plus.
+The backend owns entitlements, usage reservations, resets, and store-transaction
+verification. Provider failures and idempotent retries do not consume usage.
+Never place trusted prices, entitlement decisions, or provider keys in the
+mobile client.
+
+See `docs/freemium-and-subscription.md` for counting, privacy, cost, and live
+billing requirements.
+
+=================================================================
 14. AI PERSONALITY
 ==================
 
@@ -1451,7 +1496,7 @@ Build these mobile screens.
 37. Privacy controls
 38. Delete conversation
 39. Delete account
-40. Subscription placeholder
+40. Subscription preview; live purchases remain disabled
 41. Empty states
 42. Error states
 43. Offline states
@@ -1786,11 +1831,16 @@ Create interfaces such as:
 Use environment variables:
 
 OPENAI_API_KEY=
-OPENAI_ANALYSIS_MODEL=
+OPENAI_MODEL=gpt-5.6-terra
+OPENAI_SAFETY_IDENTIFIER_SECRET=
 OPENAI_FAST_MODEL=
 OPENAI_VISION_MODEL=
 
-Never hard-code model names.
+Keep provider/model selection server-owned. Phase 16 deliberately enforces an
+exact `gpt-5.6-terra` allowlist at the configuration and adapter boundaries so a
+mistyped or client-selected model cannot silently change the reviewed safety,
+quality, cost, or structured-output contract. Any future model change requires
+an explicit code, evaluation, privacy, cost, and documentation update.
 
 Add:
 
@@ -2298,6 +2348,12 @@ qualification evidence and does not authorize the original roadmap's Phase 5
 analytics or Phase 6 dashboard.
 Physical Android and iOS extraction qualification remains a release gate before
 any later intelligence feature consumes conversation events.
+The explicitly authorized Phase 16 development/staging integration adds a
+backend-only GPT-5.6 Terra path with separate external-processing consent,
+bounded reviewed message text, strict structured output, evidence validation,
+`store=False`, server-only secrets, and user-reviewable drafts. It does not
+authorize production activation and does not satisfy the outstanding physical
+qualification or identity/release gates.
 
 PHASE 0:
 DISCOVERY AND PLANNING
@@ -2621,3 +2677,85 @@ Not because it contains excessive visual effects.
 Build the smallest version that genuinely delivers this experience.
 
 Quality is more important than feature quantity.
+
+=================================================================
+52. PHASE 17 RUNTIME INTEGRATION STATUS
+=======================================
+
+The explicitly authorized Phase 17 runtime work connects the reviewed Flutter
+conversation flow to the authenticated FastAPI API, implements OIDC Authorization
+Code with PKCE and secure mobile credential storage, and performs strict
+asymmetric OIDC/JWKS verification on the server.
+
+Terra execution now requires a canonical idempotency key and one atomic,
+server-owned allowance reservation. The content-free ledger enforces welcome,
+Free, or verified-Plus allowances, per-minute rate limits, retry bounds, and
+per-user/global monthly cost ceilings. Provider/model choice remains server-owned.
+Screenshot bytes, local paths, raw prompts, provider responses, and coaching
+content never enter this ledger or operational logs.
+
+Local setup, secrets, backend launch, and connected-device launch are scripted
+for `/Volumes/ConvoCoachDev`. Secrets remain in macOS Keychain. PostgreSQL is the
+migration qualification target; local SQLite is bootstrapped from current
+metadata only.
+
+Production launch is not complete. It still requires real OpenAI billing/key,
+OIDC tenant registration, storefront receipt verification and webhooks, deployed
+HTTPS infrastructure and alerting, distribution signing, live safety evaluation,
+and passing physical Android/iOS qualification. See
+`docs/phase-17-runtime-integration.md`.
+
+=================================================================
+53. PHASE 18 Z.AI GLM-5.2 INTEGRATION STATUS
+============================================
+
+The explicitly authorized Phase 18 work adds Z.ai-hosted GLM-5.2 as the
+cost-priority external coaching provider. Provider and model selection remain
+server-owned. Only a confirmed, reviewed, bounded message sequence may enter
+the adapter after history consent, separate `external-ai-processing-v2`
+consent, canonical idempotency, allowance reservation, rate limiting, and
+budget checks.
+
+GLM JSON output is untrusted until strict schema, evidence-reference, finish
+reason, token-accounting, and independent safety validation pass. A local safety
+gate blocks detected under-18 romantic or sexual scenarios before any provider
+call; boundary, coercion, stalking, deception, and harassment signals require a
+safety-only response with no draft. No raw prompt, provider response,
+conversation body, API key, or account UUID may enter logs or persistence.
+
+This integration does not authorize production or claim a successful live Z.ai
+request. Live synthetic qualification, processor/legal review, deployed OIDC
+and HTTPS infrastructure, monitoring, distribution signing, storefront receipt
+verification, and physical Android/iOS qualification remain mandatory. See
+`docs/phase-18-zai-glm-5-2-integration.md`.
+
+=================================================================
+54. OPENROUTER TIERED AI ROUTING STATUS
+=======================================
+
+The current authorized AI routing uses one backend-only OpenRouter credential.
+The server—not the client—maps welcome and Free allowances to
+`openai/gpt-4o-mini` and verified Plus allowances to
+`openai/gpt-5.6-terra`. Model identifiers, reasoning effort, and exact
+model-specific price inputs are environment configuration, allowing a future
+qualified model change without shipping a mobile release. Client plan claims
+and client-selected providers remain prohibited.
+
+Only confirmed reviewed bounded text, speaker roles, opaque evidence event IDs,
+locale, content-free safety flags, and a keyed pseudonym cross the provider
+boundary after separate `external-ai-processing-v3` consent. OpenRouter requests
+use strict JSON Schema, deny provider data collection, require support for all
+parameters, and request zero-data-retention routing. Pydantic, evidence,
+refusal/termination, usage, and provider-independent safety validation remain
+authoritative. Screenshot bytes, names, paths, OCR metadata, credentials, raw
+account UUIDs, prompts, raw responses, and generated results never enter logs or
+persistence.
+
+The atomic usage reservation stores the model selected from the server-owned
+plan; completion charges that exact model's configured token prices. Backend and
+Flutter regression tests cover the tier mapping, privacy flags, schema and
+evidence rejection, safety boundary, accounting, consent, accessibility, and
+future safe model slugs. Production remains blocked on processor/legal review,
+independent live safety evaluation, billing and identity deployment, monitoring,
+signed physical-device qualification, and all release-manifest evidence. See
+`docs/openrouter-tiered-ai-routing.md`.

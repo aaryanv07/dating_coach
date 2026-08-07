@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -66,6 +67,12 @@ class User(TimestampMixin, Base):
     )
     conversations: Mapped[list[Conversation]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
+    )
+    subscription_entitlements: Mapped[list[SubscriptionEntitlement]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    ai_usage_records: Mapped[list[AIUsageRecord]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
     )
 
 
@@ -417,6 +424,89 @@ class ConversationEventRelationship(TimestampMixin, Base):
     target_event: Mapped[ConversationEvent] = relationship(
         back_populates="incoming_relationships", foreign_keys=[target_event_id]
     )
+
+
+class SubscriptionEntitlement(TimestampMixin, Base):
+    """Server-verified paid entitlement without receipt or profile content."""
+
+    __tablename__ = "subscription_entitlements"
+    __table_args__ = (
+        Index("ix_subscription_entitlements_user_period", "user_id", "current_period_end"),
+        UniqueConstraint("storefront", "transaction_reference_hash"),
+        CheckConstraint("plan_code IN ('plus')", name="plan_code"),
+        CheckConstraint("status IN ('active', 'grace', 'expired', 'revoked')", name="status"),
+        CheckConstraint("storefront IN ('apple', 'google', 'admin')", name="storefront"),
+        CheckConstraint("current_period_end > current_period_start", name="period_order"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    plan_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    storefront: Mapped[str] = mapped_column(String(16), nullable=False)
+    transaction_reference_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    verified_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+
+    user: Mapped[User] = relationship(back_populates="subscription_entitlements")
+
+
+class AIUsageRecord(TimestampMixin, Base):
+    """Content-free quota reservation, completion, and cost ledger."""
+
+    __tablename__ = "ai_usage_records"
+    __table_args__ = (
+        UniqueConstraint("user_id", "allowance_kind", "idempotency_key"),
+        Index("ix_ai_usage_user_window", "user_id", "allowance_kind", "window_start"),
+        Index("ix_ai_usage_status_created", "status", "created_at"),
+        CheckConstraint(
+            "allowance_kind IN ('conversation_analysis', 'reply_generation', "
+            "'first_message_generation', 'progress_insight')",
+            name="allowance_kind",
+        ),
+        CheckConstraint("plan_code IN ('welcome', 'free', 'plus')", name="plan_code"),
+        CheckConstraint("status IN ('reserved', 'completed', 'released')", name="status"),
+        CheckConstraint("window_end > window_start", name="window_order"),
+        CheckConstraint("attempt_count >= 1 AND attempt_count <= 3", name="attempt_count"),
+        CheckConstraint(
+            "input_tokens >= 0 AND output_tokens >= 0 AND total_tokens >= 0",
+            name="token_counts",
+        ),
+        CheckConstraint("cost_microusd >= 0", name="cost_microusd"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    conversation_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    allowance_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    plan_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    model_identifier: Mapped[str] = mapped_column(String(64), nullable=False)
+    correlation_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cost_microusd: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="ai_usage_records")
 
 
 class DeletionRequest(Base):

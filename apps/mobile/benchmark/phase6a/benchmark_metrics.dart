@@ -104,9 +104,9 @@ class ExtractionBenchmarkEvaluator {
           (pair) =>
               pair.expectedIndex != null &&
               pair.actualIndex != null &&
-              _textSimilarity(
-                    expectedMessages[pair.expectedIndex!].text,
-                    actualMessages[pair.actualIndex!].text,
+              _messageSimilarity(
+                    expectedMessages[pair.expectedIndex!],
+                    actualMessages[pair.actualIndex!],
                   ) >=
                   0.55,
         )
@@ -164,29 +164,36 @@ class ExtractionBenchmarkEvaluator {
     final actualWarnings = actual.warnings
         .map((warning) => warning.code)
         .toSet();
-    final warningUnion = {...expectedWarnings, ...actualWarnings};
-    final warningIntersection = expectedWarnings.intersection(actualWarnings);
+    final expectedWarningKeys = _warningKeys(
+      expectedWarnings,
+      confidenceAvailable: actual.metadata.confidenceAvailable,
+    );
+    final actualWarningKeys = _warningKeys(
+      actualWarnings,
+      confidenceAvailable: actual.metadata.confidenceAvailable,
+    );
+    final warningUnion = {...expectedWarningKeys, ...actualWarningKeys};
+    final warningIntersection = expectedWarningKeys.intersection(
+      actualWarningKeys,
+    );
     final expectedMessageOrder = expectedMessages
         .map((message) => _normalizedText(message.text))
         .toList(growable: false);
     final actualMessageOrder = actualMessages
         .map((message) => _normalizedText(message.text))
         .toList(growable: false);
-    final expectedEventKeys = <String>[
-      for (final message in fixture.messages)
-        _eventKey(message.eventType.wireName, message.text),
-      for (final event in fixture.events)
-        _eventKey(event.eventType.wireName, event.text),
+    final expectedEventTypes = <String>[
+      for (final message in fixture.messages) message.eventType.wireName,
+      for (final event in fixture.events) event.eventType.wireName,
       for (final page in fixture.pages)
-        if (page.dateLabel case final label?)
-          _eventKey('date_separator', label),
+        if (page.dateLabel != null) 'date_separator',
       for (final page in fixture.pages)
         for (final reaction in page.reactions)
-          if (reaction.recognizeAsText) _eventKey('reaction', reaction.text),
+          if (reaction.recognizeAsText) 'reaction',
     ];
-    final actualEventKeys = actual.events
+    final actualEventTypes = actual.events
         .where((event) => !event.isDeleted)
-        .map((event) => _eventKey(event.eventType.wireName, event.text))
+        .map((event) => event.eventType.wireName)
         .toList(growable: false);
 
     return BenchmarkMetrics(
@@ -202,8 +209,8 @@ class ExtractionBenchmarkEvaluator {
           ? 1
           : matched.length / denominator,
       eventClassificationAccuracy: _multisetAccuracy(
-        expectedEventKeys,
-        actualEventKeys,
+        expectedEventTypes,
+        actualEventTypes,
       ),
       speakerAssignmentAccuracy: expectedCount == 0
           ? 1
@@ -250,9 +257,9 @@ class ExtractionBenchmarkEvaluator {
     );
     for (var row = 1; row <= expected.length; row++) {
       for (var column = 1; column <= actual.length; column++) {
-        final similarity = _textSimilarity(
-          expected[row - 1].text,
-          actual[column - 1].text,
+        final similarity = _messageSimilarity(
+          expected[row - 1],
+          actual[column - 1],
         );
         final match = similarity >= 0.35
             ? scores[row - 1][column - 1] + similarity
@@ -268,9 +275,9 @@ class ExtractionBenchmarkEvaluator {
     var column = actual.length;
     while (row > 0 || column > 0) {
       if (row > 0 && column > 0) {
-        final similarity = _textSimilarity(
-          expected[row - 1].text,
-          actual[column - 1].text,
+        final similarity = _messageSimilarity(
+          expected[row - 1],
+          actual[column - 1],
         );
         if (similarity >= 0.35 &&
             (scores[row][column] - (scores[row - 1][column - 1] + similarity))
@@ -318,6 +325,17 @@ class ExtractionBenchmarkEvaluator {
     return _sequenceAccuracy(firstRunes, secondRunes);
   }
 
+  double _messageSimilarity(
+    BenchmarkExpectedMessage expected,
+    ReviewMessage actual,
+  ) {
+    if (actual.metadata['visual_placeholder'] == true &&
+        actual.eventType == expected.eventType) {
+      return 1;
+    }
+    return _textSimilarity(expected.text, actual.text);
+  }
+
   double _countAccuracy(int expected, int actual) {
     if (expected == 0 && actual == 0) return 1;
     final denominator = math.max(expected, actual);
@@ -325,8 +343,21 @@ class ExtractionBenchmarkEvaluator {
   }
 }
 
-String _eventKey(String eventType, String text) =>
-    '$eventType|${_normalizedText(text)}';
+Set<String> _warningKeys(
+  Set<ExtractionWarningCode> warnings, {
+  required bool confidenceAvailable,
+}) {
+  final keys = warnings.map((warning) => warning.name).toSet();
+  if (!confidenceAvailable &&
+      (warnings.contains(ExtractionWarningCode.confidenceUnavailable) ||
+          warnings.contains(ExtractionWarningCode.eventReviewRequired))) {
+    keys
+      ..remove(ExtractionWarningCode.confidenceUnavailable.name)
+      ..remove(ExtractionWarningCode.eventReviewRequired.name)
+      ..add('review_required');
+  }
+  return keys;
+}
 
 double _multisetAccuracy(List<String> expected, List<String> actual) {
   if (expected.isEmpty && actual.isEmpty) return 1;

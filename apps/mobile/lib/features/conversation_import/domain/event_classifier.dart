@@ -47,7 +47,7 @@ class DeterministicConversationEventClassifier
       final requiresReview =
           rule.type == ConversationEventType.unknown ||
           (speaker == MessageSpeaker.unknown && !rule.type.isStructural) ||
-          region.confidence == null ||
+          region.visualPlaceholder ||
           rule.confidence < 0.75 ||
           (rule.isReaction && target == null);
       events.add(
@@ -76,7 +76,8 @@ class DeterministicConversationEventClassifier
           requiresReview: requiresReview,
           sourceRegionId: 'region-${region.sourceIndex}-${region.sourceOrder}',
           metadata: {
-            'classification_strategy': 'deterministic_rules_v1',
+            'classification_strategy': 'deterministic_rules_v2',
+            if (region.visualPlaceholder) 'visual_placeholder': true,
             if (rule.isReaction) 'reaction': region.text,
           },
           relationships: relationship,
@@ -92,7 +93,10 @@ class DeterministicConversationEventClassifier
     List<CandidateMessageRegion> previous,
   ) {
     if (region.eventTypeHint != null) {
-      return _Classification(region.eventTypeHint!, 0.99);
+      return _Classification(
+        region.eventTypeHint!,
+        region.visualPlaceholder ? 0.45 : 0.99,
+      );
     }
     final normalized = region.text.trim().toLowerCase();
     if (_looksLikeEmojiOnly(region.text)) {

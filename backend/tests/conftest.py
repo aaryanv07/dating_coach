@@ -10,7 +10,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.auth.verifier import AuthClaims, StaticAuthenticationVerifier
+from app.auth.contracts import AuthClaims
+from app.auth.verifier import StaticAuthenticationVerifier
 from app.core.config import Settings
 from app.db.base import Base
 from app.db.session import create_database_engine, create_session_factory
@@ -43,12 +44,62 @@ def api_client(tmp_path: Path) -> Iterator[TestClient]:
     asyncio.run(_create_schema(engine))
     verifier = StaticAuthenticationVerifier(
         {
-            "token-a": AuthClaims(subject="subject-a", email="a@example.invalid"),
-            "token-b": AuthClaims(subject="subject-b", email="b@example.invalid"),
+            "token-a": AuthClaims(
+                subject="subject-a",
+                email="a@example.invalid",
+                email_verified=True,
+            ),
+            "token-b": AuthClaims(
+                subject="subject-b",
+                email="b@example.invalid",
+                email_verified=True,
+            ),
         }
     )
     application = create_app(
         Settings(app_environment="test", database_url=database_url),
+        session_factory=create_session_factory(engine),
+        auth_verifier=verifier,
+    )
+    with TestClient(application) as test_client:
+        yield test_client
+    asyncio.run(engine.dispose())
+
+
+@pytest.fixture
+def coach_api_client(tmp_path: Path) -> Iterator[TestClient]:
+    """Isolated API client with both explicit Phase 11 mock flags enabled."""
+    database_url = f"sqlite+aiosqlite:///{tmp_path / 'phase11.db'}"
+    engine = create_database_engine(database_url)
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def enable_foreign_keys(dbapi_connection: Any, _: Any) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    asyncio.run(_create_schema(engine))
+    verifier = StaticAuthenticationVerifier(
+        {
+            "token-a": AuthClaims(
+                subject="subject-a",
+                email="a@example.invalid",
+                email_verified=True,
+            ),
+            "token-b": AuthClaims(
+                subject="subject-b",
+                email="b@example.invalid",
+                email_verified=True,
+            ),
+        }
+    )
+    application = create_app(
+        Settings(
+            app_environment="test",
+            database_url=database_url,
+            ai_coaching_enabled=True,
+            ai_mock_execution_enabled=True,
+        ),
         session_factory=create_session_factory(engine),
         auth_verifier=verifier,
     )

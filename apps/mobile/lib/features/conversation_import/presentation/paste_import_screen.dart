@@ -81,8 +81,8 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
               ],
               const SizedBox(height: AppSpacing.xl),
               AppButton(
-                label: 'Prepare review',
-                icon: Icons.arrow_forward_rounded,
+                label: 'Review conversation',
+                icon: Icons.auto_awesome_rounded,
                 onPressed: _continue,
               ),
             ],

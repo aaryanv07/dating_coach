@@ -37,7 +37,7 @@ void main() {
             defaultValue: 'host_flutter_test',
           ),
           mlKitVersion: 'not_exercised_reference_provider',
-          extractionVersion: 'conversation-extraction-v2-events',
+          extractionVersion: 'conversation-extraction-v3-visual-events',
         ),
         nativeDeviceRun: false,
       );
