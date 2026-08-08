@@ -845,6 +845,12 @@ and finite motion changed.
 suite covers the imported splash/onboarding/Home/navigation presentation,
 reduced motion, 200% text, minimum touch targets, production import and review,
 privacy controls, tiered model contracts, and dashboard behavior. Ruff
-format/check and strict MyPy passed, and all 242 backend tests passed. A signed
-physical-iPhone installation is recorded separately after the integrated build
-has been produced and launched.
+format/check and strict MyPy passed, and all 242 backend tests passed.
+
+The integrated commit then produced an 85.9 MB iOS Profile app signed by the
+available Apple Development identity. Strict code-sign verification passed. The
+app installed on the paired iPhone 13 Pro Max, launched through `devicectl`, and
+its standalone process remained alive after 15 seconds. The new checkout's
+local backend returned 200 for loopback and Bonjour health plus an authenticated
+conversation-list probe. This verifies the integrated phone installation; it is
+not Apple Distribution signing or an App Store deployment.
