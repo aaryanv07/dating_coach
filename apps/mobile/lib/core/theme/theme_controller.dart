@@ -5,7 +5,8 @@ enum MotionPreference { system, reduced }
 
 class ThemeModeController extends Notifier<ThemeMode> {
   @override
-  ThemeMode build() => ThemeMode.system;
+  // Dark-first: the vibrant brand look is designed around the dark palette.
+  ThemeMode build() => ThemeMode.dark;
 
   void setMode(ThemeMode mode) => state = mode;
 }

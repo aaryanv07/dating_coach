@@ -2,6 +2,8 @@ import 'package:convo_coach/core/haptics/app_haptics.dart';
 import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_brand.dart';
 import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
@@ -63,7 +65,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: SafeArea(
         child: Column(
           children: [
             Padding(
@@ -127,6 +131,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -167,8 +172,14 @@ class _OnboardingPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                GradientText(
                   data.title,
+                  gradient: LinearGradient(
+                    colors: [
+                      context.appColors.gradientStart,
+                      context.appColors.gradientEnd,
+                    ],
+                  ),
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: AppSpacing.md),

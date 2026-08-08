@@ -11,24 +11,30 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadii {
-  static const double small = 4;
-  static const double medium = 8;
+  static const double small = 10;
+  static const double medium = 20;
+  static const double large = 28;
+  static const double pill = 100;
   static const BorderRadius card = BorderRadius.all(Radius.circular(medium));
+  static const BorderRadius button = BorderRadius.all(Radius.circular(pill));
+  static const BorderRadius sheet =
+      BorderRadius.vertical(top: Radius.circular(large));
 }
 
 abstract final class AppSizes {
   static const double minimumTouchTarget = 44;
-  static const double buttonHeight = 52;
+  static const double buttonHeight = 56;
   static const double iconSmall = 18;
   static const double iconMedium = 24;
   static const double maxContentWidth = 640;
 }
 
 abstract final class AppDurations {
-  static const Duration fast = Duration(milliseconds: 160);
-  static const Duration normal = Duration(milliseconds: 220);
-  static const Duration deliberate = Duration(milliseconds: 280);
+  static const Duration fast = Duration(milliseconds: 180);
+  static const Duration normal = Duration(milliseconds: 300);
+  static const Duration deliberate = Duration(milliseconds: 420);
   static const Duration loadingPulse = Duration(milliseconds: 900);
+  static const Duration ambient = Duration(milliseconds: 2400);
 }
 
 abstract final class AppOpacity {

@@ -8,13 +8,13 @@ abstract final class AppTheme {
   static ThemeData light() {
     return _build(
       brightness: Brightness.light,
-      background: const Color(0xFFF7F8FA),
+      background: const Color(0xFFFAF7FF),
       surface: const Color(0xFFFFFFFF),
-      text: const Color(0xFF17191D),
-      primary: const Color(0xFF425582),
+      text: const Color(0xFF1A1128),
+      primary: AppColors.hotPink,
       onPrimary: const Color(0xFFFFFFFF),
-      secondary: const Color(0xFF006B60),
-      tertiary: const Color(0xFFA93D58),
+      secondary: AppColors.electricPurple,
+      tertiary: AppColors.neonCyan,
       appColors: AppColors.light,
     );
   }
@@ -22,13 +22,13 @@ abstract final class AppTheme {
   static ThemeData dark() {
     return _build(
       brightness: Brightness.dark,
-      background: const Color(0xFF121416),
-      surface: const Color(0xFF1C1F23),
-      text: const Color(0xFFF3F4F6),
-      primary: const Color(0xFFB8C8F5),
-      onPrimary: const Color(0xFF16203A),
-      secondary: const Color(0xFF71D6C8),
-      tertiary: const Color(0xFFFF9DB2),
+      background: AppColors.deepViolet,
+      surface: AppColors.midnightSurface,
+      text: const Color(0xFFF5F2FF),
+      primary: AppColors.hotPink,
+      onPrimary: const Color(0xFFFFFFFF),
+      secondary: AppColors.electricPurple,
+      tertiary: AppColors.neonCyan,
       appColors: AppColors.dark,
     );
   }
@@ -75,7 +75,7 @@ abstract final class AppTheme {
       visualDensity: VisualDensity.standard,
       splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
-        backgroundColor: background,
+        backgroundColor: Colors.transparent,
         foregroundColor: text,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -93,7 +93,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface,
+        fillColor: appColors.surfaceRaised,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.lg,
@@ -113,7 +113,7 @@ abstract final class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: primary.withValues(alpha: 0.16),
+        indicatorColor: primary.withValues(alpha: 0.22),
         elevation: 0,
         height: 72,
         labelTextStyle: WidgetStatePropertyAll(textTheme.labelMedium),
@@ -122,9 +122,7 @@ abstract final class AppTheme {
         backgroundColor: surface,
         modalBackgroundColor: surface,
         showDragHandle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadii.sheet),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: surface,
@@ -132,7 +130,7 @@ abstract final class AppTheme {
       ),
       dividerTheme: DividerThemeData(color: appColors.border, thickness: 1),
       checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{

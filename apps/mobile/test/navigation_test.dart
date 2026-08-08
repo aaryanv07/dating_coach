@@ -8,7 +8,7 @@ void main() {
   ) async {
     await pumpConvoCoach(tester, initialLocation: '/home');
 
-    await tester.tap(find.text('Conversations'));
+    await tester.tap(find.text('Chats'));
     await tester.pumpAndSettle();
     expect(find.text('Weekend plans'), findsOneWidget);
 
