@@ -27,6 +27,8 @@ void main() {
 
       await tester.tap(find.text('Choose screenshots'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Extract conversation'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Extract conversation'));
       await tester.pumpAndSettle();
 

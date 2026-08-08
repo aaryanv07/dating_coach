@@ -17,14 +17,8 @@ void main() {
     expect(dark.scaffoldBackgroundColor, const Color(0xFF0D0A1A));
     expect(light.extension<AppColors>()?.success, const Color(0xFF22C55E));
     expect(dark.extension<AppColors>()?.risk, const Color(0xFFF87171));
-    expect(
-      light.extension<AppColors>()?.gradientStart,
-      AppColors.hotPink,
-    );
-    expect(
-      dark.extension<AppColors>()?.gradientEnd,
-      AppColors.electricPurple,
-    );
+    expect(light.extension<AppColors>()?.gradientStart, AppColors.hotPink);
+    expect(dark.extension<AppColors>()?.gradientEnd, AppColors.electricPurple);
     expect(light.textTheme.bodyLarge?.letterSpacing, 0);
     expect(dark.textTheme.headlineMedium?.letterSpacing, -0.5);
   });
@@ -42,16 +36,13 @@ void main() {
     expect(container.read(motionPreferenceProvider), MotionPreference.reduced);
   });
 
-  test(
-    'motion tokens stay inside the 150 to 450 millisecond budget',
-    () {
-      for (final duration in [
-        AppDurations.fast,
-        AppDurations.normal,
-        AppDurations.deliberate,
-      ]) {
-        expect(duration.inMilliseconds, inInclusiveRange(150, 450));
-      }
-    },
-  );
+  test('motion tokens stay inside the 150 to 450 millisecond budget', () {
+    for (final duration in [
+      AppDurations.fast,
+      AppDurations.normal,
+      AppDurations.deliberate,
+    ]) {
+      expect(duration.inMilliseconds, inInclusiveRange(150, 450));
+    }
+  });
 }

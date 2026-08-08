@@ -112,10 +112,7 @@ class HomeScreen extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.lock_outline_rounded,
-                          color: colors.success,
-                        ),
+                        Icon(Icons.lock_outline_rounded, color: colors.success),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Column(
@@ -150,10 +147,7 @@ class HomeScreen extends StatelessWidget {
                   child: AppCard(
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          color: colors.textMuted,
-                        ),
+                        Icon(Icons.inbox_outlined, color: colors.textMuted),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(

@@ -25,21 +25,19 @@ class ConversationDetailScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Saved conversation')),
       body: AppBackground(
         child: conversation.when(
-          loading:
-              () => const ResponsiveContent(
-                child: Column(
-                  children: [
-                    AppSkeleton(height: 120),
-                    SizedBox(height: AppSpacing.md),
-                    AppSkeleton(height: 96),
-                  ],
-                ),
-              ),
-          error:
-              (error, stackTrace) => const AppErrorState(
-                title: 'Conversation unavailable',
-                message: 'The saved conversation could not be opened.',
-              ),
+          loading: () => const ResponsiveContent(
+            child: Column(
+              children: [
+                AppSkeleton(height: 120),
+                SizedBox(height: AppSpacing.md),
+                AppSkeleton(height: 96),
+              ],
+            ),
+          ),
+          error: (error, stackTrace) => const AppErrorState(
+            title: 'Conversation unavailable',
+            message: 'The saved conversation could not be opened.',
+          ),
           data: (detail) {
             if (detail == null) {
               return const AppEmptyState(
@@ -74,10 +72,9 @@ class ConversationDetailScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.xl),
                   for (final message in detail.messages) ...[
                     Align(
-                      alignment:
-                          message.speaker == 'user'
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
+                      alignment: message.speaker == 'user'
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 560),
                         child: AppCard(

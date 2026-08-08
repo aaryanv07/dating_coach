@@ -25,6 +25,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('1 screenshot ready'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('Extract conversation'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Extract conversation'));
       await tester.pumpAndSettle();
       expect(find.text('Review studio'), findsOneWidget);

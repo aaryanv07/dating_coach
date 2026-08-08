@@ -50,16 +50,15 @@ class ConversationReviewStudio extends ConsumerWidget {
                   DropdownButtonFormField<MessageSpeaker>(
                     initialValue: speaker,
                     decoration: const InputDecoration(labelText: 'Speaker'),
-                    items:
-                        MessageSpeaker.values
-                            .where((value) => value != MessageSpeaker.unknown)
-                            .map(
-                              (value) => DropdownMenuItem(
-                                value: value,
-                                child: Text(value.label),
-                              ),
-                            )
-                            .toList(),
+                    items: MessageSpeaker.values
+                        .where((value) => value != MessageSpeaker.unknown)
+                        .map(
+                          (value) => DropdownMenuItem(
+                            value: value,
+                            child: Text(value.label),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (value) {
                       if (value != null) {
                         setDialogState(() => speaker = value);
@@ -119,11 +118,10 @@ class ConversationReviewStudio extends ConsumerWidget {
         const SingleActivator(LogicalKeyboardKey.keyZ, meta: true, shift: true):
             controller.redo,
         const SingleActivator(
-              LogicalKeyboardKey.keyZ,
-              control: true,
-              shift: true,
-            ):
-            controller.redo,
+          LogicalKeyboardKey.keyZ,
+          control: true,
+          shift: true,
+        ): controller.redo,
       },
       child: Focus(
         autofocus: true,
@@ -155,165 +153,156 @@ class ConversationReviewStudio extends ConsumerWidget {
                 onSelected: (action) {
                   if (action == 'swap') controller.swapAllSpeakers();
                 },
-                itemBuilder:
-                    (context) => const [
-                      PopupMenuItem(
-                        value: 'swap',
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(Icons.swap_vert_rounded),
-                          title: Text('Swap all speakers'),
-                        ),
-                      ),
-                    ],
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'swap',
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.swap_vert_rounded),
+                      title: Text('Swap all speakers'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           body: AppBackground(
-            child:
-                state.messages.isEmpty
-                    ? const AppErrorState(
-                      title: 'No messages to review',
-                      message: 'Return to import and add a conversation first.',
-                    )
-                    : ResponsiveContent(
-                      maxWidth: 840,
-                      child: ListView(
-                        key: const Key('review-message-list'),
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xxxl),
-                        children: [
-                          const SizedBox(height: AppSpacing.lg),
-                          TextFormField(
-                            key: const Key('conversation-title-field'),
-                            initialValue: state.title,
-                            onChanged: controller.setTitle,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                            decoration: const InputDecoration(
-                              labelText: 'Conversation title',
-                            ),
+            child: state.messages.isEmpty
+                ? const AppErrorState(
+                    title: 'No messages to review',
+                    message: 'Return to import and add a conversation first.',
+                  )
+                : ResponsiveContent(
+                    maxWidth: 840,
+                    child: ListView(
+                      key: const Key('review-message-list'),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xxxl),
+                      children: [
+                        const SizedBox(height: AppSpacing.lg),
+                        TextFormField(
+                          key: const Key('conversation-title-field'),
+                          initialValue: state.title,
+                          onChanged: controller.setTitle,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                          decoration: const InputDecoration(
+                            labelText: 'Conversation title',
                           ),
-                          const SizedBox(height: AppSpacing.lg),
-                          _ReadinessPanel(report: state.readiness),
-                          if (state.extractionWarnings.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            AppCard(
-                              semanticLabel: 'Extraction review notes',
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Extraction review notes',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  for (final warning
-                                      in state.extractionWarnings)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: AppSpacing.xs,
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(
-                                            Icons.info_outline_rounded,
-                                            size: AppSizes.iconSmall,
-                                            color: context.appColors.caution,
-                                          ),
-                                          const SizedBox(width: AppSpacing.sm),
-                                          Expanded(
-                                            child: Text(warning.message),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (state.errorMessage != null) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            AppErrorState(
-                              title: 'This conversation is not ready to save',
-                              message: state.errorMessage!,
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.xl),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${state.messages.where((message) => !message.isDeleted).length} message blocks',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: 'Add missing message',
-                                onPressed:
-                                    () => unawaited(_addMessage(context, ref)),
-                                icon: const Icon(Icons.add_comment_outlined),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          for (
-                            var index = 0;
-                            index < state.messages.length;
-                            index++
-                          ) ...[
-                            _ReviewMessageBlock(
-                              key: ValueKey(state.messages[index].id),
-                              message: state.messages[index],
-                              position: index,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                          ],
-                          AppButton(
-                            label: 'Add message',
-                            icon: Icons.add_rounded,
-                            variant: AppButtonVariant.secondary,
-                            onPressed:
-                                () => unawaited(_addMessage(context, ref)),
-                          ),
-                          const SizedBox(height: AppSpacing.xxl),
-                          CheckboxListTile(
-                            key: const Key('save-consent-checkbox'),
-                            contentPadding: EdgeInsets.zero,
-                            value: state.saveConsent,
-                            onChanged:
-                                (value) =>
-                                    controller.setSaveConsent(value ?? false),
-                            title: const Text(
-                              'Save this reviewed conversation',
-                            ),
-                            subtitle: const Text(
-                              'Only normalized message text and source-deletion metadata are kept.',
-                            ),
-                            controlAffinity: ListTileControlAffinity.leading,
-                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _ReadinessPanel(report: state.readiness),
+                        if (state.extractionWarnings.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.md),
-                          AppButton(
-                            key: const Key('confirm-save-button'),
-                            label: 'Confirm and save',
-                            icon: Icons.check_rounded,
-                            isLoading: state.isBusy,
-                            onPressed:
-                                state.readiness.isReady &&
-                                        state.saveConsent &&
-                                        state.title.trim().isNotEmpty &&
-                                        !state.isBusy
-                                    ? () => unawaited(_save(context, ref))
-                                    : null,
-                            semanticLabel:
-                                'Confirm and save reviewed conversation, readiness ${state.readiness.score} percent',
+                          AppCard(
+                            semanticLabel: 'Extraction review notes',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Extraction review notes',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                for (final warning in state.extractionWarnings)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: AppSpacing.xs,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.info_outline_rounded,
+                                          size: AppSizes.iconSmall,
+                                          color: context.appColors.caution,
+                                        ),
+                                        const SizedBox(width: AppSpacing.sm),
+                                        Expanded(child: Text(warning.message)),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
+                        if (state.errorMessage != null) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          AppErrorState(
+                            title: 'This conversation is not ready to save',
+                            message: state.errorMessage!,
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.xl),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${state.messages.where((message) => !message.isDeleted).length} message blocks',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Add missing message',
+                              onPressed: () =>
+                                  unawaited(_addMessage(context, ref)),
+                              icon: const Icon(Icons.add_comment_outlined),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        for (
+                          var index = 0;
+                          index < state.messages.length;
+                          index++
+                        ) ...[
+                          _ReviewMessageBlock(
+                            key: ValueKey(state.messages[index].id),
+                            message: state.messages[index],
+                            position: index,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                        AppButton(
+                          label: 'Add message',
+                          icon: Icons.add_rounded,
+                          variant: AppButtonVariant.secondary,
+                          onPressed: () => unawaited(_addMessage(context, ref)),
+                        ),
+                        const SizedBox(height: AppSpacing.xxl),
+                        CheckboxListTile(
+                          key: const Key('save-consent-checkbox'),
+                          contentPadding: EdgeInsets.zero,
+                          value: state.saveConsent,
+                          onChanged: (value) =>
+                              controller.setSaveConsent(value ?? false),
+                          title: const Text('Save this reviewed conversation'),
+                          subtitle: const Text(
+                            'Only normalized message text and source-deletion metadata are kept.',
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        AppButton(
+                          key: const Key('confirm-save-button'),
+                          label: 'Confirm and save',
+                          icon: Icons.check_rounded,
+                          isLoading: state.isBusy,
+                          onPressed:
+                              state.readiness.isReady &&
+                                  state.saveConsent &&
+                                  state.title.trim().isNotEmpty &&
+                                  !state.isBusy
+                              ? () => unawaited(_save(context, ref))
+                              : null,
+                          semanticLabel:
+                              'Confirm and save reviewed conversation, readiness ${state.readiness.score} percent',
+                        ),
+                      ],
                     ),
+                  ),
           ),
         ),
       ),
@@ -371,10 +360,9 @@ class _ReadinessPanel extends StatelessWidget {
                               ? Icons.check_circle_outline_rounded
                               : Icons.error_outline_rounded,
                           size: AppSizes.iconSmall,
-                          color:
-                              check.passed
-                                  ? context.appColors.success
-                                  : context.appColors.caution,
+                          color: check.passed
+                              ? context.appColors.success
+                              : context.appColors.caution,
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(child: Text(check.label)),
@@ -474,45 +462,41 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
     );
     final result = await showDialog<(String, String)>(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            title: const Text('Split message'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  key: const Key('split-first-field'),
-                  controller: firstController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'First message'),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextField(
-                  key: const Key('split-second-field'),
-                  controller: secondController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Second message',
-                  ),
-                ),
-              ],
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Split message'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              key: const Key('split-first-field'),
+              controller: firstController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(labelText: 'First message'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed:
-                    () => Navigator.of(
-                      dialogContext,
-                    ).pop((firstController.text, secondController.text)),
-                child: const Text('Split'),
-              ),
-            ],
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              key: const Key('split-second-field'),
+              controller: secondController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(labelText: 'Second message'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop((firstController.text, secondController.text)),
+            child: const Text('Split'),
+          ),
+        ],
+      ),
     );
     firstController.dispose();
     secondController.dispose();
@@ -531,10 +515,9 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
     final sourceIndex = widget.message.sourceScreenshotIndex;
     if (sourceIndex == null) return;
     final importState = ref.read(conversationImportProvider);
-    final sourceMetadata =
-        importState.sources
-            .where((source) => source.index == sourceIndex)
-            .firstOrNull;
+    final sourceMetadata = importState.sources
+        .where((source) => source.index == sourceIndex)
+        .firstOrNull;
     if (sourceMetadata == null) return;
     final source = await ref
         .read(temporarySourceStoreProvider)
@@ -542,28 +525,25 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
     if (!mounted) return;
     await showAppBottomSheet<void>(
       context: context,
-      builder:
-          (sheetContext) => AppBottomSheetBody(
-            title: 'Screenshot ${sourceIndex + 1}',
-            subtitle: sourceMetadata.name,
-            child: Semantics(
-              image: true,
-              label: 'Original screenshot ${sourceIndex + 1}',
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 560),
-                child:
-                    source?.bytes == null
-                        ? const _OriginalUnavailable()
-                        : Image.memory(
-                          source!.bytes!,
-                          fit: BoxFit.contain,
-                          errorBuilder:
-                              (context, error, stackTrace) =>
-                                  const _OriginalUnavailable(),
-                        ),
-              ),
-            ),
+      builder: (sheetContext) => AppBottomSheetBody(
+        title: 'Screenshot ${sourceIndex + 1}',
+        subtitle: sourceMetadata.name,
+        child: Semantics(
+          image: true,
+          label: 'Original screenshot ${sourceIndex + 1}',
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 560),
+            child: source?.bytes == null
+                ? const _OriginalUnavailable()
+                : Image.memory(
+                    source!.bytes!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const _OriginalUnavailable(),
+                  ),
           ),
+        ),
+      ),
     );
   }
 
@@ -584,10 +564,9 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
               ),
             ),
             TextButton.icon(
-              onPressed:
-                  () => ref
-                      .read(conversationImportProvider.notifier)
-                      .restoreMessage(message.id),
+              onPressed: () => ref
+                  .read(conversationImportProvider.notifier)
+                  .restoreMessage(message.id),
               icon: const Icon(Icons.restore_rounded),
               label: const Text('Restore'),
             ),
@@ -610,15 +589,14 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
                     key: Key('speaker-${message.id}'),
                     value: message.speaker,
                     isExpanded: true,
-                    items:
-                        MessageSpeaker.values
-                            .map(
-                              (speaker) => DropdownMenuItem(
-                                value: speaker,
-                                child: Text(speaker.label),
-                              ),
-                            )
-                            .toList(),
+                    items: MessageSpeaker.values
+                        .map(
+                          (speaker) => DropdownMenuItem(
+                            value: speaker,
+                            child: Text(speaker.label),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (speaker) {
                       if (speaker != null) {
                         ref
@@ -632,37 +610,36 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
               PopupMenuButton<_MessageAction>(
                 tooltip: 'Edit message actions',
                 onSelected: (action) => unawaited(_performAction(action)),
-                itemBuilder:
-                    (context) => const [
-                      PopupMenuItem(
-                        value: _MessageAction.merge,
-                        child: Text('Merge with next'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.split,
-                        child: Text('Split message'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.swapSpeaker,
-                        child: Text('Swap speaker'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.duplicate,
-                        child: Text('Duplicate'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.moveUp,
-                        child: Text('Move up'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.moveDown,
-                        child: Text('Move down'),
-                      ),
-                      PopupMenuItem(
-                        value: _MessageAction.delete,
-                        child: Text('Delete'),
-                      ),
-                    ],
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _MessageAction.merge,
+                    child: Text('Merge with next'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.split,
+                    child: Text('Split message'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.swapSpeaker,
+                    child: Text('Swap speaker'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.duplicate,
+                    child: Text('Duplicate'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.moveUp,
+                    child: Text('Move up'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.moveDown,
+                    child: Text('Move down'),
+                  ),
+                  PopupMenuItem(
+                    value: _MessageAction.delete,
+                    child: Text('Delete'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -691,10 +668,9 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
             minLines: 1,
             maxLines: null,
             textCapitalization: TextCapitalization.sentences,
-            onSubmitted:
-                (text) => ref
-                    .read(conversationImportProvider.notifier)
-                    .editMessage(message.id, text),
+            onSubmitted: (text) => ref
+                .read(conversationImportProvider.notifier)
+                .editMessage(message.id, text),
             decoration: const InputDecoration(
               labelText: 'Message text',
               border: InputBorder.none,
@@ -715,13 +691,12 @@ class _ReviewMessageBlockState extends ConsumerState<_ReviewMessageBlock> {
                 )
               else
                 Expanded(
-                  child:
-                      message.visibleTimestampText == null
-                          ? const SizedBox.shrink()
-                          : Text(
-                            'Visible time ${message.visibleTimestampText}; date unavailable',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
+                  child: message.visibleTimestampText == null
+                      ? const SizedBox.shrink()
+                      : Text(
+                          'Visible time ${message.visibleTimestampText}; date unavailable',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                 ),
               if (message.sourceScreenshotIndex != null)
                 TextButton.icon(

@@ -17,8 +17,9 @@ abstract final class AppRadii {
   static const double pill = 100;
   static const BorderRadius card = BorderRadius.all(Radius.circular(medium));
   static const BorderRadius button = BorderRadius.all(Radius.circular(pill));
-  static const BorderRadius sheet =
-      BorderRadius.vertical(top: Radius.circular(large));
+  static const BorderRadius sheet = BorderRadius.vertical(
+    top: Radius.circular(large),
+  );
 }
 
 abstract final class AppSizes {

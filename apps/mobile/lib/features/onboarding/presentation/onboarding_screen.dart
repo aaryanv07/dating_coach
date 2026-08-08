@@ -68,69 +68,69 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                AppSpacing.md,
-                AppSpacing.md,
-                0,
-              ),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: BrandLockup(compact: true),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: BrandLockup(compact: true),
+                      ),
                     ),
-                  ),
-                  AppButton(
-                    label: 'Skip',
-                    expand: false,
-                    variant: AppButtonVariant.quiet,
-                    onPressed: () => context.go('/privacy'),
-                  ),
-                ],
+                    AppButton(
+                      label: 'Skip',
+                      expand: false,
+                      variant: AppButtonVariant.quiet,
+                      onPressed: () => context.go('/privacy'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _pages.length,
-                onPageChanged: (index) => setState(() => _pageIndex = index),
-                itemBuilder: (context, index) {
-                  return _OnboardingPage(data: _pages[index]);
-                },
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _pages.length,
+                  onPageChanged: (index) => setState(() => _pageIndex = index),
+                  itemBuilder: (context, index) {
+                    return _OnboardingPage(data: _pages[index]);
+                  },
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xl,
-                0,
-                AppSpacing.xl,
-                AppSpacing.xl,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  0,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  children: [
+                    _ProgressSegments(
+                      currentIndex: _pageIndex,
+                      count: _pages.length,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      label: _pageIndex == _pages.length - 1
+                          ? 'Continue privately'
+                          : 'Continue',
+                      icon: Icons.arrow_forward_rounded,
+                      semanticLabel: 'Continue onboarding',
+                      onPressed: _nextPage,
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  _ProgressSegments(
-                    currentIndex: _pageIndex,
-                    count: _pages.length,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppButton(
-                    label: _pageIndex == _pages.length - 1
-                        ? 'Continue privately'
-                        : 'Continue',
-                    icon: Icons.arrow_forward_rounded,
-                    semanticLabel: 'Continue onboarding',
-                    onPressed: _nextPage,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
