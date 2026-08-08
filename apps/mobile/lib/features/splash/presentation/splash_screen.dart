@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:convo_coach/core/config/app_config.dart';
 import 'package:convo_coach/core/motion/app_motion.dart';
@@ -44,19 +45,40 @@ class _SplashScreenState extends State<SplashScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppPopIn(
-                  child: AppAmbientPulse(
-                    child: const ConvoMark(size: 88, glow: true),
+                  child: SizedBox(
+                    width: 144,
+                    height: 144,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        AppSlowRotate(
+                          child: _GradientHalo(
+                            size: 144,
+                            colors: [
+                              colors.gradientStart,
+                              colors.gradientEnd,
+                              colors.gradientStart,
+                            ],
+                          ),
+                        ),
+                        AppAmbientPulse(
+                          child: const ConvoMark(size: 88, glow: true),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 AppReveal(
                   delay: const Duration(milliseconds: 120),
-                  child: GradientText(
-                    AppConfig.name,
-                    gradient: LinearGradient(
-                      colors: [colors.gradientStart, colors.gradientEnd],
+                  child: AppShimmer(
+                    child: GradientText(
+                      AppConfig.name,
+                      gradient: LinearGradient(
+                        colors: [colors.gradientStart, colors.gradientEnd],
+                      ),
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -67,10 +89,117 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.xl),
+                AppReveal(
+                  delay: const Duration(milliseconds: 320),
+                  child: _PulseDots(color: colors.gradientEnd),
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A soft rotating conic-gradient ring used as a halo behind the brand mark.
+class _GradientHalo extends StatelessWidget {
+  const _GradientHalo({required this.size, required this.colors});
+
+  final double size;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: SweepGradient(
+            colors: [for (final color in colors) color.withValues(alpha: 0.55)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).scaffoldBackgroundColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Three dots pulsing in sequence — a subtle "warming up" indicator.
+class _PulseDots extends StatefulWidget {
+  const _PulseDots({required this.color});
+
+  final Color color;
+
+  @override
+  State<_PulseDots> createState() => _PulseDotsState();
+}
+
+class _PulseDotsState extends State<_PulseDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionScope.reduceMotionOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MotionScope.reduceMotionOf(context)) {
+      return const SizedBox(height: 8);
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              _dot(_controller.value, i),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _dot(double t, int index) {
+    // Smooth periodic pulse: each dot is phase-offset by a third of a cycle.
+    final phase = (t - index / 3) * 2 * math.pi;
+    final active = 0.5 + 0.5 * math.sin(phase);
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: widget.color.withValues(alpha: 0.3 + 0.7 * active),
       ),
     );
   }

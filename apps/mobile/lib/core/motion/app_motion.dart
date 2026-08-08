@@ -100,10 +100,7 @@ class AppPopIn extends StatelessWidget {
       builder: (context, value, child) {
         return Transform.scale(
           scale: value,
-          child: Opacity(
-            opacity: value.clamp(0, 1),
-            child: child,
-          ),
+          child: Opacity(opacity: value.clamp(0, 1), child: child),
         );
       },
     );
@@ -154,11 +151,257 @@ class _AppAmbientPulseState extends State<AppAmbientPulse>
   Widget build(BuildContext context) {
     if (MotionScope.reduceMotionOf(context)) return widget.child;
     return ScaleTransition(
-      scale: Tween<double>(begin: widget.minScale, end: widget.maxScale)
-          .animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
+      scale: Tween<double>(
+        begin: widget.minScale,
+        end: widget.maxScale,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
       child: widget.child,
+    );
+  }
+}
+
+/// Gently floats the child up and down forever — great for orbs and marks.
+class AppFloat extends StatefulWidget {
+  const AppFloat({
+    required this.child,
+    this.amplitude = 10,
+    this.duration = const Duration(seconds: 5),
+    super.key,
+  });
+
+  final Widget child;
+  final double amplitude;
+  final Duration duration;
+
+  @override
+  State<AppFloat> createState() => _AppFloatState();
+}
+
+class _AppFloatState extends State<AppFloat>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
+
+  @override
+  void didUpdateWidget(AppFloat oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+      if (_controller.isAnimating) {
+        _controller
+          ..stop()
+          ..repeat(reverse: true);
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionScope.reduceMotionOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MotionScope.reduceMotionOf(context)) return widget.child;
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_controller.value);
+        return Transform.translate(
+          offset: Offset(0, widget.amplitude * (t * 2 - 1)),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+/// Continuously rotates the child — for gradient halos and rings.
+class AppSlowRotate extends StatefulWidget {
+  const AppSlowRotate({
+    required this.child,
+    this.duration = const Duration(seconds: 8),
+    super.key,
+  });
+
+  final Widget child;
+  final Duration duration;
+
+  @override
+  State<AppSlowRotate> createState() => _AppSlowRotateState();
+}
+
+class _AppSlowRotateState extends State<AppSlowRotate>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
+
+  @override
+  void didUpdateWidget(AppSlowRotate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+      if (_controller.isAnimating) {
+        _controller
+          ..stop()
+          ..repeat();
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionScope.reduceMotionOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MotionScope.reduceMotionOf(context)) return widget.child;
+    return RotationTransition(turns: _controller, child: widget.child);
+  }
+}
+
+/// Sweeps a soft highlight across the child forever — shimmer effect.
+class AppShimmer extends StatefulWidget {
+  const AppShimmer({
+    required this.child,
+    this.duration = const Duration(milliseconds: 2200),
+    super.key,
+  });
+
+  final Widget child;
+  final Duration duration;
+
+  @override
+  State<AppShimmer> createState() => _AppShimmerState();
+}
+
+class _AppShimmerState extends State<AppShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  );
+
+  @override
+  void didUpdateWidget(AppShimmer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.duration != oldWidget.duration) {
+      _controller.duration = widget.duration;
+      if (_controller.isAnimating) {
+        _controller
+          ..stop()
+          ..repeat();
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionScope.reduceMotionOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MotionScope.reduceMotionOf(context)) return widget.child;
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = _controller.value;
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(-1 + t * 4, 0),
+              end: Alignment(0 + t * 4, 0),
+              colors: [
+                Colors.transparent,
+                Colors.white.withValues(alpha: 0.45),
+                Colors.transparent,
+              ],
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+/// Scales down slightly while pressed — tactile feedback for taps.
+class AppTapScale extends StatefulWidget {
+  const AppTapScale({
+    required this.child,
+    this.onTap,
+    this.pressedScale = 0.96,
+    super.key,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final double pressedScale;
+
+  @override
+  State<AppTapScale> createState() => _AppTapScaleState();
+}
+
+class _AppTapScaleState extends State<AppTapScale> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MotionScope.reduceMotionOf(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: !reduce && _pressed ? widget.pressedScale : 1,
+        duration: reduce ? Duration.zero : AppDurations.fast,
+        curve: AppMotion.standardCurve,
+        child: widget.child,
+      ),
     );
   }
 }
