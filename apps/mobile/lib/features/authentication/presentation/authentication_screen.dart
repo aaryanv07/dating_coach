@@ -136,10 +136,9 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
               AppButton(
                 label: 'Continue with email',
                 icon: Icons.arrow_forward_rounded,
-                onPressed:
-                    _emailLooksValid
-                        ? () => _continue(MockAuthMethod.email)
-                        : null,
+                onPressed: _emailLooksValid
+                    ? () => _continue(MockAuthMethod.email)
+                    : null,
               ),
               const SizedBox(height: AppSpacing.xl),
               Text(

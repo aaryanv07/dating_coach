@@ -26,13 +26,12 @@ class CommunicationProfileScreen extends ConsumerWidget {
       body: AppBackground(
         child: profile.when(
           loading: () => const _ProfileSkeleton(),
-          error:
-              (error, stackTrace) => AppErrorState(
-                title: 'Your profile is unavailable.',
-                message: 'Try loading your preferences again.',
-                actionLabel: 'Retry',
-                onAction: () => ref.invalidate(communicationProfileProvider),
-              ),
+          error: (error, stackTrace) => AppErrorState(
+            title: 'Your profile is unavailable.',
+            message: 'Try loading your preferences again.',
+            actionLabel: 'Retry',
+            onAction: () => ref.invalidate(communicationProfileProvider),
+          ),
           data: (value) => _ProfileForm(profile: value),
         ),
       ),

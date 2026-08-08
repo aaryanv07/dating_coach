@@ -18,10 +18,9 @@ class ScreenshotImportScreen extends ConsumerWidget {
   const ScreenshotImportScreen({super.key});
 
   Future<void> _extract(BuildContext context, WidgetRef ref) async {
-    final success =
-        await ref
-            .read(conversationImportProvider.notifier)
-            .extractScreenshots();
+    final success = await ref
+        .read(conversationImportProvider.notifier)
+        .extractScreenshots();
     if (success && context.mounted) context.push('/import/review');
   }
 
@@ -74,10 +73,9 @@ class ScreenshotImportScreen extends ConsumerWidget {
                   icon: Icons.photo_library_outlined,
                   variant: AppButtonVariant.secondary,
                   isLoading: state.isPreparingSources,
-                  onPressed:
-                      state.isBusy || state.isPreparingSources
-                          ? null
-                          : () => unawaited(controller.pickScreenshots()),
+                  onPressed: state.isBusy || state.isPreparingSources
+                      ? null
+                      : () => unawaited(controller.pickScreenshots()),
                 ),
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -116,30 +114,26 @@ class ScreenshotImportScreen extends ConsumerWidget {
                         children: [
                           IconButton(
                             tooltip: 'Move ${source.name} earlier',
-                            onPressed:
-                                source.index == 0
-                                    ? null
-                                    : () => unawaited(
-                                      controller.moveSource(source.id, -1),
-                                    ),
+                            onPressed: source.index == 0
+                                ? null
+                                : () => unawaited(
+                                    controller.moveSource(source.id, -1),
+                                  ),
                             icon: const Icon(Icons.arrow_upward_rounded),
                           ),
                           IconButton(
                             tooltip: 'Move ${source.name} later',
-                            onPressed:
-                                source.index == state.sources.length - 1
-                                    ? null
-                                    : () => unawaited(
-                                      controller.moveSource(source.id, 1),
-                                    ),
+                            onPressed: source.index == state.sources.length - 1
+                                ? null
+                                : () => unawaited(
+                                    controller.moveSource(source.id, 1),
+                                  ),
                             icon: const Icon(Icons.arrow_downward_rounded),
                           ),
                           IconButton(
                             tooltip: 'Remove ${source.name}',
-                            onPressed:
-                                () => unawaited(
-                                  controller.removeSource(source.id),
-                                ),
+                            onPressed: () =>
+                                unawaited(controller.removeSource(source.id)),
                             icon: Icon(
                               Icons.close_rounded,
                               color: context.appColors.risk,
@@ -188,10 +182,10 @@ class ScreenshotImportScreen extends ConsumerWidget {
                   isLoading: state.isBusy,
                   onPressed:
                       state.sources.isEmpty ||
-                              state.isBusy ||
-                              state.isPreparingSources
-                          ? null
-                          : () => unawaited(_extract(context, ref)),
+                          state.isBusy ||
+                          state.isPreparingSources
+                      ? null
+                      : () => unawaited(_extract(context, ref)),
                 ),
               ],
             ),

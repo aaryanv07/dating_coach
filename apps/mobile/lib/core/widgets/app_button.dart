@@ -98,10 +98,7 @@ class _AppButtonState extends ConsumerState<AppButton> {
         if (widget.isLoading)
           SizedBox.square(
             dimension: AppSizes.iconSmall,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: foreground,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
           )
         else if (widget.icon != null)
           Icon(widget.icon, size: AppSizes.iconSmall, color: foreground),

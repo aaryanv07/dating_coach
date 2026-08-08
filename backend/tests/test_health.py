@@ -41,11 +41,7 @@ def test_readiness_fails_closed_without_required_urls() -> None:
 
 
 def test_service_index_does_not_expose_configuration(client: TestClient) -> None:
-    response = client.get("/")
+    response = client.get("/", follow_redirects=False)
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "service": "ConvoCoach API",
-        "version": "0.1.0",
-        "documentation": "/docs",
-    }
+    assert response.status_code == 307
+    assert response.headers["location"] == "/docs"

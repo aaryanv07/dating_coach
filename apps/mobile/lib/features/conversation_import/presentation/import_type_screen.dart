@@ -67,10 +67,9 @@ class ImportTypeScreen extends ConsumerWidget {
                 child: AppCard(
                   highlight: true,
                   semanticLabel: 'Import chat screenshots',
-                  onTap:
-                      () => unawaited(
-                        _open(context, ref, ConversationImportType.screenshot),
-                      ),
+                  onTap: () => unawaited(
+                    _open(context, ref, ConversationImportType.screenshot),
+                  ),
                   child: const _ImportRow(
                     icon: Icons.photo_library_outlined,
                     title: 'Chat screenshots',
@@ -84,10 +83,9 @@ class ImportTypeScreen extends ConsumerWidget {
                 delay: const Duration(milliseconds: 180),
                 child: AppCard(
                   semanticLabel: 'Paste a conversation',
-                  onTap:
-                      () => unawaited(
-                        _open(context, ref, ConversationImportType.paste),
-                      ),
+                  onTap: () => unawaited(
+                    _open(context, ref, ConversationImportType.paste),
+                  ),
                   child: const _ImportRow(
                     icon: Icons.content_paste_rounded,
                     title: 'Paste conversation',

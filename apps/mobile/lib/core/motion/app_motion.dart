@@ -100,10 +100,7 @@ class AppPopIn extends StatelessWidget {
       builder: (context, value, child) {
         return Transform.scale(
           scale: value,
-          child: Opacity(
-            opacity: value.clamp(0, 1),
-            child: child,
-          ),
+          child: Opacity(opacity: value.clamp(0, 1), child: child),
         );
       },
     );
@@ -154,10 +151,10 @@ class _AppAmbientPulseState extends State<AppAmbientPulse>
   Widget build(BuildContext context) {
     if (MotionScope.reduceMotionOf(context)) return widget.child;
     return ScaleTransition(
-      scale: Tween<double>(begin: widget.minScale, end: widget.maxScale)
-          .animate(
-            CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-          ),
+      scale: Tween<double>(
+        begin: widget.minScale,
+        end: widget.maxScale,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
       child: widget.child,
     );
   }

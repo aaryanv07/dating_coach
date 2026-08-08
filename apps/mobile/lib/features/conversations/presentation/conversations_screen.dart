@@ -28,27 +28,23 @@ class ConversationsScreen extends ConsumerWidget {
       body: AppBackground(
         child: conversations.when(
           loading: () => const _ConversationListSkeleton(),
-          error:
-              (error, stackTrace) => AppErrorState(
-                title: 'Conversations are unavailable.',
-                message: 'Try loading your private list again.',
-                actionLabel: 'Retry',
-                onAction:
-                    () => unawaited(
-                      ref.read(conversationListProvider.notifier).refresh(),
-                    ),
-              ),
-          data:
-              (items) =>
-                  items.isEmpty
-                      ? AppEmptyState(
-                        title: 'A quiet start.',
-                        message:
-                            'Saved conversations appear here only after you choose to keep them.',
-                        actionLabel: 'Create',
-                        onAction: () => unawaited(showCreateActions(context)),
-                      )
-                      : _ConversationList(items: items),
+          error: (error, stackTrace) => AppErrorState(
+            title: 'Conversations are unavailable.',
+            message: 'Try loading your private list again.',
+            actionLabel: 'Retry',
+            onAction: () => unawaited(
+              ref.read(conversationListProvider.notifier).refresh(),
+            ),
+          ),
+          data: (items) => items.isEmpty
+              ? AppEmptyState(
+                  title: 'A quiet start.',
+                  message:
+                      'Saved conversations appear here only after you choose to keep them.',
+                  actionLabel: 'Create',
+                  onAction: () => unawaited(showCreateActions(context)),
+                )
+              : _ConversationList(items: items),
         ),
       ),
     );
@@ -98,8 +94,8 @@ class _ConversationList extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
           itemCount: items.length + 1,
-          separatorBuilder:
-              (context, index) => const SizedBox(height: AppSpacing.md),
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             if (index == 0) {
               return AppReveal(
@@ -130,8 +126,8 @@ class _ConversationList extends ConsumerWidget {
                   trailing: IconButton(
                     tooltip: 'Delete ${conversation.title}',
                     icon: const Icon(Icons.delete_outline_rounded),
-                    onPressed:
-                        () => unawaited(_delete(context, ref, conversation)),
+                    onPressed: () =>
+                        unawaited(_delete(context, ref, conversation)),
                   ),
                 ),
               ),
