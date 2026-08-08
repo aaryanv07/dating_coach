@@ -428,3 +428,35 @@ flags complement rather than replace ConvoCoach's independent validation,
 safety, consent, privacy, cost, and release gates. The legacy direct OpenAI and
 Z.ai adapters remain explicit rollback modes; no automatic fallback can create
 an unbudgeted second provider call.
+
+## 2026-08-08: Freeze the dating_coach(2) UI for App Store preparation
+
+The current `dating_coach(2)` Flutter interface is the release design baseline.
+App Store preparation may add required privacy, accessibility, configuration,
+signing, and operational behavior, but it must not silently restyle the product
+or copy third-party brand assets. The first release-hardening pass adds an
+explicit owner-controlled account export and the required photo-library purpose
+copy without changing the navigation or visual design language.
+
+The export uses an authenticated, owner-scoped, versioned backend contract and a
+temporary on-device file passed to the platform share sheet. Screenshot bytes,
+credential material, identity-provider subjects, transaction hashes, prompts,
+and internal request identifiers are excluded. Generated iOS App Store icons are
+also rebuilt without an alpha channel and protected by a regression test.
+
+These repository changes do not constitute App Store deployment. Distribution
+signing, production API/TLS/database/cache readiness, production Google and
+Apple OIDC verification, store products, published legal URLs, independent AI
+safety approval, and App Store Connect submission remain separately evidenced
+launch gates.
+
+## 2026-08-08: The exact `SIP` rename is rejected during store preflight
+
+The requested conditional rename is not applied. Live Apple and Google store
+results already contain multiple `Sip` products, including a social-networking
+app published by Sip Inc. and several subscription apps. The short term also
+has an established VoIP meaning. Using the exact name would create avoidable
+store-search, metadata, and brand-confusion risk, and App Store Connect cannot
+authoritatively reserve a replacement name until the paid developer membership
+is active. ConvoCoach remains the installed display name while a distinctive
+candidate is selected and cleared.

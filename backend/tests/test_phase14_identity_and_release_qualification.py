@@ -210,12 +210,15 @@ async def test_production_verifier_accepts_only_policy_validated_claims() -> Non
                 "exp": int((datetime.now(UTC) + timedelta(minutes=5)).timestamp()),
                 "email": "verified@example.invalid",
                 "email_verified": True,
+                "permissions": ["read:user-metrics"],
+                "scope": "openid profile",
             }
 
     verifier = ProductionAuthenticationVerifier(verifier.policy, decoder=Decoder())
     claims = await verifier.verify("private-production-token")
     assert claims.subject == "subject-a"
     assert claims.email == "verified@example.invalid"
+    assert claims.permissions == ("read:user-metrics", "openid", "profile")
 
 
 @pytest.mark.anyio

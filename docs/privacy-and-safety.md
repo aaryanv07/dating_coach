@@ -77,8 +77,12 @@ bytes remain temporary, voice notes are not transcribed without explicit
 consent, contact and payment metadata is minimized or rejected, unknown content
 is not guessed, and screenshot bytes or paths never reach the backend. Event
 replacement is owner scoped and consent gated; conversation/account deletion
-cascades through both event tables. The existing product export surface still
-needs to expose events before a production release that retains event history.
+cascades through both event tables. The authenticated `account-export.v1`
+surface includes reviewed events and relationships in an owner-scoped JSON file
+while excluding raw screenshot bytes and paths, identity-provider subjects,
+transaction hashes, internal request identifiers, and AI prompts. The mobile
+client warns that the export contains private data, uses the system share sheet,
+and deletes its temporary file after that sheet returns.
 
 Phase 6B derives deterministic analytics in memory from accepted canonical
 events only. It creates no database table, migration, API route, cache, history,

@@ -66,6 +66,11 @@ void main() {
     expect(iosLocalInfo, contains('NSAllowsLocalNetworking'));
     expect(iosLocalInfo, contains('ConvoCoach development server'));
     expect(iosReleaseInfo, isNot(contains('NSAllowsLocalNetworking')));
+    expect(iosReleaseInfo, contains('NSPhotoLibraryUsageDescription'));
+    expect(
+      iosReleaseInfo,
+      contains('conversation screenshots that you explicitly choose'),
+    );
     expect(
       RegExp(
         r'249021D4217E4FDB00AE95B9 /\* Profile \*/ = \{[\s\S]*?'
@@ -80,6 +85,20 @@ void main() {
       ).hasMatch(iosProject),
       isTrue,
     );
+  });
+
+  test('App Store icon assets do not contain an alpha channel', () {
+    final icons = Directory(
+      'ios/Runner/Assets.xcassets/AppIcon.appiconset',
+    ).listSync().whereType<File>().where((file) => file.path.endsWith('.png'));
+
+    expect(icons, isNotEmpty);
+    for (final icon in icons) {
+      final bytes = icon.readAsBytesSync();
+      expect(bytes.length, greaterThan(25), reason: icon.path);
+      expect(bytes.sublist(1, 4), <int>[0x50, 0x4e, 0x47], reason: icon.path);
+      expect(bytes[25], isNot(anyOf(4, 6)), reason: icon.path);
+    }
   });
 
   test('local device scripts prefer a bounded Bonjour hostname', () {

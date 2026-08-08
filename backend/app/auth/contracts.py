@@ -11,6 +11,8 @@ MAX_AUTH_ISSUER_LENGTH = 512
 MAX_AUTH_AUDIENCE_LENGTH = 255
 MAX_AUTH_EMAIL_LENGTH = 320
 MAX_AUTH_DISPLAY_NAME_LENGTH = 120
+MAX_AUTH_PERMISSIONS = 64
+MAX_AUTH_PERMISSION_LENGTH = 128
 
 
 class AuthClaimValidationError(ValueError):
@@ -35,6 +37,7 @@ class AuthClaims:
     subject: str
     issuer: str = LOCAL_AUTH_ISSUER
     audiences: tuple[str, ...] = (LOCAL_AUTH_AUDIENCE,)
+    permissions: tuple[str, ...] = ()
     email: str | None = None
     email_verified: bool = False
     display_name: str | None = None
@@ -61,6 +64,18 @@ class AuthClaims:
                 field="auth_audience",
                 maximum=MAX_AUTH_AUDIENCE_LENGTH,
             )
+        if len(self.permissions) > MAX_AUTH_PERMISSIONS or len(set(self.permissions)) != len(
+            self.permissions
+        ):
+            raise AuthClaimValidationError("auth_permissions_invalid")
+        for permission in self.permissions:
+            _validate_text(
+                permission,
+                field="auth_permissions",
+                maximum=MAX_AUTH_PERMISSION_LENGTH,
+            )
+            if any(character.isspace() for character in permission):
+                raise AuthClaimValidationError("auth_permissions_invalid")
         if self.email is not None:
             _validate_text(
                 self.email,

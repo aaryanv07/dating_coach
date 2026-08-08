@@ -46,6 +46,14 @@ class AccountActions {
     }
   }
 
+  Future<String?> exportAccount() async {
+    try {
+      return await accountPrivacy.exportAccountData();
+    } on Object {
+      return null;
+    }
+  }
+
   Future<bool> deleteAccount() async {
     try {
       await accountPrivacy.requestAccountDeletion();

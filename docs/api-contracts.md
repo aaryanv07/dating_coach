@@ -32,6 +32,8 @@ logged.
 | `POST` | `/conversations/{id}/confirm` | Persist a reviewed normalized import |
 | `POST` | `/conversations/{id}/coach-preview` | Run the default-off deterministic mock preview |
 | `GET` | `/subscription/status` | Read the authenticated server-owned plan and AI allowance snapshot |
+| `GET` | `/admin/user-metrics` | Read aggregate account/plan/AI-activity counts with `read:user-metrics` permission |
+| `GET` | `/privacy/export` | Download the authenticated owner's versioned JSON export; never returns raw screenshot bytes, credentials, or internal request identifiers |
 | `POST` | `/privacy/delete-account` | Remove private data and queue provider cleanup |
 
 Conversation list items include import type, confirmation status, and readiness,
@@ -49,6 +51,13 @@ OCR provenance. Screenshot bytes, paths, URLs, source hashes, and analysis field
 are not part of the contract. A visible time with no visible date may be retained
 as bounded `visible_timestamp_text` while the parsed timestamp stays null;
 estimated timestamps are rejected.
+
+`GET /privacy/export` returns `account-export.v1` with `private, no-store`
+headers and an attachment filename. It includes the owner's account choices,
+consents, reviewed conversation records and events, entitlements, and aggregate
+AI usage records. Ownership is enforced from the verified bearer token. It
+excludes the OIDC subject, transaction hashes, idempotency/fingerprint fields,
+correlation identifiers, raw screenshot bytes or paths, and AI prompts.
 
 `POST /conversations/{id}/coach-preview` accepts no request body. It requires a
 verified owner, active `save_conversation_history` consent, a confirmed
@@ -115,3 +124,10 @@ Every response carries `X-Correlation-ID`. A supplied identifier is accepted
 only when it is a canonical UUID. Unexpected errors and oversized requests use
 content-safe envelopes containing a stable code and that UUID only. Production
 does not expose `/docs` or `/openapi.json`.
+
+`GET /api/v1/admin/user-metrics` is an operator contract, not a mobile product
+route. Its `user-metrics.v1` response is aggregate-only and non-cacheable. It
+requires the independently verified `read:user-metrics` OAuth permission and
+never returns identity fields, account rows, private content, or provider
+payloads. Metric definitions and Auth0 setup are documented in
+`docs/operator-user-metrics.md`.

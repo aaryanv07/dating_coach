@@ -109,3 +109,9 @@ def test_ai_usage_tables_are_content_free_and_owner_cascaded() -> None:
     for table in (entitlements, usage):
         user_fk = next(key for key in table.foreign_keys if key.column.table.name == "users")
         assert user_fk.ondelete == "CASCADE"
+
+
+def test_user_metrics_need_no_parallel_identity_store() -> None:
+    """Operator aggregates must keep the existing users table as source of truth."""
+    assert "operator_users" not in Base.metadata.tables
+    assert "analytics_users" not in Base.metadata.tables

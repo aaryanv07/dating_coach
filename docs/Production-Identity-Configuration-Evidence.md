@@ -39,9 +39,19 @@ permission to mark any corresponding production gate as passed.
 
 ## Deliberately unqualified
 
+- On 2026-08-08 Xcode showed only `Personal Team 918830770660` with on-device
+  testing access, and Keychain contained one Apple Development identity but no
+  Apple Distribution identity. App Store Connect reported that the Apple
+  Account was not eligible. This is consistent with an Apple Account that has
+  not yet completed paid Apple Developer Program enrollment; it cannot create
+  an App Store record, distribution profile, or distributable archive.
 - Google uses Auth0 development credentials and is not a production Google OIDC
   registration.
 - An Apple connection has not been created because the production Apple Services
   ID, team, key ID, and private signing key are not yet available.
 - Callback handling and login/logout have not passed a physical-device flow.
 - The Auth0 trial is not evidence of an approved long-term production plan.
+- The `read:user-metrics` API permission, least-privilege operator role, and
+  separate private operator client still require dashboard configuration and
+  an authorization test against the deployed API. The implementation fails
+  closed until those steps are complete.

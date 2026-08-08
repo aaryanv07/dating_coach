@@ -126,4 +126,21 @@ void main() {
     expect(find.textContaining('Your space in'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
+
+  testWidgets('settings exposes an explicit owner-controlled data export', (
+    tester,
+  ) async {
+    await pumpConvoCoach(tester, initialLocation: '/settings');
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('export-account-action')),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.byKey(const Key('export-account-action')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Export your data?'), findsOneWidget);
+    expect(find.byKey(const Key('confirm-account-export')), findsOneWidget);
+  });
 }

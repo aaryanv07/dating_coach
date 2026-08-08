@@ -25,6 +25,8 @@ Before creating a production process:
    evidence exists.
 10. Require the Phase 14 evaluator to report `qualified`; the current example
     truthfully reports `blocked`.
+11. Configure `read:user-metrics` as a least-privilege Auth0 API permission only
+    for the private operator client. Never grant it to the mobile application.
 
 ## Required production environment
 
@@ -71,6 +73,16 @@ Use the environment-specific virtual environment path where it differs. Review
 the downgrade of each revision in a disposable or restored environment before
 release. The application startup/readiness code only reads
 `alembic_version`; it never calls Alembic or changes schema state.
+
+## User-count operations
+
+The authoritative registered-user count comes from PostgreSQL through the
+protected aggregate endpoint `GET /api/v1/admin/user-metrics`. Follow
+`docs/operator-user-metrics.md` for Auth0 permission setup, exact metric
+definitions, and a token-safe read procedure. Do not query production from the
+mobile client, expose an account list, or treat Auth0's dashboard count as the
+application source of truth; Auth0 can include identities that never completed
+application-user provisioning.
 
 ## Service startup and health
 

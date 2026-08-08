@@ -81,6 +81,21 @@ async def get_verified_claims(
 
 VerifiedClaims = Annotated[AuthClaims, Depends(get_verified_claims)]
 
+USER_METRICS_PERMISSION = "read:user-metrics"
+
+
+async def require_user_metrics_permission(claims: VerifiedClaims) -> AuthClaims:
+    """Allow aggregate user metrics only to explicitly authorized operators."""
+    if USER_METRICS_PERMISSION not in claims.permissions:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient operator permission",
+        )
+    return claims
+
+
+UserMetricsOperator = Annotated[AuthClaims, Depends(require_user_metrics_permission)]
+
 
 async def get_current_user(
     claims: VerifiedClaims,

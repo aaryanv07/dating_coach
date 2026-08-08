@@ -9,6 +9,7 @@ def test_openapi_contains_only_authorized_product_routes(client: TestClient) -> 
     assert paths == {
         "/health/live",
         "/health/ready",
+        "/api/v1/admin/user-metrics",
         "/api/v1/auth/session/verify",
         "/api/v1/users/me",
         "/api/v1/users/me/preferences",
@@ -26,4 +27,5 @@ def test_openapi_contains_only_authorized_product_routes(client: TestClient) -> 
         "/api/v1/subscription/notifications/apple",
         "/api/v1/subscription/notifications/google",
         "/api/v1/privacy/delete-account",
+        "/api/v1/privacy/export",
     }

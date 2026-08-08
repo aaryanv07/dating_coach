@@ -11,6 +11,7 @@ import 'package:convo_coach/features/authentication/application/mock_auth_contro
 import 'package:convo_coach/features/conversations/application/conversation_list_controller.dart';
 import 'package:convo_coach/features/progress/application/progress_dashboard_controller.dart';
 import 'package:convo_coach/features/settings/application/account_actions.dart';
+import 'package:convo_coach/features/settings/application/account_export_sharer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -86,6 +87,49 @@ class SettingsScreen extends ConsumerWidget {
     ref.invalidate(progressDashboardProvider);
     ref.invalidate(conversationListProvider);
     context.go('/auth');
+  }
+
+  Future<void> _exportAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export your data?'),
+        content: const Text(
+          'The export can contain your profile and saved conversation text. Choose a private destination in the system share sheet. ConvoCoach deletes its temporary export after sharing.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('confirm-account-export'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Export'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final export = await ref.read(accountActionsProvider).exportAccount();
+    if (!context.mounted) return;
+    if (export == null) {
+      _showFailure(context, 'Your data export could not be prepared.');
+      return;
+    }
+    final renderObject = context.findRenderObject();
+    final shareOrigin = renderObject is RenderBox
+        ? renderObject.localToGlobal(Offset.zero) & renderObject.size
+        : null;
+    try {
+      await ref
+          .read(accountExportSharerProvider)
+          .share(export, sharePositionOrigin: shareOrigin);
+    } on Object {
+      if (context.mounted) {
+        _showFailure(context, 'The system share sheet could not be opened.');
+      }
+    }
   }
 
   void _showFailure(BuildContext context, String message) {
@@ -241,6 +285,15 @@ class SettingsScreen extends ConsumerWidget {
                     title: const Text('Sign out'),
                     subtitle: const Text('Clear private data from this device'),
                     onTap: () => _signOut(context, ref),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    key: const Key('export-account-action'),
+                    minTileHeight: AppSizes.minimumTouchTarget,
+                    leading: const Icon(Icons.file_download_outlined),
+                    title: const Text('Export my data'),
+                    subtitle: const Text('Share a private JSON copy'),
+                    onTap: () => _exportAccount(context, ref),
                   ),
                   const Divider(height: 1),
                   ListTile(

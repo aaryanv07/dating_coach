@@ -89,6 +89,14 @@ and signed Android AAB from the exact clean revision. Complete Phase 6A.3 plus
 authentication, store purchase, privacy, deletion/export, reduced-motion, and
 crash-free launch tests on representative physical iPhone and Android devices.
 
+For export qualification, sign in as two synthetic sandbox users. Create
+reviewed data for each, export from the first account, and verify the JSON is
+`account-export.v1`, contains only the first owner's records, opens through the
+system share sheet, and leaves no ConvoCoach export in the app's temporary
+directory after sharing. For deletion qualification, verify application data,
+the broker identity, processor records, and backups follow the approved deletion
+schedule; a locally queued provider cleanup is not sufficient by itself.
+
 ## 6. Governance and controlled launch
 
 Replace all placeholders in the privacy and terms drafts. Obtain approved processor

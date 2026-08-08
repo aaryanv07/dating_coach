@@ -799,3 +799,35 @@ quality, independent safety approval, or production readiness.
   tests/test_phase18_zai_glm_integration.py)
 (cd apps/mobile && flutter test test/phase16_openai_terra_coach_test.dart)
 ```
+
+## 2026-08-08 App Store preparation verification
+
+The owner-controlled export regression verifies authenticated, owner-scoped
+serialization, no-store/attachment headers, inclusion of reviewed conversation
+events, exclusion of another user's data, and exclusion of credential,
+transaction, screenshot, prompt, and internal request fields. Mobile coverage
+verifies authenticated transport, bounded response size, missing-token failure,
+an explicit disclosure/confirmation flow, platform sharing, deletion of the
+temporary export, and preservation of the session and local reflection.
+
+The iOS release-purpose regression verifies the photo-library usage description.
+Every generated iOS AppIcon PNG is inspected through its PNG IHDR color type and
+must be opaque. On 2026-08-08 Ruff format/check, strict MyPy, and all 242 backend
+tests passed. Dart formatting and `flutter analyze` passed, and all 179 Flutter
+tests passed from a temporary parenthesis-free path because the installed
+Flutter 3.44 toolchain's macOS native-library parser cannot handle `(2)` in the
+checkout path. The repository was restored to its original path immediately
+after the run.
+
+This verifies repository behavior only. A distribution-signed archive,
+App Store Connect upload, production identity and backend endpoints, sandbox
+subscription flow, and final review submission are not yet evidenced.
+
+After the conditional `SIP` rename was rejected by live-store preflight, the
+unchanged ConvoCoach display name and frozen `dating_coach(2)` UI were rebuilt
+as a signed Profile app on 2026-08-08. The 85.9 MB app passed local code-sign
+verification, installed on the paired iPhone 13 Pro Max, launched through
+`devicectl`, and its standalone process remained alive after 15 seconds. The
+refreshed local backend returned liveness 200 through both loopback and the
+Bonjour host. This is current-device installation evidence, not Apple
+Distribution signing or App Store production deployment.

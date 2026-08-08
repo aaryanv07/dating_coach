@@ -197,12 +197,34 @@ def _claims_from_payload(payload: Mapping[str, object]) -> AuthClaims:
         subject=subject,
         issuer=issuer,
         audiences=audiences,
+        permissions=_permissions_from_payload(payload),
         email=email,
         email_verified=payload.get("email_verified") is True,
         display_name=display_name,
         issued_at=_required_numeric_date(payload, "iat"),
         expires_at=_required_numeric_date(payload, "exp"),
     )
+
+
+def _permissions_from_payload(payload: Mapping[str, object]) -> tuple[str, ...]:
+    """Normalize standard OAuth scopes and Auth0 RBAC permissions."""
+    permission_value = payload.get("permissions")
+    if permission_value is None:
+        permissions: list[str] = []
+    elif isinstance(permission_value, list) and all(
+        isinstance(item, str) for item in permission_value
+    ):
+        permissions = list(cast(list[str], permission_value))
+    else:
+        raise AuthenticationError("authentication_failed")
+
+    scope_value = payload.get("scope")
+    if scope_value is not None:
+        if not isinstance(scope_value, str):
+            raise AuthenticationError("authentication_failed")
+        permissions.extend(scope_value.split())
+
+    return tuple(dict.fromkeys(permissions))
 
 
 def _required_string_claim(payload: Mapping[str, object], key: str) -> str:

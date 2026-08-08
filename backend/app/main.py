@@ -15,6 +15,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import __version__
 from app.api.routes import (
+    admin,
     authentication,
     communication_profile,
     consents,
@@ -129,6 +130,7 @@ def create_app(
         store_purchase_verifier or build_store_purchase_verifier(runtime_settings)
     )
     application.include_router(health.router)
+    application.include_router(admin.router)
     application.include_router(authentication.router)
     application.include_router(users.router)
     application.include_router(communication_profile.router)
