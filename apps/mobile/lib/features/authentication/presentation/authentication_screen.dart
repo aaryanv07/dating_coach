@@ -1,7 +1,10 @@
 import 'package:convo_coach/core/config/app_config.dart';
 import 'package:convo_coach/core/haptics/app_haptics.dart';
+import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_input.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
@@ -36,94 +39,116 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(leading: const BackButton()),
-      body: ResponsiveContent(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-          children: [
-            Text(
-              'Your space in ${AppConfig.name}.',
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Choose a preview sign-in. No account or network request is created in this build.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.science_outlined, color: context.appColors.info),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Mock mode',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            AppButton(
-              label: 'Continue with Apple',
-              icon: Icons.apple,
-              variant: AppButtonVariant.secondary,
-              onPressed: () => _continue(MockAuthMethod.apple),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: 'Continue with Google',
-              icon: Icons.public_rounded,
-              variant: AppButtonVariant.secondary,
-              onPressed: () => _continue(MockAuthMethod.google),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Row(
-              children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
+      body: AppBackground(
+        child: ResponsiveContent(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+            children: [
+              AppReveal(
+                child: GradientText(
+                  'Your space in ${AppConfig.name}.',
+                  gradient: LinearGradient(
+                    colors: [colors.gradientStart, colors.gradientEnd],
                   ),
-                  child: Text(
-                    'or',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
-                const Expanded(child: Divider()),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            AppTextField(
-              label: 'Email',
-              hint: 'you@example.com',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.done,
-              autofillHints: const [AutofillHints.email],
-              prefixIcon: Icons.mail_outline_rounded,
-              onChanged: (value) {
-                final looksValid = value.contains('@') && value.contains('.');
-                if (looksValid != _emailLooksValid) {
-                  setState(() => _emailLooksValid = looksValid);
-                }
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: 'Continue with email',
-              icon: Icons.arrow_forward_rounded,
-              onPressed: _emailLooksValid
-                  ? () => _continue(MockAuthMethod.email)
-                  : null,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'By continuing, you confirm the age and privacy choices you just made.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppReveal(
+                delay: const Duration(milliseconds: 60),
+                child: Text(
+                  'Choose a preview sign-in. No account or network request is created in this build.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              AppReveal(
+                delay: const Duration(milliseconds: 120),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.science_outlined, color: context.appColors.info),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Mock mode',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              AppReveal(
+                delay: const Duration(milliseconds: 180),
+                child: AppButton(
+                  label: 'Continue with Apple',
+                  icon: Icons.apple,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => _continue(MockAuthMethod.apple),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppReveal(
+                delay: const Duration(milliseconds: 240),
+                child: AppButton(
+                  label: 'Continue with Google',
+                  icon: Icons.public_rounded,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => _continue(MockAuthMethod.google),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: Text(
+                      'or',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              AppTextField(
+                label: 'Email',
+                hint: 'you@example.com',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.email],
+                prefixIcon: Icons.mail_outline_rounded,
+                onChanged: (value) {
+                  final looksValid = value.contains('@') && value.contains('.');
+                  if (looksValid != _emailLooksValid) {
+                    setState(() => _emailLooksValid = looksValid);
+                  }
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'Continue with email',
+                icon: Icons.arrow_forward_rounded,
+                onPressed:
+                    _emailLooksValid
+                        ? () => _continue(MockAuthMethod.email)
+                        : null,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'By continuing, you confirm the age and privacy choices you just made.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );

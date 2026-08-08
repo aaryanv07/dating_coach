@@ -1,0 +1,1 @@
+- [Flutter tooling](flutter-tooling.md) — no flutter on PATH; use nix-store SDK's `dart format` as a syntax gate; analyze needs pub deps.

@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:convo_coach/core/motion/app_motion.dart';
+import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
@@ -30,67 +33,94 @@ class ImportTypeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.appColors;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Import conversation')),
-      body: ResponsiveContent(
-        maxWidth: 720,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: AppSpacing.xxxl),
-          children: [
-            const SizedBox(height: AppSpacing.lg),
-            AppReveal(
-              child: Text(
-                'Bring the conversation into focus.',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Nothing is interpreted until you review and confirm every message.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            AppCard(
-              semanticLabel: 'Import chat screenshots',
-              onTap: () => unawaited(
-                _open(context, ref, ConversationImportType.screenshot),
-              ),
-              child: const _ImportRow(
-                icon: Icons.photo_library_outlined,
-                title: 'Chat screenshots',
-                subtitle:
-                    'Choose several images and correct the extracted text.',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppCard(
-              semanticLabel: 'Paste a conversation',
-              onTap: () =>
-                  unawaited(_open(context, ref, ConversationImportType.paste)),
-              child: const _ImportRow(
-                icon: Icons.content_paste_rounded,
-                title: 'Paste conversation',
-                subtitle: 'Add message text directly, one message per line.',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Opacity(
-              opacity: AppOpacity.disabled,
-              child: AppCard(
-                child: _ImportRow(
-                  icon: Icons.account_box_outlined,
-                  title: 'Profile screenshot',
-                  subtitle: 'Coming in a future phase.',
+      body: AppBackground(
+        child: ResponsiveContent(
+          maxWidth: 720,
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xxxl),
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              AppReveal(
+                child: GradientText(
+                  'Bring the conversation into focus.',
+                  gradient: LinearGradient(
+                    colors: [colors.gradientStart, colors.gradientEnd],
+                  ),
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const AppOfflineState(
-              title: 'Prepared on this device',
-              message:
-                  'Screenshot extraction uses a replaceable on-device mock in this phase. Source images are temporary.',
-            ),
-          ],
+              const SizedBox(height: AppSpacing.sm),
+              AppReveal(
+                delay: const Duration(milliseconds: 60),
+                child: Text(
+                  'Nothing is interpreted until you review and confirm every message.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              AppReveal(
+                delay: const Duration(milliseconds: 120),
+                child: AppCard(
+                  highlight: true,
+                  semanticLabel: 'Import chat screenshots',
+                  onTap:
+                      () => unawaited(
+                        _open(context, ref, ConversationImportType.screenshot),
+                      ),
+                  child: const _ImportRow(
+                    icon: Icons.photo_library_outlined,
+                    title: 'Chat screenshots',
+                    subtitle:
+                        'Choose several images and correct the extracted text.',
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppReveal(
+                delay: const Duration(milliseconds: 180),
+                child: AppCard(
+                  semanticLabel: 'Paste a conversation',
+                  onTap:
+                      () => unawaited(
+                        _open(context, ref, ConversationImportType.paste),
+                      ),
+                  child: const _ImportRow(
+                    icon: Icons.content_paste_rounded,
+                    title: 'Paste conversation',
+                    subtitle:
+                        'Add message text directly, one message per line.',
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const AppReveal(
+                delay: Duration(milliseconds: 240),
+                child: Opacity(
+                  opacity: AppOpacity.disabled,
+                  child: AppCard(
+                    child: _ImportRow(
+                      icon: Icons.account_box_outlined,
+                      title: 'Profile screenshot',
+                      subtitle: 'Coming in a future phase.',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              const AppReveal(
+                delay: Duration(milliseconds: 300),
+                child: AppOfflineState(
+                  title: 'Prepared on this device',
+                  message:
+                      'Screenshot extraction uses a replaceable on-device mock in this phase. Source images are temporary.',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
