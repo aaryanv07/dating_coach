@@ -4,6 +4,7 @@ import 'package:convo_coach/core/haptics/app_haptics.dart';
 import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_theme.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_vibrant_backdrop.dart';
 import 'package:flutter/material.dart';
@@ -26,14 +27,14 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const Key('animated-splash-content')), findsOneWidget);
-    expect(find.byKey(const Key('splash-conversation-signal')), findsOneWidget);
+    expect(find.text('ConvoCoach'), findsOneWidget);
+    expect(find.byType(AppSlowRotate), findsOneWidget);
 
     await tester.pump(AppDurations.fast);
-    expect(find.byKey(const Key('animated-splash-content')), findsOneWidget);
+    expect(find.text('ConvoCoach'), findsOneWidget);
 
     await tester.pumpAndSettle();
-    expect(find.text('START WITH\nYOUR VOICE'), findsOneWidget);
+    expect(find.text('Understand every conversation.'), findsOneWidget);
   });
 
   testWidgets('coach setup reveal honors the system motion preference', (
@@ -55,10 +56,8 @@ void main() {
     );
     await tester.pump();
 
-    final reveal = tester.widget<TweenAnimationBuilder<double>>(
-      find.byKey(const Key('coach-style-hero-entry')),
-    );
-    expect(reveal.duration, Duration.zero);
+    expect(find.text('Understand every conversation.'), findsOneWidget);
+    expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -84,7 +83,7 @@ void main() {
     );
     await tester.pump();
     final pressed = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
-    expect(pressed.scale, 0.98);
+    expect(pressed.scale, 0.96);
     expect(pressed.duration, AppDurations.fast);
 
     await gesture.up();
@@ -130,36 +129,19 @@ void main() {
     expect(find.byKey(const Key('mermaid-wave-field')), findsOneWidget);
   });
 
-  testWidgets('home preview responds with bounded 3D tilt', (tester) async {
+  testWidgets('GitHub home ambient motion completes and settles', (
+    tester,
+  ) async {
     await pumpConvoCoach(tester, initialLocation: '/home');
 
-    final preview = find.byKey(const Key('home-3d-preview-transform'));
-    final initial = List<double>.of(
-      tester.widget<AnimatedContainer>(preview).transform!.storage,
-    );
-    final center = tester.getCenter(preview);
-    final listener = tester.widget<Listener>(
-      find.ancestor(of: preview, matching: find.byType(Listener)).first,
-    );
-    listener.onPointerMove!(
-      PointerMoveEvent(position: center + const Offset(42, 18)),
-    );
-    await tester.pump();
-
-    final tilted = List<double>.of(
-      tester.widget<AnimatedContainer>(preview).transform!.storage,
-    );
-    expect(tilted, isNot(initial));
-
-    listener.onPointerUp!(PointerUpEvent(position: center));
-    await tester.pump();
-    final reset = List<double>.of(
-      tester.widget<AnimatedContainer>(preview).transform!.storage,
-    );
-    expect(reset, isNot(tilted));
+    expect(find.byType(AppBackground), findsOneWidget);
+    expect(find.byType(AppFloat), findsNWidgets(2));
+    expect(find.text('Level up your\nconversations.'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('3D and tab effects become static with reduced motion', (
+  testWidgets('ambient and tab compatibility effects respect reduced motion', (
     tester,
   ) async {
     tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
@@ -170,12 +152,14 @@ void main() {
 
     await pumpConvoCoach(tester, initialLocation: '/home');
 
-    final preview = tester.widget<AnimatedContainer>(
-      find.byKey(const Key('home-3d-preview-transform')),
+    expect(find.byType(AppFloat), findsNWidgets(2));
+    expect(
+      find.descendant(
+        of: find.byType(AppFloat),
+        matching: find.byType(AnimatedBuilder),
+      ),
+      findsNothing,
     );
-    expect(preview.duration, Duration.zero);
-    expect(find.byKey(const Key('tab-transition-static')), findsOneWidget);
-    expect(find.byKey(const Key('tab-transition-motion')), findsNothing);
 
     await tester.pumpWidget(
       const MaterialApp(

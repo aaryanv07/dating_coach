@@ -460,3 +460,25 @@ store-search, metadata, and brand-confusion risk, and App Store Connect cannot
 authoritatively reserve a replacement name until the paid developer membership
 is active. ConvoCoach remains the installed display name while a distinctive
 candidate is selected and cleared.
+
+## 2026-08-08: GitHub `main` UI is integrated without production regressions
+
+The vibrant Flutter presentation from GitHub `main` is the current visual
+baseline. Its splash, onboarding, Home, five-position navigation shell, shared
+background, brand, buttons, cards, color roles, typography, and compatible
+conversation surfaces are integrated on top of the complete production branch.
+Production-only authentication, import review, analytics, privacy export,
+operator metrics, AI routing, billing boundaries, and release controls remain
+authoritative where the two histories conflict.
+
+The imported ambient helpers run once instead of looping indefinitely. Normal
+interaction durations remain between 150 and 300 milliseconds, system and
+in-app reduced-motion preferences produce the same final content without
+interpolation, and the central Create destination opens the production import
+sheet rather than replacing a navigation branch. Replit-only metadata and
+attached design-reference artifacts are not part of the product checkout.
+
+This integration is a tested local release candidate, not evidence of App Store
+deployment. Apple Distribution membership/signing, a production TLS backend,
+production OIDC, verified store products, published legal URLs, and independent
+AI-safety approval remain external launch gates.

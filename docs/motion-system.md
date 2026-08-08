@@ -5,14 +5,14 @@ completion. It is never required to access a control.
 
 | Token | Duration | Use |
 | --- | ---: | --- |
-| Fast | 160 ms | Press and selection feedback |
-| Normal | 220 ms | Reveal and theme transitions |
+| Fast | 180 ms | Press and selection feedback |
+| Normal | 260 ms | Reveal and theme transitions |
 | Deliberate | 280 ms | Page progression |
 | Loading pulse | 900 ms | Subtle repeating skeleton only |
 
 Standard transitions use an ease-out cubic curve. Press feedback uses a short
 spring-like ease-out-back curve with small scale travel. Tappable cards scale to
-98.5 percent and buttons scale to 98 percent while pressed. Onboarding metrics
+98.5 percent and buttons scale to 96 percent while pressed. Onboarding metrics
 draw from zero to their mock values; page content uses opacity and translation
 only.
 
@@ -58,12 +58,11 @@ actions remain identical.
 
 ## Oceanic surface reveal
 
-Shared oceanic backdrops reveal their decorative wave field once with 18 pixels
-of vertical travel and opacity over the deliberate 280 ms token. Pearl glows and
-scale arcs remain static, and the wave field never loops or follows the device
-gyroscope. The splash disables this extra backdrop interpolation because its
-existing 280 ms brand sequence already contains the maximum three major visual
-moments.
+Shared vibrant backdrops use static gradient fields with bounded, one-shot
+translation, scale, opacity, or rotation on their decorative layers. The longer
+2,400 ms ambient token is reserved for those non-interactive one-shot finishes;
+it is not a normal interaction duration and never repeats. The splash uses its
+own bounded transition and leaves the final state visible.
 
 When reduced motion is active, the wave field starts in its final position with
 zero duration. Decorative painting ignores pointer input, is isolated behind a

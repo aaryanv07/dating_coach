@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:convo_coach/core/config/app_config.dart';
 import 'package:convo_coach/core/motion/app_motion.dart';
+import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_brand.dart';
-import 'package:convo_coach/core/widgets/app_vibrant_backdrop.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,196 +18,189 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-  bool _started = false;
+class _SplashScreenState extends State<SplashScreen> {
+  bool _scheduled = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    if (MotionScope.reduceMotionOf(context)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
-      return;
-    }
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppDurations.deliberate,
+    if (_scheduled) return;
+    _scheduled = true;
+    final delay = AppMotion.duration(context, AppMotionSpeed.deliberate);
+    unawaited(
+      Future<void>.delayed(delay * 2, () {
+        if (mounted) context.go('/onboarding');
+      }),
     );
-    unawaited(_controller!.forward().whenComplete(_finish));
-  }
-
-  void _finish() {
-    if (mounted) context.go('/onboarding');
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
-    if (controller == null) {
-      return const _SplashContent();
-    }
-
-    final markCurve = CurvedAnimation(
-      parent: controller,
-      curve: const Interval(0, 0.7, curve: AppMotion.springCurve),
-    );
-    final signalCurve = CurvedAnimation(
-      parent: controller,
-      curve: const Interval(0.15, 0.85, curve: AppMotion.standardCurve),
-    );
-    final copyCurve = CurvedAnimation(
-      parent: controller,
-      curve: const Interval(0.3, 1, curve: AppMotion.standardCurve),
-    );
-
-    return _SplashContent(
-      markAnimation: markCurve,
-      signalAnimation: signalCurve,
-      copyAnimation: copyCurve,
-    );
-  }
-}
-
-class _SplashContent extends StatelessWidget {
-  const _SplashContent({
-    this.markAnimation,
-    this.signalAnimation,
-    this.copyAnimation,
-  });
-
-  final Animation<double>? markAnimation;
-  final Animation<double>? signalAnimation;
-  final Animation<double>? copyAnimation;
-
-  @override
-  Widget build(BuildContext context) {
-    final mark = _animated(
-      animation: markAnimation,
-      slideBegin: const Offset(0, 0.08),
-      scaleBegin: 0.84,
-      child: const ConvoMark(key: Key('splash-mark'), size: 76),
-    );
-    final signal = _animated(
-      animation: signalAnimation,
-      slideBegin: const Offset(-0.12, 0),
-      scaleBegin: 0.94,
-      child: const _ConversationSignal(),
-    );
-    final copy = _animated(
-      animation: copyAnimation,
-      slideBegin: const Offset(0, 0.14),
-      scaleBegin: 0.98,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            AppConfig.name,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Clearer conversations. Your call.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    );
-
+    final colors = context.appColors;
     return Scaffold(
-      body: AppVibrantBackdrop(
-        animate: false,
+      body: AppBackground(
         child: SafeArea(
           child: Center(
-            child: Semantics(
-              container: true,
-              label: '${AppConfig.name}. Clearer conversations. Your call.',
-              child: ExcludeSemantics(
-                child: Column(
-                  key: const Key('animated-splash-content'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    mark,
-                    const SizedBox(height: AppSpacing.md),
-                    signal,
-                    const SizedBox(height: AppSpacing.lg),
-                    copy,
-                  ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppPopIn(
+                  child: SizedBox(
+                    width: 144,
+                    height: 144,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        AppSlowRotate(
+                          child: _GradientHalo(
+                            size: 144,
+                            colors: [
+                              colors.gradientStart,
+                              colors.gradientEnd,
+                              colors.gradientStart,
+                            ],
+                          ),
+                        ),
+                        AppAmbientPulse(
+                          child: const ConvoMark(size: 88, glow: true),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.xl),
+                AppReveal(
+                  delay: const Duration(milliseconds: 120),
+                  child: AppShimmer(
+                    child: GradientText(
+                      AppConfig.name,
+                      gradient: LinearGradient(
+                        colors: [colors.gradientStart, colors.gradientEnd],
+                      ),
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppReveal(
+                  delay: const Duration(milliseconds: 220),
+                  child: Text(
+                    'Clearer conversations. Your call.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                AppReveal(
+                  delay: const Duration(milliseconds: 320),
+                  child: _PulseDots(color: colors.gradientEnd),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _animated({
-    required Animation<double>? animation,
-    required Offset slideBegin,
-    required double scaleBegin,
-    required Widget child,
-  }) {
-    if (animation == null) return child;
-    return FadeTransition(
-      opacity: animation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: slideBegin,
-          end: Offset.zero,
-        ).animate(animation),
-        child: ScaleTransition(
-          scale: Tween<double>(begin: scaleBegin, end: 1).animate(animation),
-          child: child,
+/// A soft rotating conic-gradient ring used as a halo behind the brand mark.
+class _GradientHalo extends StatelessWidget {
+  const _GradientHalo({required this.size, required this.colors});
+
+  final double size;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: SweepGradient(
+            colors: [for (final color in colors) color.withValues(alpha: 0.55)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(3),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).scaffoldBackgroundColor,
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _ConversationSignal extends StatelessWidget {
-  const _ConversationSignal();
+/// Three dots pulsing in sequence — a subtle "warming up" indicator.
+class _PulseDots extends StatefulWidget {
+  const _PulseDots({required this.color});
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ExcludeSemantics(
-      child: Row(
-        key: const Key('splash-conversation-signal'),
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _SignalBubble(width: 42, color: scheme.surfaceContainerHighest),
-          const SizedBox(width: AppSpacing.sm),
-          _SignalBubble(width: 56, color: scheme.primaryContainer),
-          const SizedBox(width: AppSpacing.sm),
-          _SignalBubble(width: 34, color: scheme.secondaryContainer),
-        ],
-      ),
-    );
-  }
-}
-
-class _SignalBubble extends StatelessWidget {
-  const _SignalBubble({required this.width, required this.color});
-
-  final double width;
   final Color color;
 
   @override
+  State<_PulseDots> createState() => _PulseDotsState();
+}
+
+class _PulseDotsState extends State<_PulseDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MotionScope.reduceMotionOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(color: color, borderRadius: AppRadii.card),
-      child: SizedBox(width: width, height: 18),
+    if (MotionScope.reduceMotionOf(context)) {
+      return const SizedBox(height: 8);
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              _dot(_controller.value, i),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _dot(double t, int index) {
+    // Smooth periodic pulse: each dot is phase-offset by a third of a cycle.
+    final phase = (t - index / 3) * 2 * math.pi;
+    final active = 0.5 + 0.5 * math.sin(phase);
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: widget.color.withValues(alpha: 0.3 + 0.7 * active),
+      ),
     );
   }
 }

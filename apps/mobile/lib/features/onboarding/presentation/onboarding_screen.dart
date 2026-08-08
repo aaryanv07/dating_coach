@@ -1,12 +1,11 @@
 import 'package:convo_coach/core/haptics/app_haptics.dart';
-import 'dart:math' as math;
-
 import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_brand.dart';
 import 'package:convo_coach/core/widgets/app_button.dart';
-import 'package:convo_coach/core/widgets/app_gradient_text.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,24 +24,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   static const _pages = <_OnboardingPageData>[
     _OnboardingPageData(
-      eyebrow: 'COACH SETUP',
-      title: 'START WITH\nYOUR VOICE',
+      title: 'Understand every conversation.',
       body:
-          'Shape coaching around how you communicate. You keep the final word, every time.',
-      visual: _CoachCalibrationVisual(),
+          'See observable patterns without pretending to read someone else\'s mind.',
+      visual: _ConversationVisual(),
     ),
     _OnboardingPageData(
-      eyebrow: 'CLEAR SIGNALS',
-      title: 'READ THE PATTERN,\nNOT THEIR MIND',
+      title: 'Know what is working.',
       body:
-          'See observable reciprocity, momentum and clarity—with uncertainty kept visible.',
+          'Turn reciprocity, momentum and clarity into calm, explainable guidance.',
       visual: _MetricsVisual(),
     ),
     _OnboardingPageData(
-      eyebrow: 'YOUR DECISION',
-      title: 'DRAFTS THAT STILL\nSOUND LIKE YOU',
+      title: 'Replies that still sound like you.',
       body:
-          'Explore a few honest directions, edit freely and choose whether to send anything.',
+          'Choose a direction, keep your voice and make every final decision yourself.',
       visual: _ReplyVisual(),
     ),
   ];
@@ -68,126 +64,73 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final primaryGlow = _pageIndex.isEven
-        ? scheme.primaryContainer
-        : scheme.secondaryContainer;
-    final secondaryGlow = _pageIndex == 1
-        ? scheme.tertiaryContainer
-        : scheme.secondaryContainer;
     return Scaffold(
-      body: AnimatedContainer(
-        key: const Key('immersive-onboarding-background'),
-        duration: AppMotion.duration(context, AppMotionSpeed.normal),
-        curve: AppMotion.standardCurve,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: const [0, 0.46, 1],
-            colors: [
-              primaryGlow.withValues(alpha: 0.78),
-              scheme.surface,
-              secondaryGlow.withValues(alpha: 0.34),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: BrandLockup(compact: true),
+                      ),
+                    ),
+                    AppButton(
+                      label: 'Skip',
+                      expand: false,
+                      variant: AppButtonVariant.quiet,
+                      onPressed: () => context.go('/privacy'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _pages.length,
+                  onPageChanged: (index) => setState(() => _pageIndex = index),
+                  itemBuilder: (context, index) {
+                    return _OnboardingPage(data: _pages[index]);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  0,
+                  AppSpacing.xl,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  children: [
+                    _ProgressSegments(
+                      currentIndex: _pageIndex,
+                      count: _pages.length,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      label: _pageIndex == _pages.length - 1
+                          ? 'Continue privately'
+                          : 'Continue',
+                      icon: Icons.arrow_forward_rounded,
+                      semanticLabel: 'Continue onboarding',
+                      onPressed: _nextPage,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -120,
-              right: -100,
-              child: _BackdropGlow(
-                size: 280,
-                color: scheme.primary.withValues(alpha: 0.15),
-              ),
-            ),
-            Positioned(
-              bottom: 40,
-              left: -140,
-              child: _BackdropGlow(
-                size: 320,
-                color: scheme.secondary.withValues(alpha: 0.1),
-              ),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.xl,
-                      AppSpacing.md,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: BrandLockup(compact: true),
-                          ),
-                        ),
-                        Semantics(
-                          label:
-                              'Onboarding step ${_pageIndex + 1} of ${_pages.length}',
-                          child: ExcludeSemantics(
-                            child: _CompactStepIndicator(
-                              currentIndex: _pageIndex,
-                              count: _pages.length,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        AppButton(
-                          label: 'Skip',
-                          expand: false,
-                          variant: AppButtonVariant.quiet,
-                          onPressed: () => context.go('/privacy'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: _pages.length,
-                      onPageChanged: (index) =>
-                          setState(() => _pageIndex = index),
-                      itemBuilder: (context, index) {
-                        return _OnboardingPage(data: _pages[index]);
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.xl,
-                      0,
-                      AppSpacing.xl,
-                      AppSpacing.xl,
-                    ),
-                    child: Column(
-                      children: [
-                        _ProgressSegments(
-                          currentIndex: _pageIndex,
-                          count: _pages.length,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        AppButton(
-                          label: _pageIndex == _pages.length - 1
-                              ? 'Continue privately'
-                              : 'Start exploring',
-                          icon: Icons.arrow_forward_rounded,
-                          semanticLabel: 'Continue onboarding',
-                          onPressed: _nextPage,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -196,13 +139,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
 class _OnboardingPageData {
   const _OnboardingPageData({
-    required this.eyebrow,
     required this.title,
     required this.body,
     required this.visual,
   });
 
-  final String eyebrow;
   final String title;
   final String body;
   final Widget visual;
@@ -231,22 +172,15 @@ class _OnboardingPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  data.eyebrow,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.8,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                AppGradientText(
+                GradientText(
                   data.title,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    height: 0.98,
-                    letterSpacing: -1.2,
+                  gradient: LinearGradient(
+                    colors: [
+                      context.appColors.gradientStart,
+                      context.appColors.gradientEnd,
+                    ],
                   ),
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(data.body, style: Theme.of(context).textTheme.bodyLarge),
@@ -300,56 +234,6 @@ class _OnboardingPage extends StatelessWidget {
   }
 }
 
-class _BackdropGlow extends StatelessWidget {
-  const _BackdropGlow({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExcludeSemantics(
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: SizedBox.square(dimension: size),
-      ),
-    );
-  }
-}
-
-class _CompactStepIndicator extends StatelessWidget {
-  const _CompactStepIndicator({
-    required this.currentIndex,
-    required this.count,
-  });
-
-  final int currentIndex;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(count, (index) {
-        final active = index == currentIndex;
-        return AnimatedContainer(
-          duration: AppMotion.duration(context, AppMotionSpeed.fast),
-          curve: AppMotion.standardCurve,
-          width: active ? 24 : 6,
-          height: 6,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: active
-                ? Theme.of(context).colorScheme.primary
-                : context.appColors.border,
-            borderRadius: BorderRadius.circular(AppRadii.medium),
-          ),
-        );
-      }),
-    );
-  }
-}
-
 class _ProgressSegments extends StatelessWidget {
   const _ProgressSegments({required this.currentIndex, required this.count});
 
@@ -384,205 +268,67 @@ class _ProgressSegments extends StatelessWidget {
   }
 }
 
-class _CoachCalibrationVisual extends StatelessWidget {
-  const _CoachCalibrationVisual();
+class _ConversationVisual extends StatelessWidget {
+  const _ConversationVisual();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Semantics(
       image: true,
-      excludeSemantics: true,
-      label:
-          'A coaching-style preview with warm and direct response directions',
-      child: MediaQuery.withClampedTextScaling(
-        maxScaleFactor: 1,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: SizedBox(
-            key: const Key('coach-style-hero'),
-            width: 320,
-            height: 380,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const SizedBox.square(dimension: 300),
-                ),
-                TweenAnimationBuilder<double>(
-                  key: const Key('coach-style-hero-entry'),
-                  duration: AppMotion.duration(
-                    context,
-                    AppMotionSpeed.deliberate,
-                  ),
-                  curve: AppMotion.springCurve,
-                  tween: Tween(begin: 0, end: 1),
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value.clamp(0, 1),
-                      child: Transform.translate(
-                        offset: Offset(0, 18 * (1 - value)),
-                        child: Transform.scale(
-                          scale: 0.92 + (0.08 * value),
-                          child: child,
-                        ),
-                      ),
-                    );
-                  },
-                  child: Transform.rotate(
-                    angle: -math.pi / 90,
-                    child: Container(
-                      width: 270,
-                      height: 362,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            scheme.surfaceContainerHighest,
-                            scheme.primaryContainer,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: context.appColors.border.withValues(
-                            alpha: 0.8,
-                          ),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: scheme.shadow.withValues(alpha: 0.18),
-                            blurRadius: 28,
-                            offset: const Offset(0, 18),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: scheme.primary,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadii.medium,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              const Icon(Icons.lock_outline_rounded, size: 18),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
-                          Text(
-                            'How would you like to sound?',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            '“Want to continue this over coffee?”',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const Spacer(),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Transform.rotate(
-                                  angle: -0.035,
-                                  child: _StyleDirectionCard(
-                                    key: Key('coach-style-card-warm'),
-                                    index: '01',
-                                    label: 'Warm & curious',
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Transform.rotate(
-                                  angle: 0.035,
-                                  child: _StyleDirectionCard(
-                                    key: Key('coach-style-card-direct'),
-                                    index: '02',
-                                    label: 'Clear & direct',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Center(
-                            child: Text(
-                              'YOUR VOICE • YOUR CHOICE',
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.2,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      label: 'A balanced conversation with clear back and forth',
+      child: SizedBox(
+        width: 300,
+        height: 260,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 20,
+              left: 0,
+              right: 56,
+              child: _MessageBubble(
+                text: 'That sounds like a story worth hearing.',
+                color: scheme.surfaceContainerHighest,
+              ),
             ),
-          ),
+            Positioned(
+              top: 94,
+              left: 48,
+              right: 0,
+              child: _MessageBubble(
+                text: 'Only if you share your weekend plot twist too.',
+                color: scheme.primaryContainer,
+              ),
+            ),
+            Positioned(
+              top: 178,
+              left: 8,
+              right: 78,
+              child: _MessageBubble(
+                text: 'Deal. Mine involved a very ambitious train plan.',
+                color: scheme.surfaceContainerHighest,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _StyleDirectionCard extends StatelessWidget {
-  const _StyleDirectionCard({
-    required this.index,
-    required this.label,
-    super.key,
-  });
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.text, required this.color});
 
-  final String index;
-  final String label;
+  final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 92,
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.appColors.border),
-      ),
+    return DecoratedBox(
+      decoration: BoxDecoration(color: color, borderRadius: AppRadii.card),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(index, style: Theme.of(context).textTheme.bodySmall),
-            const Spacer(),
-            Text(
-              label,
-              maxLines: 2,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
       ),
     );
   }

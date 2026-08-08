@@ -1,28 +1,47 @@
 import 'package:convo_coach/core/config/app_config.dart';
+import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
-import 'package:convo_coach/core/widgets/app_gradient_text.dart';
+import 'package:convo_coach/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 
+/// Brand mark drawn with the vibrant pink→purple gradient plus a glow.
 class ConvoMark extends StatelessWidget {
-  const ConvoMark({this.size = 40, super.key});
+  const ConvoMark({this.size = 40, this.glow = false, super.key});
 
   final double size;
+  final bool glow;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final colors = context.appColors;
+    final mark = CustomPaint(
+      size: Size.square(size),
+      painter: _ConvoMarkPainter(
+        gradientStart: colors.gradientStart,
+        gradientEnd: colors.gradientEnd,
+        accent: colors.gradientAccent,
+      ),
+    );
+
     return Semantics(
       image: true,
       label: '${AppConfig.name} logo',
       child: ExcludeSemantics(
-        child: CustomPaint(
-          size: Size.square(size),
-          painter: _ConvoMarkPainter(
-            primary: scheme.primary,
-            secondary: scheme.secondary,
-            accent: scheme.tertiary,
-          ),
-        ),
+        child: glow
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.glow,
+                      blurRadius: size * 0.6,
+                      spreadRadius: size * 0.05,
+                    ),
+                  ],
+                ),
+                child: mark,
+              )
+            : mark,
       ),
     );
   }
@@ -35,24 +54,22 @@ class BrandLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final style = compact
+        ? Theme.of(context).textTheme.titleMedium
+        : Theme.of(context).textTheme.titleLarge;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         ConvoMark(size: compact ? 30 : 40),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
-          child: AppGradientText(
+          child: GradientText(
             AppConfig.name,
-            maxLines: 1,
-            style: compact
-                ? Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
-                  )
-                : Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
+            gradient: LinearGradient(
+              colors: [colors.gradientStart, colors.gradientEnd],
+            ),
+            style: style?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
       ],
@@ -62,28 +79,30 @@ class BrandLockup extends StatelessWidget {
 
 class _ConvoMarkPainter extends CustomPainter {
   const _ConvoMarkPainter({
-    required this.primary,
-    required this.secondary,
+    required this.gradientStart,
+    required this.gradientEnd,
     required this.accent,
   });
 
-  final Color primary;
-  final Color secondary;
+  final Color gradientStart;
+  final Color gradientEnd;
   final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.075;
-    final primaryPaint = Paint()
-      ..color = primary
+    final stroke = size.width * 0.085;
+    final rect = Offset.zero & size;
+    final gradientPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [gradientStart, gradientEnd],
+      ).createShader(rect)
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    final wavePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke * 0.74
-      ..strokeCap = StrokeCap.round;
+    final accentPaint = Paint()..color = accent;
 
     final bubble = RRect.fromRectAndRadius(
       Rect.fromLTWH(
@@ -92,9 +111,9 @@ class _ConvoMarkPainter extends CustomPainter {
         size.width * 0.72,
         size.height * 0.58,
       ),
-      Radius.circular(size.width * 0.2),
+      Radius.circular(size.width * 0.24),
     );
-    canvas.drawRRect(bubble, primaryPaint);
+    canvas.drawRRect(bubble, gradientPaint);
 
     final tail = Path()
       ..moveTo(size.width * 0.56, size.height * 0.72)
@@ -104,53 +123,24 @@ class _ConvoMarkPainter extends CustomPainter {
         size.width * 0.34,
         size.height * 0.85,
       );
-    canvas.drawPath(tail, primaryPaint);
-
-    final upperWave = Path()
-      ..moveTo(size.width * 0.28, size.height * 0.42)
-      ..cubicTo(
-        size.width * 0.38,
-        size.height * 0.33,
-        size.width * 0.46,
-        size.height * 0.51,
-        size.width * 0.57,
-        size.height * 0.42,
-      )
-      ..cubicTo(
-        size.width * 0.64,
-        size.height * 0.36,
-        size.width * 0.69,
-        size.height * 0.4,
-        size.width * 0.72,
-        size.height * 0.43,
-      );
-    wavePaint.color = accent;
-    canvas.drawPath(upperWave, wavePaint);
-
-    final lowerWave = Path()
-      ..moveTo(size.width * 0.3, size.height * 0.54)
-      ..cubicTo(
-        size.width * 0.4,
-        size.height * 0.45,
-        size.width * 0.5,
-        size.height * 0.63,
-        size.width * 0.61,
-        size.height * 0.54,
-      );
-    wavePaint.color = secondary;
-    canvas.drawPath(lowerWave, wavePaint);
+    canvas.drawPath(tail, gradientPaint);
 
     canvas.drawCircle(
-      Offset(size.width * 0.57, size.height * 0.29),
-      size.width * 0.052,
-      Paint()..color = secondary,
+      Offset(size.width * 0.36, size.height * 0.43),
+      size.width * 0.055,
+      accentPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.56, size.height * 0.43),
+      size.width * 0.055,
+      accentPaint,
     );
   }
 
   @override
   bool shouldRepaint(_ConvoMarkPainter oldDelegate) {
-    return primary != oldDelegate.primary ||
-        secondary != oldDelegate.secondary ||
+    return gradientStart != oldDelegate.gradientStart ||
+        gradientEnd != oldDelegate.gradientEnd ||
         accent != oldDelegate.accent;
   }
 }

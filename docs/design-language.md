@@ -16,8 +16,9 @@ remain solid colors so readability never depends on an effect.
 Components use semantic tokens, 8/14/22 pixel radii, generous spacing, at least
 44 pixel targets, and heavy system headings with plain-language body copy. Cards
 frame actual content or tools; sections remain unframed. Status is always paired
-with icons and text. The near-black navigation surface makes four stable product
-spaces easy to identify: Home, Chats, Stats, and Settings.
+with icons and text. The navigation surface presents four stable product spaces:
+Home, Chats, Progress, and Settings. A fifth, centered Create control is an
+action—not a separate destination—and opens the production import sheet.
 
 Home is upload-first. A balanced menu/brand/quick-add header frames one centered
 promise, one dominant near-black screenshot action with a thin iridescent edge,
@@ -63,10 +64,11 @@ constant bubbles, sparkles, or attention-seeking particle fields.
 Supplied competitor references may inform hierarchy, simplicity, pastel energy,
 high-contrast actions, and depth, but never provide reusable brand marks, assets,
 exact compositions, copied trade dress, compatibility scoring, attachment
-labels, or claims about another person's interest. The dark navigation dock uses
-an original four-space information architecture, iridescent selected icons, a
-shape-backed selected state, and an adaptive large-text layout. ConvoCoach's
-wording keeps uncertainty and user agency explicit.
+labels, or claims about another person's interest. The navigation dock uses an
+original four-space information architecture plus the centered Create action,
+iridescent selected icons, a shape-backed selected state, and an adaptive
+large-text layout. ConvoCoach's wording keeps uncertainty and user agency
+explicit.
 
 The global Stats space uses an iridescent score hero, two concise aggregate
 tiles, reply performance, explicit plan confirmation, and a protected private

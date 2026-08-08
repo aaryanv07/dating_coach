@@ -831,3 +831,20 @@ verification, installed on the paired iPhone 13 Pro Max, launched through
 refreshed local backend returned liveness 200 through both loopback and the
 Bonjour host. This is current-device installation evidence, not Apple
 Distribution signing or App Store production deployment.
+
+## 2026-08-08 GitHub UI integration verification
+
+GitHub `main` at `eabc54e` was merged into the complete production line at
+`f620d9e` in a clean SSD checkout. Conflicts were resolved by taking the GitHub
+visual system and primary surfaces while retaining production authentication,
+review, analytics, privacy, AI, billing, and operational behavior. Regression
+coverage was updated only where the intended UI copy, theme values, navigation,
+and finite motion changed.
+
+`flutter analyze` completed with no issues and all 176 Flutter tests passed. The
+suite covers the imported splash/onboarding/Home/navigation presentation,
+reduced motion, 200% text, minimum touch targets, production import and review,
+privacy controls, tiered model contracts, and dashboard behavior. Ruff
+format/check and strict MyPy passed, and all 242 backend tests passed. A signed
+physical-iPhone installation is recorded separately after the integrated build
+has been produced and launched.

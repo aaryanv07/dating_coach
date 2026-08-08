@@ -9,20 +9,14 @@ void main() {
   ) async {
     await pumpConvoCoach(tester);
 
-    expect(find.text('START WITH\nYOUR VOICE'), findsOneWidget);
-    expect(
-      find.byKey(const Key('immersive-onboarding-background')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('coach-style-hero')), findsOneWidget);
-    expect(find.byKey(const Key('coach-style-card-warm')), findsOneWidget);
-    expect(find.byKey(const Key('coach-style-card-direct')), findsOneWidget);
+    expect(find.text('Understand every conversation.'), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
     expect(find.text('Onboarding step 1 of 3'), findsNothing);
 
-    await tester.tap(find.text('Start exploring'));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    expect(find.text('READ THE PATTERN,\nNOT THEIR MIND'), findsOneWidget);
+    expect(find.text('Know what is working.'), findsOneWidget);
   });
 
   testWidgets('skip keeps privacy and age essentials in the flow', (
@@ -50,13 +44,9 @@ void main() {
 
     await pumpConvoCoach(tester);
 
-    expect(
-      find.byKey(const Key('immersive-onboarding-background')),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('coach-style-hero')), findsOneWidget);
-    expect(find.text('START WITH\nYOUR VOICE'), findsOneWidget);
-    expect(find.text('Start exploring'), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+    expect(find.text('Understand every conversation.'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
+import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_card.dart';
 import 'package:convo_coach/core/widgets/app_overlays.dart';
 import 'package:convo_coach/core/widgets/app_skeleton.dart';
@@ -21,25 +23,29 @@ class ConversationsScreen extends ConsumerWidget {
     final conversations = ref.watch(conversationListProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Conversations')),
-      body: conversations.when(
-        loading: () => const _ConversationListSkeleton(),
-        error: (error, stackTrace) => AppErrorState(
-          title: 'Conversations are unavailable.',
-          message: 'Try loading your private list again.',
-          actionLabel: 'Retry',
-          onAction: () =>
-              unawaited(ref.read(conversationListProvider.notifier).refresh()),
+      body: AppBackground(
+        child: conversations.when(
+          loading: () => const _ConversationListSkeleton(),
+          error: (error, stackTrace) => AppErrorState(
+            title: 'Conversations are unavailable.',
+            message: 'Try loading your private list again.',
+            actionLabel: 'Retry',
+            onAction: () => unawaited(
+              ref.read(conversationListProvider.notifier).refresh(),
+            ),
+          ),
+          data: (items) => items.isEmpty
+              ? AppEmptyState(
+                  title: 'A quiet start.',
+                  message:
+                      'Saved conversations appear here only after you choose to keep them.',
+                  actionLabel: 'Create',
+                  onAction: () => unawaited(showCreateActions(context)),
+                )
+              : _ConversationList(items: items),
         ),
-        data: (items) => items.isEmpty
-            ? AppEmptyState(
-                title: 'A quiet start.',
-                message:
-                    'Saved conversations appear here only after you choose to keep them.',
-                actionLabel: 'Create',
-                onAction: () => unawaited(showCreateActions(context)),
-              )
-            : _ConversationList(items: items),
       ),
     );
   }
@@ -92,31 +98,37 @@ class _ConversationList extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, index) {
             if (index == 0) {
-              return Text(
-                'Saved only with your permission',
-                style: Theme.of(context).textTheme.labelMedium,
+              return AppReveal(
+                child: Text(
+                  'Saved only with your permission',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               );
             }
             final conversation = items[index - 1];
-            return AppCard(
-              semanticLabel: 'Open ${conversation.title}',
-              onTap: () => context.push('/conversations/${conversation.id}'),
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: CircleAvatar(
-                  child: Text(
-                    conversation.participantName.characters.first.toUpperCase(),
+            return AppReveal(
+              delay: Duration(milliseconds: (index * 50).clamp(0, 300)),
+              child: AppCard(
+                semanticLabel: 'Open ${conversation.title}',
+                onTap: () => context.push('/conversations/${conversation.id}'),
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      conversation.participantName.characters.first
+                          .toUpperCase(),
+                    ),
                   ),
-                ),
-                title: Text(conversation.title),
-                subtitle: Text(
-                  '${conversation.participantName} · ${conversation.messageCount} messages',
-                ),
-                trailing: IconButton(
-                  tooltip: 'Delete ${conversation.title}',
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  onPressed: () =>
-                      unawaited(_delete(context, ref, conversation)),
+                  title: Text(conversation.title),
+                  subtitle: Text(
+                    '${conversation.participantName} · ${conversation.messageCount} messages',
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Delete ${conversation.title}',
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    onPressed: () =>
+                        unawaited(_delete(context, ref, conversation)),
+                  ),
                 ),
               ),
             );

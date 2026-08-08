@@ -6,30 +6,30 @@ abstract final class AppTypography {
       displaySmall: TextStyle(
         color: text,
         fontSize: 38,
-        fontWeight: FontWeight.w900,
-        height: 1.04,
-        letterSpacing: -1.1,
+        fontWeight: FontWeight.w800,
+        height: 1.1,
+        letterSpacing: -0.8,
       ),
       headlineMedium: TextStyle(
         color: text,
         fontSize: 30,
         fontWeight: FontWeight.w800,
-        height: 1.12,
-        letterSpacing: -0.7,
+        height: 1.15,
+        letterSpacing: -0.5,
       ),
       headlineSmall: TextStyle(
         color: text,
         fontSize: 24,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         height: 1.25,
-        letterSpacing: -0.4,
+        letterSpacing: -0.3,
       ),
       titleLarge: TextStyle(
         color: text,
         fontSize: 20,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         height: 1.3,
-        letterSpacing: -0.25,
+        letterSpacing: -0.2,
       ),
       titleMedium: TextStyle(
         color: text,
@@ -64,15 +64,42 @@ abstract final class AppTypography {
         fontSize: 15,
         fontWeight: FontWeight.w700,
         height: 1.2,
-        letterSpacing: 0,
+        letterSpacing: 0.2,
       ),
       labelMedium: TextStyle(
         color: textMuted,
         fontSize: 13,
         fontWeight: FontWeight.w600,
         height: 1.2,
-        letterSpacing: 0,
+        letterSpacing: 0.2,
       ),
+    );
+  }
+}
+
+/// Renders text filled with the brand gradient.
+class GradientText extends StatelessWidget {
+  const GradientText(
+    this.text, {
+    required this.gradient,
+    this.style,
+    this.textAlign,
+    super.key,
+  });
+
+  final String text;
+  final Gradient gradient;
+  final TextStyle? style;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => gradient.createShader(
+        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+      ),
+      child: Text(text, style: style, textAlign: textAlign),
     );
   }
 }
