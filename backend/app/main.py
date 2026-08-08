@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app import __version__
@@ -66,12 +67,8 @@ def create_app(
     application.include_router(privacy.router)
 
     @application.get("/", include_in_schema=False)
-    def service_index() -> dict[str, str]:
-        return {
-            "service": runtime_settings.app_name,
-            "version": __version__,
-            "documentation": "/docs",
-        }
+    def service_index() -> RedirectResponse:
+        return RedirectResponse(url="/docs")
 
     return application
 
