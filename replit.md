@@ -9,7 +9,7 @@ Imported from GitHub; monorepo layout:
 
 ## Environment notes
 - Flutter is NOT installed in this Replit environment — the mobile app cannot be built/run/tested here. Verify with `flutter analyze` / `flutter test` locally or in CI (`.github/workflows/`).
-- No run workflow configured; the user chose code changes only, no backend setup.
+- Backend runs on Replit: workflow "Start application" runs Alembic migrations then uvicorn on port 5000 (webview shows `/docs`). It rewrites `DATABASE_URL` to the `postgresql+asyncpg://` scheme and strips `sslmode` inline, since Replit's managed PostgreSQL exposes a plain `postgresql://` URL. Redis is not actually required — readiness only checks the env var, which has a default.
 
 ## UI/UX direction (Aug 2026)
 The mobile app was redesigned to a vibrant, RizzGPT-inspired look:
