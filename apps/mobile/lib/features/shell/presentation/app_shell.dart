@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/features/shell/presentation/create_actions_sheet.dart';
 import 'package:flutter/material.dart';
@@ -84,25 +85,29 @@ class _CreateOrb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [colors.gradientStart, colors.gradientEnd],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.glow,
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    return AppAmbientPulse(
+      minScale: 0.94,
+      maxScale: 1.06,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [colors.gradientStart, colors.gradientEnd],
           ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: colors.glow,
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
       ),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
     );
   }
 }
