@@ -854,3 +854,17 @@ its standalone process remained alive after 15 seconds. The new checkout's
 local backend returned 200 for loopback and Bonjour health plus an authenticated
 conversation-list probe. This verifies the integrated phone installation; it is
 not Apple Distribution signing or an App Store deployment.
+
+## 2026-08-09 GitHub UI refresh installation
+
+Remote `main` commit `b205f84` was merged into the production-candidate branch.
+It adds a one-shot shimmer to the Home hero and a one-shot ambient scale to the
+center Create control; the shared motion implementation prevents indefinite
+decoration and preserves reduced-motion behavior. `dart format`, `flutter
+analyze`, and all 176 Flutter tests passed.
+
+The resulting 85.9 MB Profile app passed strict code-sign verification,
+installed on the paired iPhone 13 Pro Max, launched through `devicectl`, and
+remained alive as a standalone process after 15 seconds. The installed source
+commit was `f413689`, which contains `b205f84`. This remains development-signed
+physical-device evidence rather than App Store distribution qualification.
