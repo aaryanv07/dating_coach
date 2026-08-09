@@ -101,8 +101,8 @@ class HomeScreen extends StatelessWidget {
                         AppButton(
                           label: 'Start creating',
                           icon: Icons.auto_awesome_rounded,
-                          onPressed:
-                              () => unawaited(showCreateActions(context)),
+                          onPressed: () =>
+                              unawaited(showCreateActions(context)),
                         ),
                       ],
                     ),
