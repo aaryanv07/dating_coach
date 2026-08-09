@@ -36,12 +36,15 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xl),
                 AppReveal(
                   delay: const Duration(milliseconds: 60),
-                  child: GradientText(
-                    'Level up your\nconversations.',
-                    gradient: LinearGradient(
-                      colors: [colors.gradientStart, colors.gradientEnd],
+                  child: AppShimmer(
+                    duration: const Duration(milliseconds: 3200),
+                    child: GradientText(
+                      'Level up your\nconversations.',
+                      gradient: LinearGradient(
+                        colors: [colors.gradientStart, colors.gradientEnd],
+                      ),
+                      style: textTheme.displaySmall,
                     ),
-                    style: textTheme.displaySmall,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -98,8 +101,8 @@ class HomeScreen extends StatelessWidget {
                         AppButton(
                           label: 'Start creating',
                           icon: Icons.auto_awesome_rounded,
-                          onPressed: () =>
-                              unawaited(showCreateActions(context)),
+                          onPressed:
+                              () => unawaited(showCreateActions(context)),
                         ),
                       ],
                     ),
