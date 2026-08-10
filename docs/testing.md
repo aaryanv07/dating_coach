@@ -880,7 +880,16 @@ manifest remains fail-closed. A regression test protects both declarations.
 `flutter analyze` and all 176 Flutter tests passed, and the corrected 190 MB
 debug APK compiled successfully. ConvoCoach was isolated on localhost port 8001
 because port 8000 belonged to an unrelated Django project; ADB reverse forwarding
-was configured for that port. Physical installation remains blocked by the
-phone's MIUI `INSTALL_FAILED_USER_RESTRICTED` policy until the owner enables
-**Install via USB** in Developer options and accepts the device confirmation.
-No Android launch, runtime, OCR, or end-to-end qualification is claimed yet.
+was configured for that port. After the owner enabled **Install via USB** and
+accepted MIUI's per-install dialog, the app installed, completed a 4,014 ms cold
+launch, remained the resumed process after 15 seconds, rendered the updated
+onboarding, and produced no fatal Android or Flutter log entry.
+
+The subsequent seven-fixture native OCR qualification could not start because
+the device had only 780 MB free and returned `INSTALL_FAILED_INSUFFICIENT_STORAGE`.
+Flutter Drive's documented retry removed the installed debug package before
+the remaining attempts failed; free space then fell to 594 MB. A smaller 103 MB
+arm64 APK compiled, but Android correctly refused to create its install session.
+The owner must free at least 2 GB before ConvoCoach can be restored and Android
+OCR, API, navigation, and repeated physical qualification can continue. No
+native OCR or end-to-end Android qualification is claimed yet.
