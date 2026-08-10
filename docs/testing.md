@@ -868,3 +868,19 @@ installed on the paired iPhone 13 Pro Max, launched through `devicectl`, and
 remained alive as a standalone process after 15 seconds. The installed source
 commit was `f413689`, which contains `b205f84`. This remains development-signed
 physical-device evidence rather than App Store distribution qualification.
+
+## 2026-08-10 Android device installation attempt
+
+A Xiaomi 21091116I running Android 13/API 33 was detected and authorized over
+ADB. The first debug APK build exposed a manifest merge conflict between the
+release `usesCleartextTraffic=false` policy and the USB-local debug override.
+The debug manifest now explicitly replaces that one attribute, while the release
+manifest remains fail-closed. A regression test protects both declarations.
+
+`flutter analyze` and all 176 Flutter tests passed, and the corrected 190 MB
+debug APK compiled successfully. ConvoCoach was isolated on localhost port 8001
+because port 8000 belonged to an unrelated Django project; ADB reverse forwarding
+was configured for that port. Physical installation remains blocked by the
+phone's MIUI `INSTALL_FAILED_USER_RESTRICTED` policy until the owner enables
+**Install via USB** in Developer options and accepts the device confirmation.
+No Android launch, runtime, OCR, or end-to-end qualification is claimed yet.

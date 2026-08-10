@@ -33,6 +33,9 @@ void main() {
     final androidManifest = File(
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
+    final androidDebugManifest = File(
+      'android/app/src/debug/AndroidManifest.xml',
+    ).readAsStringSync();
     final iosManifest = File(
       'ios/Runner/PrivacyInfo.xcprivacy',
     ).readAsStringSync();
@@ -50,6 +53,14 @@ void main() {
 
     expect(androidManifest, contains('android:allowBackup="false"'));
     expect(androidManifest, contains('android:usesCleartextTraffic="false"'));
+    expect(
+      androidDebugManifest,
+      contains('tools:replace="android:usesCleartextTraffic"'),
+    );
+    expect(
+      androidDebugManifest,
+      contains('android:usesCleartextTraffic="true"'),
+    );
     expect(androidManifest, contains('@xml/data_extraction_rules'));
     expect(iosManifest, contains('<key>NSPrivacyTracking</key>'));
     expect(iosManifest, contains('<false/>'));
