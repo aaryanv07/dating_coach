@@ -885,11 +885,18 @@ accepted MIUI's per-install dialog, the app installed, completed a 4,014 ms cold
 launch, remained the resumed process after 15 seconds, rendered the updated
 onboarding, and produced no fatal Android or Flutter log entry.
 
-The subsequent seven-fixture native OCR qualification could not start because
+The first seven-fixture native OCR qualification was initially blocked because
 the device had only 780 MB free and returned `INSTALL_FAILED_INSUFFICIENT_STORAGE`.
-Flutter Drive's documented retry removed the installed debug package before
-the remaining attempts failed; free space then fell to 594 MB. A smaller 103 MB
-arm64 APK compiled, but Android correctly refused to create its install session.
-The owner must free at least 2 GB before ConvoCoach can be restored and Android
-OCR, API, navigation, and repeated physical qualification can continue. No
-native OCR or end-to-end Android qualification is claimed yet.
+After the owner freed space, the 103 MB arm64 app was restored, cold-launched,
+rendered the current Home/Create and paste-conversation flows, remained resumed
+after 15 seconds, and produced no fatal Android or Flutter log entry. USB
+forwarding reached the isolated local backend socket.
+
+The physical benchmark then completed every original synthetic fixture through
+the on-device ML Kit adapter: 98.43% character accuracy, 95.95% word accuracy,
+100% message extraction, 97.62% event classification, 100% cleanup, a passing
+cancellation probe, and a 54.5 MB peak RSS delta. It remains `BLOCKED`: warning
+accuracy was 78.57% against 90%, review recall 85.71% against 95%, and p95
+latency 4,520 ms against 2,500 ms. The normal version-code 2005 arm64 app was
+reinstalled and cold-launched after the benchmark. This is one physical Android
+run, not complete Android qualification or Play Store deployment.

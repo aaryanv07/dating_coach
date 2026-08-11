@@ -2,11 +2,10 @@
 
 ## Status
 
-`BLOCKED`, most recently rechecked on 2026-07-30. A physical iPhone run now
-completes the production ML Kit suite, but two required accuracy gates remain
-below target. No physical Android is attached. Phase 6A.3 therefore remains
-incomplete; neither a successful iOS execution nor emulator evidence is
-represented as full cross-platform qualification.
+`BLOCKED`, most recently rechecked on 2026-08-10. Physical Android and iPhone
+runs now complete the production ML Kit suite, but required quality gates remain
+below target on both platforms. Phase 6A.3 therefore remains incomplete; neither
+single-device run is represented as full cross-platform qualification.
 
 This remains a truthful qualification block. The qualification workflow made
 no backend, API, database, extraction, benchmark, fixture, or quality-gate
@@ -28,12 +27,12 @@ run cannot satisfy the physical-device gate.
 
 | Platform | Required | Observed | Result |
 | --- | --- | --- | --- |
-| Android | Android SDK and ADB, accepted licenses, supported physical device, install permission | Android Studio 2026.1.2, command-line tools 20.0, ADB/platform tools 37.0.0, API and Build Tools 36, NDK 28.2.13676358, CMake 3.22.1, and licenses are ready; an Android 16/API 36 ARM64 emulator runs the suite, the debug APK builds, and no physical Android device is detected | `BLOCKED`: `physical_android_device_unavailable` and native quality gates remain below target |
+| Android | Android SDK and ADB, accepted licenses, supported physical device, install permission | Android Studio 2026.1.2, command-line tools 20.0, ADB/platform tools 37.0.0, API and Build Tools 36, NDK 28.2.13676358, CMake 3.22.1, and licenses are ready. A Xiaomi 21091116I on Android 13 completed the seven-fixture physical suite through the production ML Kit adapter. | `BLOCKED`: warning accuracy 78.57% is below 90%, review recall 85.71% is below 95%, and p95 latency 4,520 ms exceeds 2,500 ms. |
 | iOS | Complete Xcode selected with `xcode-select`, CocoaPods, signing/install configuration, supported physical iPhone | Xcode 26.6, CocoaPods 1.17.0, a Personal Team, and an iPhone 13 Pro Max on iOS 26.5.2 are ready. Signing, standalone Profile installation, launch, and the seven-fixture native suite completed | `BLOCKED`: event classification 94.76% is below 95%, and minimum fixture message extraction 80% is below 90% |
 
-Qualifying Android physical runs: zero. Completed iOS physical runs: one. The
-iOS report is native but blocked by required quality gates, so qualifying iOS
-physical runs remain zero. There is no cross-platform native comparison.
+Completed Android physical runs: one. Completed iOS physical runs: one. Both
+reports are native but blocked by required quality gates, so qualifying physical
+runs remain zero. There is no cross-platform native comparison.
 
 ## Qualification evidence
 
@@ -89,6 +88,21 @@ correction must introduce a separately reviewed, on-device visual-region
 evidence boundary with explicit uncertainty and focused original synthetic
 tests.
 
+On 2026-08-10, a Xiaomi 21091116I running Android 13/API 33 was authorized
+over ADB. The debug manifest required a narrowly scoped merge override so its
+USB-local development HTTP route could coexist with the release
+`usesCleartextTraffic=false` policy; a regression test protects the release and
+debug declarations. The first physical run completed all seven original
+synthetic fixtures with zero failures or cancellations, 100% cleanup, a passing
+cancellation probe, 98.43% character accuracy, 95.95% word accuracy, 100%
+message extraction, 97.62% event classification, and a 54.5 MB maximum RSS
+delta. It is still `BLOCKED`: warning accuracy was 78.57% against 90%, review
+recall was 85.71% against 95%, and p95 latency was 4,520 ms against 2,500 ms.
+The report contains aggregate metrics and synthetic fixture IDs only. The
+user-facing arm64 debug app was reinstalled after the benchmark and cold-launched
+successfully; the benchmark result does not claim Android launch qualification
+or an App Store/Play Store release.
+
 On 2026-07-30, the Apple Development key partition access was repaired with
 explicit owner approval. A signed Profile app installed and relaunched directly
 through iOS without Flutter tooling, remained alive, and reached the local
@@ -140,10 +154,8 @@ accuracy, latency, memory, or classifier quality.
 
 The current evidence still does not establish:
 
-- two consecutive physical-device runs on Android or iOS;
-- physical-device OCR, reaction recognition, or reaction-target accuracy;
-- physical-device latency, memory, stability, failure cleanup, or cancellation
-  behavior;
+- two consecutive unchanged physical-device runs on Android or iOS;
+- passing physical-device warning, review-recall, and latency gates;
 - comparison between repeated native reports; or
 - physical-device screen-reader, text-scaling, touch-target, contrast, and
   reduced-motion smoke checks.
