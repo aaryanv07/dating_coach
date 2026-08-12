@@ -2,10 +2,12 @@
 
 ## Status
 
-`BLOCKED`, most recently rechecked on 2026-08-10. Physical Android and iPhone
-runs now complete the production ML Kit suite, but required quality gates remain
-below target on both platforms. Phase 6A.3 therefore remains incomplete; neither
-single-device run is represented as full cross-platform qualification.
+`BLOCKED`, most recently rechecked on 2026-08-12. Android now has two
+consecutive unchanged physical-device runs that pass every required extraction
+gate. The iPhone result still misses required extraction gates, and the physical
+accessibility smoke checks remain unperformed. Phase 6A.3 therefore remains
+incomplete; the passing Android result is not represented as full
+cross-platform qualification.
 
 This remains a truthful qualification block. The qualification workflow made
 no backend, API, database, extraction, benchmark, fixture, or quality-gate
@@ -27,12 +29,12 @@ run cannot satisfy the physical-device gate.
 
 | Platform | Required | Observed | Result |
 | --- | --- | --- | --- |
-| Android | Android SDK and ADB, accepted licenses, supported physical device, install permission | Android Studio 2026.1.2, command-line tools 20.0, ADB/platform tools 37.0.0, API and Build Tools 36, NDK 28.2.13676358, CMake 3.22.1, and licenses are ready. A Xiaomi 21091116I on Android 13 completed the seven-fixture physical suite through the production ML Kit adapter. | `BLOCKED`: warning accuracy 78.57% is below 90%, review recall 85.71% is below 95%, and p95 latency 4,520 ms exceeds 2,500 ms. |
+| Android | Android SDK and ADB, accepted licenses, supported physical device, install permission | Android Studio 2026.1.2, command-line tools 20.0, ADB/platform tools 37.0.1, API and Build Tools 36, NDK 28.2.13676358, CMake 3.22.1, and licenses are ready. A Xiaomi 21091116I on Android 13 completed two consecutive unchanged seven-fixture physical suites through the production ML Kit adapter. | `PASS`: every required gate passed twice; p95 latency was 2,103 ms and 2,136 ms. |
 | iOS | Complete Xcode selected with `xcode-select`, CocoaPods, signing/install configuration, supported physical iPhone | Xcode 26.6, CocoaPods 1.17.0, a Personal Team, and an iPhone 13 Pro Max on iOS 26.5.2 are ready. Signing, standalone Profile installation, launch, and the seven-fixture native suite completed | `BLOCKED`: event classification 94.76% is below 95%, and minimum fixture message extraction 80% is below 90% |
 
-Completed Android physical runs: one. Completed iOS physical runs: one. Both
-reports are native but blocked by required quality gates, so qualifying physical
-runs remain zero. There is no cross-platform native comparison.
+Qualifying Android physical runs: two consecutive unchanged runs. Completed iOS
+physical runs: one, still blocked by required quality gates. There is no passing
+cross-platform native comparison.
 
 ## Qualification evidence
 
@@ -103,6 +105,33 @@ user-facing arm64 debug app was reinstalled after the benchmark and cold-launche
 successfully; the benchmark result does not claim Android launch qualification
 or an App Store/Play Store release.
 
+On 2026-08-12, the Android production adapter was corrected without weakening
+any quality gate. A single ML Kit recognizer is reused within an import and
+closed with its owning scope. Preprocessing is bounded to one screenshot ahead
+of recognition. Preprocessing also emits a compact metadata-free luminance
+raster, so confidence calibration does not decode the sanitized screenshot a
+second time. The engine rejects pre-cancelled work before creating temporary
+resources and still awaits bounded in-flight preprocessing on failure. Focused
+tests cover reuse, cleanup, cancellation, low-contrast review, the compact
+raster, and the bounded pipeline.
+
+Two consecutive unchanged physical runs then passed every required gate. Both
+completed all seven synthetic fixtures with no failure or cancellation, 98.43%
+character accuracy, 95.95% word accuracy, 100% message extraction, 97.62% event
+classification, 100% speaker/timestamp/ordering/deduplication accuracy, 92.86%
+warning accuracy, 100% review recall, 100% cleanup, and a passing cancellation
+probe. Run 1 measured 2,103 ms p95 latency and a 62,902,272-byte maximum RSS
+delta; run 2 measured 2,136 ms and 57,143,296 bytes. The nonrequired manual
+review rate was 57.14%, with 71.43% review precision; these are disclosed and
+were not treated as release-blocking gates. Reports contain only aggregate
+metrics and synthetic fixture IDs. Their content-free comparison returned
+`NO_REGRESSION` with no blocking regressions. After qualification, the normal
+universal debug app version 0.2.0+2006 was rebuilt, installed, cold-launched in
+4,267 ms, remained resumed for 15 seconds, and produced no fatal Android or
+Flutter log.
+This establishes the documented Android extraction qualification, not Play
+Store production deployment.
+
 On 2026-07-30, the Apple Development key partition access was repaired with
 explicit owner approval. A signed Profile app installed and relaunched directly
 through iOS without Flutter tooling, remained alive, and reached the local
@@ -154,11 +183,11 @@ accuracy, latency, memory, or classifier quality.
 
 The current evidence still does not establish:
 
-- two consecutive unchanged physical-device runs on Android or iOS;
-- passing physical-device warning, review-recall, and latency gates;
-- comparison between repeated native reports; or
+- two consecutive unchanged passing physical-device runs on iOS;
+- passing iOS minimum-fixture and event-classification gates;
+- a passing cross-platform native comparison; or
 - physical-device screen-reader, text-scaling, touch-target, contrast, and
-  reduced-motion smoke checks.
+  reduced-motion smoke checks on both platforms.
 
 Host tests continue to cover deterministic cleanup, cancellation, privacy,
 semantics, 200 percent text scaling, touch targets, and reduced-motion behavior.
@@ -223,20 +252,14 @@ The Phase 6A.3 verification pass produced these results:
 
 ## Failed gates and next decision
 
-The required physical-platform availability, `native_device_run`, physical
-two-run consistency, physical reaction and accuracy, physical performance,
-physical cleanup/cancellation, and physical accessibility gates remain
-unsatisfied. The simulator also shows that extraction-quality remediation is
-needed before a physical report can pass even if device availability is
-resolved.
+Android physical extraction, performance, cleanup, cancellation, and two-run
+consistency gates are satisfied. The corresponding iOS extraction and two-run
+gates, cross-platform passing comparison, and physical accessibility gates
+remain unsatisfied.
 
-Remain `BLOCKED`. Investigate the failing original synthetic cases without
-logging or exporting message content. Design and review the on-device
-visual-region evidence boundary described above, add focused regression
-coverage for every production extraction correction, and keep every existing
-quality threshold. Then connect supported physical devices, verify
-physical-iPhone signing and installation, run two consecutive unchanged
-production-pipeline
-qualifications per required device class, validate and compare every
-content-free report, perform the physical accessibility smoke checks, and
-review every gate. Do not begin Phase 6B until both platform suites pass.
+Remain `BLOCKED`. Investigate the failing iOS synthetic cases without logging or
+exporting message content, add focused regression coverage for every correction,
+and keep every existing quality threshold. Then run two consecutive unchanged
+iPhone production-pipeline qualifications, validate and compare every
+content-free report, perform the physical accessibility smoke checks on both
+platforms, and review every gate before production release.

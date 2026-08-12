@@ -28,25 +28,29 @@ void runPhase6aNativeBenchmark({required String expectedPlatform}) {
         textRecognitionProvider: provider,
       );
       const harness = ExtractionBenchmarkHarness();
-      final report = await harness.run(
-        fixtures: fixtures,
-        engineFactory: (_) => engine,
-        sessionEnvironment: BenchmarkSessionEnvironment(
-          platform: Platform.operatingSystem,
-          deviceModel: device.model,
-          osVersion: device.osVersion,
-          flutterVersion: const String.fromEnvironment(
-            'PHASE6A_FLUTTER_VERSION',
-            defaultValue: 'unreported',
+      try {
+        final report = await harness.run(
+          fixtures: fixtures,
+          engineFactory: (_) => engine,
+          sessionEnvironment: BenchmarkSessionEnvironment(
+            platform: Platform.operatingSystem,
+            deviceModel: device.model,
+            osVersion: device.osVersion,
+            flutterVersion: const String.fromEnvironment(
+              'PHASE6A_FLUTTER_VERSION',
+              defaultValue: 'unreported',
+            ),
+            mlKitVersion: provider.providerVersion,
+            extractionVersion: engine.extractionVersion,
           ),
-          mlKitVersion: provider.providerVersion,
-          extractionVersion: engine.extractionVersion,
-        ),
-        nativeDeviceRun: device.isPhysicalDevice,
-      );
-      binding.reportData = <String, Object?>{'phase6a': report.toJson()};
+          nativeDeviceRun: device.isPhysicalDevice,
+        );
+        binding.reportData = <String, Object?>{'phase6a': report.toJson()};
 
-      expect(report.cases, hasLength(fixtures.length));
+        expect(report.cases, hasLength(fixtures.length));
+      } finally {
+        await provider.close();
+      }
     },
     timeout: const Timeout(Duration(minutes: 15)),
   );

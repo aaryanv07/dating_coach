@@ -82,6 +82,7 @@ class PreprocessedImage {
     required this.height,
     required this.orientationCorrected,
     required this.wasResized,
+    this.visualConfidenceRaster,
   });
 
   final int sourceIndex;
@@ -90,6 +91,22 @@ class PreprocessedImage {
   final int height;
   final bool orientationCorrected;
   final bool wasResized;
+  final VisualConfidenceRaster? visualConfidenceRaster;
+}
+
+/// A compact, metadata-free luminance map used to calibrate native OCR
+/// confidence without decoding the sanitized image a second time.
+@immutable
+class VisualConfidenceRaster {
+  const VisualConfidenceRaster({
+    required this.width,
+    required this.height,
+    required this.luminance,
+  });
+
+  final int width;
+  final int height;
+  final Uint8List luminance;
 }
 
 enum TimestampPrecision { date, time, dateTime }

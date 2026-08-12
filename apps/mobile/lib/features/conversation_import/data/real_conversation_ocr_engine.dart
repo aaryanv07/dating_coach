@@ -48,19 +48,39 @@ class RealConversationOcrEngine implements OcrEngine {
     if (sources.isEmpty) {
       throw const ExtractionException('Add a screenshot before extracting.');
     }
+    cancellationToken.throwIfCancelled();
     final screenshots = <ExtractedScreenshot>[];
     var confidenceAvailable = true;
+    Future<PreprocessedImage>? pendingPreprocessing = preprocessor.process(
+      sources.first,
+      cancellationToken: cancellationToken,
+    );
     for (var index = 0; index < sources.length; index++) {
+      final processed = await pendingPreprocessing!;
       cancellationToken.throwIfCancelled();
-      final processed = await preprocessor.process(
-        sources[index],
-        cancellationToken: cancellationToken,
-      );
       onProgress((index + 0.35) / sources.length);
-      final page = await textRecognitionProvider.recognize(
-        processed,
-        cancellationToken: cancellationToken,
-      );
+      pendingPreprocessing = index + 1 < sources.length
+          ? preprocessor.process(
+              sources[index + 1],
+              cancellationToken: cancellationToken,
+            )
+          : null;
+      RecognizedTextPage page;
+      try {
+        page = await textRecognitionProvider.recognize(
+          processed,
+          cancellationToken: cancellationToken,
+        );
+      } on Object {
+        // A single bounded look-ahead may still be preprocessing. Await it so
+        // temporary work and errors never escape this extraction scope.
+        try {
+          await pendingPreprocessing;
+        } on Object {
+          // Preserve the recognition failure as the stable boundary error.
+        }
+        rethrow;
+      }
       final regions = regionGrouper
           .group(page, locale: locale)
           .map((region) {

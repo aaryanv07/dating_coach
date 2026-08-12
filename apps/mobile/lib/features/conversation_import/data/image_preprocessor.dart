@@ -148,6 +148,28 @@ PreprocessedImage _preprocess(Uint8List bytes, _PreprocessingConfig config) {
     height: image.height,
     orientationCorrected: orientationCorrected,
     wasResized: wasResized,
+    visualConfidenceRaster: _buildVisualConfidenceRaster(image),
+  );
+}
+
+VisualConfidenceRaster _buildVisualConfidenceRaster(img.Image image) {
+  const sampleStep = 4;
+  final width = (image.width / sampleStep).ceil();
+  final height = (image.height / sampleStep).ceil();
+  final luminance = Uint8List(width * height);
+  for (var y = 0; y < height; y++) {
+    final sourceY = math.min(image.height - 1, y * sampleStep + 2);
+    for (var x = 0; x < width; x++) {
+      final sourceX = math.min(image.width - 1, x * sampleStep + 2);
+      final pixel = image.getPixel(sourceX, sourceY);
+      luminance[y * width + x] =
+          (0.2126 * pixel.r + 0.7152 * pixel.g + 0.0722 * pixel.b).round();
+    }
+  }
+  return VisualConfidenceRaster(
+    width: width,
+    height: height,
+    luminance: luminance,
   );
 }
 

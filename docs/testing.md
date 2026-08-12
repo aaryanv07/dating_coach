@@ -149,8 +149,9 @@ mandatory before production release.
 Subsequent toolchain setup installed Android Studio 2026.1.2, Android API and
 Build Tools 36, ADB/platform tools 37.0.0, NDK 28.2.13676358, CMake 3.22.1, and
 CocoaPods 1.17.0. A 2026-07-21 follow-up installed and selected Xcode 26.6 and
-the iOS 26.5 runtime. `flutter doctor -v` reports no issues, and the content-free
-readiness detector blocks both platforms only on their missing physical devices.
+the iOS 26.5 runtime. `flutter doctor -v` reported no issues; at that point, the
+content-free readiness detector blocked both platforms only on their missing
+physical devices.
 
 The 2026-07-22 simulator follow-up moved Android to AGP 8.13.2 and Gradle 8.13,
 aligned the two legacy native-plugin library subprojects to compile SDK 36, and
@@ -181,9 +182,10 @@ deterministic normalization, DTO round trips, and Review Studio corrections.
 
 Migration verification must run upgrade, downgrade to `20260714_0003`, re-upgrade
 to head, and `alembic check` against PostgreSQL. The Phase 6A reference benchmark
-includes the compact-heart reaction regression and must still pass. Native
-Android/iOS OCR and classifier quality are not established by host tests and
-remain required physical-device qualification.
+includes the compact-heart reaction regression and must still pass. Native OCR
+and classifier quality are not established by host tests. Android later passed
+its physical qualification pair on 2026-08-12; iOS remains a required
+physical-device qualification.
 
 ## Phase 6B deterministic analytics verification
 
@@ -212,9 +214,10 @@ The benchmark prints aggregate version, event-count, iteration, elapsed-time,
 and throughput values only. It is separate from the Phase 6A OCR benchmark and
 is not a native performance gate.
 
-Phase 6A.3 remains `BLOCKED`; physical Android/iOS OCR, performance, cleanup,
-cancellation, and accessibility qualification are still mandatory before
-release even while later build phases proceed.
+Phase 6A.3 remains `BLOCKED`; Android extraction qualification passed on
+2026-08-12, while physical iOS extraction and both platforms' physical
+accessibility qualification remain mandatory before release even while later
+build phases proceed.
 
 The final Phase 6B regression passed all 56 backend tests, strict MyPy across 47
 source files, Ruff, `pip check`, all 82 Flutter tests, the provider-neutral
@@ -900,3 +903,31 @@ accuracy was 78.57% against 90%, review recall 85.71% against 95%, and p95
 latency 4,520 ms against 2,500 ms. The normal version-code 2005 arm64 app was
 reinstalled and cold-launched after the benchmark. This is one physical Android
 run, not complete Android qualification or Play Store deployment.
+
+## 2026-08-12 Android physical extraction qualification
+
+The production adapter now reuses one scoped ML Kit recognizer, pipelines at
+most one screenshot of preprocessing ahead of native OCR, and carries a compact
+metadata-free luminance raster out of preprocessing for confidence calibration.
+This removes a second sanitized-image decode while preserving low-contrast
+review behavior. Pre-cancelled extraction is rejected before temporary work
+starts, and bounded in-flight preprocessing is awaited on failure. Focused
+adapter and engine regressions passed, including recognizer reuse/close,
+temporary cleanup, cancellation, visual calibration, and pipeline bounds.
+
+Two consecutive unchanged runs on the Xiaomi 21091116I completed all seven
+original synthetic fixtures through the production ML Kit adapter and passed
+every required gate. Both measured 98.43% character accuracy, 95.95% word
+accuracy, 100% message extraction, 97.62% event classification, 92.86% warning
+accuracy, 100% review recall, 100% cleanup, and a passing cancellation probe.
+P95 latency was 2,103 ms then 2,136 ms against the 2,500 ms maximum; maximum RSS
+delta was 62,902,272 then 57,143,296 bytes. The content-free comparison returned
+`NO_REGRESSION` with no blocking regressions.
+
+After the physical runs, `flutter analyze`, all 181 Flutter tests, and the
+provider-neutral reference benchmark passed. The normal universal debug APK,
+version 0.2.0+2006, was rebuilt and installed. It cold-launched in 4,267 ms,
+remained the resumed process after 15 seconds, and produced no fatal Android or
+Flutter log. Android native extraction is qualified by this evidence; iOS
+native extraction and both platforms' physical accessibility smoke checks still
+block full Phase 6A.3 and production-store qualification.

@@ -19,7 +19,7 @@
   ],
   "expected_source_order": [0],
   "expected_duplicate_ids": [],
-  "expected_warnings": [],
+  "expected_warnings": ["eventReviewRequired"],
   "messages": [
     {
       "id": "timeline-1",
@@ -27,8 +27,8 @@
       "text": "Kal coffee ka plan still on hai?",
       "timestamp": "2026-07-18T17:40:00.000",
       "visible_timestamp_text": "5:40 PM",
-      "reference_confidence": 0.89,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "timeline-2",
@@ -36,8 +36,8 @@
       "text": "Yes, same quiet place works for me.",
       "timestamp": "2026-07-18T17:42:00.000",
       "visible_timestamp_text": "5:42 PM",
-      "reference_confidence": 0.88,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "timeline-photo",
@@ -45,8 +45,8 @@
       "text": "Photo",
       "timestamp": null,
       "visible_timestamp_text": null,
-      "reference_confidence": 0.92,
-      "requires_manual_review": false,
+      "reference_confidence": 0.74,
+      "requires_manual_review": true,
       "event_type": "image"
     },
     {
@@ -55,8 +55,8 @@
       "text": "Voice note",
       "timestamp": null,
       "visible_timestamp_text": null,
-      "reference_confidence": 0.9,
-      "requires_manual_review": false,
+      "reference_confidence": 0.74,
+      "requires_manual_review": true,
       "event_type": "voice_note"
     }
   ],

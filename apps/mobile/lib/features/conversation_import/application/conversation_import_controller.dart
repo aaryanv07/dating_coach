@@ -32,9 +32,13 @@ final temporarySourceStoreProvider = Provider<TemporarySourceStore>(
 final ocrEngineProvider = Provider<OcrEngine>((ref) {
   final supportsMlKit = Platform.isAndroid || Platform.isIOS;
   if (!supportsMlKit) return const MockOcrEngine();
+  final textRecognitionProvider = GoogleMlKitTextRecognitionProvider();
+  ref.onDispose(() {
+    unawaited(textRecognitionProvider.close());
+  });
   return RealConversationOcrEngine(
     preprocessor: const SafeConversationImagePreprocessor(),
-    textRecognitionProvider: GoogleMlKitTextRecognitionProvider(),
+    textRecognitionProvider: textRecognitionProvider,
   );
 });
 

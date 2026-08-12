@@ -127,6 +127,14 @@ void main() {
 
       expect(const SafeConversationImagePreprocessor().version, 'image-v2');
       expect((right - left).abs(), greaterThan(10));
+      expect(result.visualConfidenceRaster, isNotNull);
+      expect(
+        result.visualConfidenceRaster!.luminance,
+        hasLength(
+          result.visualConfidenceRaster!.width *
+              result.visualConfidenceRaster!.height,
+        ),
+      );
     });
   });
 
@@ -138,6 +146,7 @@ void main() {
         final gateway = _FakeGateway(_syntheticRecognizedText());
         final provider = GoogleMlKitTextRecognitionProvider(
           gatewayFactory: () => gateway,
+          visualConfidenceEstimator: (_, _) => 1,
           temporaryDirectoryFactory: () async {
             workspace = await Directory.systemTemp.createTemp(
               'ocr-adapter-test-',
@@ -159,13 +168,118 @@ void main() {
         );
 
         expect(gateway.fileExistedDuringProcessing, isTrue);
-        expect(gateway.closed, isTrue);
+        expect(gateway.closed, isFalse);
         expect(await workspace.exists(), isFalse);
         expect(page.sourceIndex, 3);
         expect(page.lines.single.text, 'Synthetic hello');
         expect(page.lines.single.confidence, 0.77);
         expect(page.lines.single.bounds.right, 54);
         expect(page.lines.single.elements.single.confidence, 0.74);
+        await provider.close();
+        expect(gateway.closed, isTrue);
+      },
+    );
+
+    test('reuses one native recognizer until the provider closes', () async {
+      var gatewayCreations = 0;
+      final gateway = _FakeGateway(_syntheticRecognizedText());
+      final provider = GoogleMlKitTextRecognitionProvider(
+        gatewayFactory: () {
+          gatewayCreations++;
+          return gateway;
+        },
+        visualConfidenceEstimator: (_, _) => 1,
+      );
+      final image = PreprocessedImage(
+        sourceIndex: 0,
+        bytes: img.encodePng(img.Image(width: 60, height: 80)),
+        width: 60,
+        height: 80,
+        orientationCorrected: false,
+        wasResized: false,
+      );
+
+      await provider.recognize(
+        image,
+        cancellationToken: ExtractionCancellationToken(),
+      );
+      await provider.recognize(
+        image,
+        cancellationToken: ExtractionCancellationToken(),
+      );
+
+      expect(gatewayCreations, 1);
+      expect(gateway.closed, isFalse);
+      await provider.close();
+      expect(gateway.closed, isTrue);
+    });
+
+    test('visual evidence lowers confidence for low-contrast text', () {
+      final highContrast = img.Image(width: 100, height: 30);
+      img.fill(highContrast, color: img.ColorRgb8(255, 255, 255));
+      img.fillRect(
+        highContrast,
+        x1: 10,
+        y1: 5,
+        x2: 30,
+        y2: 25,
+        color: img.ColorRgb8(20, 20, 20),
+      );
+      final lowContrast = img.Image(width: 100, height: 30);
+      img.fill(lowContrast, color: img.ColorRgb8(255, 255, 255));
+      img.fillRect(
+        lowContrast,
+        x1: 10,
+        y1: 5,
+        x2: 30,
+        y2: 25,
+        color: img.ColorRgb8(185, 185, 185),
+      );
+      const bounds = OcrBounds(left: 0, top: 0, right: 100, bottom: 30);
+
+      final high = estimateVisualTextConfidence(
+        img.encodePng(highContrast),
+        bounds,
+      );
+      final low = estimateVisualTextConfidence(
+        img.encodePng(lowContrast),
+        bounds,
+      );
+
+      expect(high, greaterThanOrEqualTo(0.8));
+      expect(low, lessThan(0.8));
+    });
+
+    test(
+      'uses the precomputed visual raster without decoding image bytes',
+      () async {
+        final gateway = _FakeGateway(_syntheticRecognizedText());
+        final provider = GoogleMlKitTextRecognitionProvider(
+          gatewayFactory: () => gateway,
+        );
+        final raster = VisualConfidenceRaster(
+          width: 15,
+          height: 20,
+          luminance: Uint8List.fromList(
+            List<int>.generate(300, (index) => index.isEven ? 20 : 255),
+          ),
+        );
+
+        final page = await provider.recognize(
+          PreprocessedImage(
+            sourceIndex: 0,
+            bytes: Uint8List.fromList([0, 1, 2]),
+            width: 60,
+            height: 80,
+            orientationCorrected: false,
+            wasResized: false,
+            visualConfidenceRaster: raster,
+          ),
+          cancellationToken: ExtractionCancellationToken(),
+        );
+
+        expect(page.lines.single.confidence, 0.77);
+        await provider.close();
       },
     );
 

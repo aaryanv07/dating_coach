@@ -59,7 +59,7 @@ void main() {
   });
 
   test(
-    'confidence calibration identifies the low-contrast review item',
+    'confidence calibration marks the low-contrast conversation for review',
     () async {
       final fixtures = await BenchmarkFixtureCatalog.load();
       final fixture = fixtures.firstWhere(
@@ -70,7 +70,7 @@ void main() {
         _resultFor(fixture),
       );
 
-      expect(metrics.manualReviewRate, 0.25);
+      expect(metrics.manualReviewRate, 1);
       expect(metrics.reviewRecall, 1);
       expect(metrics.reviewPrecision, 1);
     },
@@ -90,7 +90,7 @@ void main() {
 
       expect(metrics.manualReviewRate, 1);
       expect(metrics.reviewRecall, 1);
-      expect(metrics.reviewPrecision, 0.25);
+      expect(metrics.reviewPrecision, 1);
       expect(metrics.warningAccuracy, 1);
     },
   );
@@ -296,6 +296,7 @@ ReviewMessage _reviewMessage(
     status: ReviewMessageStatus.extracted,
     visibleTimestampText: expected.visibleTimestampText,
     eventType: expected.eventType,
+    requiresReview: expected.requiresManualReview,
   );
 }
 

@@ -140,8 +140,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Tum usually Sunday ko kya karte ho?",
       "timestamp": "2026-07-16T10:10:00.000",
       "visible_timestamp_text": "10:10 AM",
-      "reference_confidence": 0.88,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "match-2",
@@ -149,8 +149,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Subah cricket, phir ghar pe aaram.",
       "timestamp": "2026-07-16T10:12:00.000",
       "visible_timestamp_text": "10:12 AM",
-      "reference_confidence": 0.86,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "match-3",
@@ -167,8 +167,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Toh brunch ka plan tumhare liye perfect hai.",
       "timestamp": "2026-07-16T10:17:00.000",
       "visible_timestamp_text": "10:17 AM",
-      "reference_confidence": 0.84,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     }
   ],
   "pages": [
@@ -493,7 +493,9 @@ const phase6aEmbeddedGroundTruth = <String, String>{
     0
   ],
   "expected_duplicate_ids": [],
-  "expected_warnings": [],
+  "expected_warnings": [
+    "eventReviewRequired"
+  ],
   "messages": [
     {
       "id": "timeline-1",
@@ -501,8 +503,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Kal coffee ka plan still on hai?",
       "timestamp": "2026-07-18T17:40:00.000",
       "visible_timestamp_text": "5:40 PM",
-      "reference_confidence": 0.89,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "timeline-2",
@@ -510,8 +512,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Yes, same quiet place works for me.",
       "timestamp": "2026-07-18T17:42:00.000",
       "visible_timestamp_text": "5:42 PM",
-      "reference_confidence": 0.88,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "timeline-photo",
@@ -519,8 +521,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Photo",
       "timestamp": null,
       "visible_timestamp_text": null,
-      "reference_confidence": 0.92,
-      "requires_manual_review": false,
+      "reference_confidence": 0.74,
+      "requires_manual_review": true,
       "event_type": "image"
     },
     {
@@ -529,8 +531,8 @@ const phase6aEmbeddedGroundTruth = <String, String>{
       "text": "Voice note",
       "timestamp": null,
       "visible_timestamp_text": null,
-      "reference_confidence": 0.9,
-      "requires_manual_review": false,
+      "reference_confidence": 0.74,
+      "requires_manual_review": true,
       "event_type": "voice_note"
     }
   ],

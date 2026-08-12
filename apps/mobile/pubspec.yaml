@@ -1,7 +1,7 @@
 name: convo_coach
 description: Privacy-conscious communication coaching for adult dating users.
 publish_to: 'none'
-version: 0.2.0+5
+version: 0.2.0+2006
 
 environment:
   sdk: ^3.12.2

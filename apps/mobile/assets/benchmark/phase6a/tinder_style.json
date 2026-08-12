@@ -23,8 +23,8 @@
       "text": "Tum usually Sunday ko kya karte ho?",
       "timestamp": "2026-07-16T10:10:00.000",
       "visible_timestamp_text": "10:10 AM",
-      "reference_confidence": 0.88,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "match-2",
@@ -32,8 +32,8 @@
       "text": "Subah cricket, phir ghar pe aaram.",
       "timestamp": "2026-07-16T10:12:00.000",
       "visible_timestamp_text": "10:12 AM",
-      "reference_confidence": 0.86,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     },
     {
       "id": "match-3",
@@ -50,8 +50,8 @@
       "text": "Toh brunch ka plan tumhare liye perfect hai.",
       "timestamp": "2026-07-16T10:17:00.000",
       "visible_timestamp_text": "10:17 AM",
-      "reference_confidence": 0.84,
-      "requires_manual_review": false
+      "reference_confidence": 0.74,
+      "requires_manual_review": true
     }
   ],
   "pages": [
