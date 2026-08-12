@@ -158,6 +158,20 @@ def create_app(
         request: Request,
         error: HTTPException,
     ) -> Response:
+        if request.url.path.endswith(conversation_coach.COACH_REPORT_PATH_SUFFIX):
+            detail = {
+                status.HTTP_401_UNAUTHORIZED: "Authentication required",
+                status.HTTP_403_FORBIDDEN: "Report unavailable",
+                status.HTTP_404_NOT_FOUND: "Conversation not found",
+            }.get(error.status_code, "Report unavailable")
+            return JSONResponse(
+                status_code=error.status_code,
+                content={"detail": detail},
+                headers={
+                    **conversation_coach.NO_STORE_HEADERS,
+                    **(error.headers or {}),
+                },
+            )
         if not request.url.path.endswith(conversation_coach.COACH_PREVIEW_PATH_SUFFIX):
             return await http_exception_handler(request, error)
         if error.status_code == status.HTTP_401_UNAUTHORIZED:
@@ -181,6 +195,12 @@ def create_app(
         request: Request,
         error: RequestValidationError,
     ) -> Response:
+        if request.url.path.endswith(conversation_coach.COACH_REPORT_PATH_SUFFIX):
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                content={"detail": "Invalid report"},
+                headers=conversation_coach.NO_STORE_HEADERS,
+            )
         if not request.url.path.endswith(conversation_coach.COACH_PREVIEW_PATH_SUFFIX):
             return await request_validation_exception_handler(request, error)
         return conversation_coach.coach_preview_failure_response(

@@ -76,6 +76,47 @@ void main() {
       );
     });
 
+    test(
+      'Android release validates only Google Play identity and products',
+      () {
+        final configuration = productionConfiguration(
+          oidcAppleConnection: '',
+          appleMonthlyProductId: '',
+          appleYearlyProductId: '',
+        );
+
+        expect(
+          configuration.validationFailures(
+            releaseMode: true,
+            platform: MobileReleasePlatform.android,
+          ),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'Android release fails closed without Google identity and products',
+      () {
+        final configuration = productionConfiguration(
+          oidcGoogleConnection: '',
+          googleMonthlyProductId: '',
+          googleYearlyProductId: '',
+        );
+
+        expect(
+          configuration.validationFailures(
+            releaseMode: true,
+            platform: MobileReleasePlatform.android,
+          ),
+          containsAll({
+            'release_google_sign_in_missing',
+            'store_product_identifiers_invalid',
+          }),
+        );
+      },
+    );
+
     test('fails closed for mock, environment, URL, and token', () {
       final configuration = productionConfiguration(
         environment: 'local',

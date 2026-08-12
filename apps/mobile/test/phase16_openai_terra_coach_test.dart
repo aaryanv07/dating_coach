@@ -109,9 +109,14 @@ ConversationCoachRepositoryResult _externalConsentRequired() =>
 class _ConsentThenLiveRepository
     implements
         ConversationCoachRepository,
-        ExternalProcessingConsentRepository {
-  bool consentGranted = false;
+        ExternalProcessingConsentRepository,
+        AIOutputReportingRepository {
+  _ConsentThenLiveRepository({this.consentGranted = false});
+
+  bool consentGranted;
   int grantCalls = 0;
+  int reportCalls = 0;
+  CoachOutputReportCategory? reportedCategory;
 
   @override
   Future<ConversationCoachRepositoryResult> fetchPreview(
@@ -128,6 +133,20 @@ class _ConsentThenLiveRepository
   }) async {
     grantCalls += 1;
     consentGranted = true;
+    return true;
+  }
+
+  @override
+  Future<bool> reportOutput({
+    required String conversationId,
+    required String responseId,
+    required CoachOutputReportCategory category,
+    required ConversationCoachCancellationToken cancellationToken,
+  }) async {
+    expect(conversationId, _conversationId);
+    expect(responseId, '00000000-0000-4000-8000-000000000002');
+    reportCalls += 1;
+    reportedCategory = category;
     return true;
   }
 }
@@ -300,8 +319,11 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.textContaining('Uncertainty:'), findsOneWidget);
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -900));
-      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.textContaining('I enjoyed chatting'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.textContaining('I enjoyed chatting'), findsOneWidget);
       expect(find.textContaining('not a fact about intent'), findsOneWidget);
       expect(find.textContaining('Mock infrastructure'), findsNothing);
@@ -327,6 +349,42 @@ void main() {
 
       expect(find.byKey(const Key('external-ai-consent')), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('reports live AI output without attaching private content', (
+      tester,
+    ) async {
+      final repository = _ConsentThenLiveRepository(consentGranted: true);
+      await pumpConvoCoach(
+        tester,
+        initialLocation: '/conversations/$_conversationId/coach-preview',
+        conversationCoachEntryAvailable: true,
+        conversationCoachRepository: repository,
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('report-ai-output')),
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('report-ai-output')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('report-ai-output-sheet')), findsOneWidget);
+      expect(find.textContaining('opaque response ID'), findsOneWidget);
+      expect(
+        find.textContaining('generated response are not included'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Harmful or unsafe'));
+      await tester.pumpAndSettle();
+
+      expect(repository.reportCalls, 1);
+      expect(
+        repository.reportedCategory,
+        CoachOutputReportCategory.harmfulOrUnsafe,
+      );
+      expect(find.textContaining('Report received'), findsOneWidget);
     });
   });
 }

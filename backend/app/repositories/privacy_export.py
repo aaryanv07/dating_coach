@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db.models import (
+    AIOutputReport,
     AIUsageRecord,
     CommunicationProfile,
     ConsentRecord,
@@ -94,6 +95,13 @@ class PrivacyExportRepository:
                 .order_by(AIUsageRecord.created_at, AIUsageRecord.id)
             )
         )
+        output_reports = list(
+            await self._session.scalars(
+                select(AIOutputReport)
+                .where(AIOutputReport.user_id == user.id)
+                .order_by(AIOutputReport.created_at, AIOutputReport.id)
+            )
+        )
 
         preferences_payload: JsonValue = None
         if preferences is not None:
@@ -171,6 +179,18 @@ class PrivacyExportRepository:
                     "created_at": _timestamp(usage.created_at),
                 }
                 for usage in usage_records
+            ],
+            "ai_output_reports": [
+                {
+                    "id": str(report.id),
+                    "conversation_id": str(report.conversation_id),
+                    "response_id": str(report.response_id),
+                    "category": report.category,
+                    "status": report.status,
+                    "created_at": _timestamp(report.created_at),
+                    "updated_at": _timestamp(report.updated_at),
+                }
+                for report in output_reports
             ],
         }
 

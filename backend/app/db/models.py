@@ -74,6 +74,9 @@ class User(TimestampMixin, Base):
     ai_usage_records: Mapped[list[AIUsageRecord]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    ai_output_reports: Mapped[list[AIOutputReport]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class UserPreference(TimestampMixin, Base):
@@ -180,6 +183,9 @@ class Conversation(TimestampMixin, Base):
         back_populates="conversation",
         cascade="all, delete-orphan",
         order_by="ConversationSource.source_index",
+    )
+    ai_output_reports: Mapped[list[AIOutputReport]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
     )
 
 
@@ -507,6 +513,42 @@ class AIUsageRecord(TimestampMixin, Base):
     released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="ai_usage_records")
+
+
+class AIOutputReport(TimestampMixin, Base):
+    """Content-free user report about one opaque generated-response identifier."""
+
+    __tablename__ = "ai_output_reports"
+    __table_args__ = (
+        UniqueConstraint("user_id", "response_id"),
+        Index("ix_ai_output_reports_status_created", "status", "created_at"),
+        Index("ix_ai_output_reports_category_created", "category", "created_at"),
+        CheckConstraint(
+            "category IN ('harmful_or_unsafe', 'harassing_or_hateful', "
+            "'sexual_content', 'deceptive_or_manipulative', 'other')",
+            name="category",
+        ),
+        CheckConstraint(
+            "status IN ('received', 'reviewed', 'actioned', 'dismissed')",
+            name="status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    response_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="received", nullable=False)
+
+    user: Mapped[User] = relationship(back_populates="ai_output_reports")
+    conversation: Mapped[Conversation] = relationship(back_populates="ai_output_reports")
 
 
 class DeletionRequest(Base):

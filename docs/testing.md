@@ -227,6 +227,23 @@ The first drift attempt used a stale pre-existing local database volume and was
 not treated as valid evidence; the clean isolated database result is the
 authoritative migration verification.
 
+## Google Play release hardening verification
+
+The Play hardening change adds deterministic tests for Android-only release
+configuration and privacy-minimized AI-output reporting. Backend tests verify
+owner scoping, idempotency, exact response fields, bounded categories, rejection
+of content-bearing payloads, export, and deletion cascades. Mobile tests verify
+that only live outputs expose the report action and that its disclosure excludes
+conversation, screenshot, and generated text.
+
+The Android release gate additionally builds an AAB from a clean revision,
+confirms package `com.convocoach.convo_coach` and target API 36 in the merged
+manifest, checks that the signer matches the protected upload key, and emits a
+SHA-256 digest. A build made from the example configuration proves the local
+toolchain and signing path only; it is never a production candidate because its
+API value is a placeholder. Only `scripts/build_google_play_bundle.zsh` with the
+ignored reviewed production configuration may produce a release candidate.
+
 ## Phase 7 conversation-data dashboard verification
 
 Phase 7 adds a Flutter-only read-only consumer of supplied Phase 6B analytics.

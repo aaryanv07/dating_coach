@@ -39,6 +39,15 @@ abstract interface class ExternalProcessingConsentRepository {
   });
 }
 
+abstract interface class AIOutputReportingRepository {
+  Future<bool> reportOutput({
+    required String conversationId,
+    required String responseId,
+    required CoachOutputReportCategory category,
+    required ConversationCoachCancellationToken cancellationToken,
+  });
+}
+
 class UnavailableConversationCoachRepository
     implements ConversationCoachRepository {
   const UnavailableConversationCoachRepository();

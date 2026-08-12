@@ -29,7 +29,10 @@ class ConversationCoachScreen extends ConsumerWidget {
       body: switch (state) {
         ConversationCoachLoading() => _Loading(onCancel: controller.cancel),
         ConversationCoachGrantingConsent() => const _GrantingConsent(),
-        ConversationCoachReady(:final preview) => _Preview(preview: preview),
+        ConversationCoachReady(:final preview) => _Preview(
+          preview: preview,
+          onReport: controller.reportOutput,
+        ),
         ConversationCoachFeatureDisabled() => const _SafeState(
           icon: Icons.lock_outline_rounded,
           title: 'Preview is disabled',
@@ -214,9 +217,14 @@ class _ExternalProcessingConsent extends StatelessWidget {
 }
 
 class _Preview extends StatelessWidget {
-  const _Preview({required this.preview});
+  const _Preview({required this.preview, required this.onReport});
 
   final ConversationCoachPreviewViewModel preview;
+  final Future<bool> Function(
+    String responseId,
+    CoachOutputReportCategory category,
+  )
+  onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -277,11 +285,76 @@ class _Preview extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               _PreviewSection(section: section),
             ],
+            if (!preview.mockExecution) ...[
+              const SizedBox(height: AppSpacing.xl),
+              AppButton(
+                key: const Key('report-ai-output'),
+                label: 'Report this AI response',
+                icon: Icons.flag_outlined,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => _showReportSheet(context),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Reports help us improve safety. Your chat and the generated text are not included.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             if (kDebugMode) ...[
               const SizedBox(height: AppSpacing.lg),
               _DeveloperEvidence(preview: preview),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showReportSheet(BuildContext context) async {
+    final category = await showModalBottomSheet<CoachOutputReportCategory>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          key: const Key('report-ai-output-sheet'),
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          children: [
+            Text(
+              'What should we review?',
+              style: Theme.of(sheetContext).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'Only an opaque response ID and the category are sent. Conversation text, screenshots, and the generated response are not included.',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (final item in CoachOutputReportCategory.values)
+              ListTile(
+                minTileHeight: 48,
+                leading: const Icon(Icons.flag_outlined),
+                title: Text(item.label),
+                onTap: () => Navigator.of(sheetContext).pop(item),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (category == null || !context.mounted) return;
+    final received = await onReport(preview.responseId, category);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          received
+              ? 'Report received. Thank you for helping improve safety.'
+              : 'The report could not be sent. Please try again.',
         ),
       ),
     );

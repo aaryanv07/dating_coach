@@ -4,14 +4,17 @@ from collections.abc import Mapping
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Request, Response, status
+from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from app.api.dependencies import CurrentUser, DatabaseSession
 from app.core.config import Settings
 from app.core.observability import resolve_correlation_id
+from app.repositories.ai_output_reports import AIOutputReportRepository
 from app.schemas.conversation_coach import (
     CoachLiveSuccessV2,
+    CoachOutputReportReceiptV1,
+    CoachOutputReportRequestV1,
     CoachPreviewErrorCode,
     CoachPreviewErrorV1,
     CoachPreviewFailureV1,
@@ -24,6 +27,7 @@ from app.services.conversation_coach import (
 
 router = APIRouter(prefix="/api/v1/conversations", tags=["conversation-coach"])
 COACH_PREVIEW_PATH_SUFFIX = "/coach-preview"
+COACH_REPORT_PATH_SUFFIX = "/coach-reports"
 NO_STORE_HEADERS = {
     "Cache-Control": "no-store, max-age=0",
     "Pragma": "no-cache",
@@ -150,3 +154,37 @@ async def create_coach_preview(
         response.headers[name] = value
     response.headers["X-Correlation-ID"] = str(correlation_id)
     return result
+
+
+@router.post(
+    "/{conversation_id}/coach-reports",
+    response_model=CoachOutputReportReceiptV1,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_coach_output_report(
+    conversation_id: UUID,
+    payload: CoachOutputReportRequestV1,
+    response: Response,
+    user: CurrentUser,
+    session: DatabaseSession,
+) -> CoachOutputReportReceiptV1:
+    """Record a privacy-minimized user report without retaining AI or chat content."""
+    report = await AIOutputReportRepository(session).create_or_get(
+        user_id=user.id,
+        conversation_id=conversation_id,
+        response_id=payload.response_id,
+        category=payload.category,
+    )
+    if report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        )
+    await session.commit()
+    for name, value in NO_STORE_HEADERS.items():
+        response.headers[name] = value
+    return CoachOutputReportReceiptV1(
+        report_id=report.id,
+        status="received",
+        created_at=report.created_at,
+    )

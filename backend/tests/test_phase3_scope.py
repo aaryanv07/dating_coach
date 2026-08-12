@@ -21,6 +21,7 @@ def test_openapi_contains_only_authorized_product_routes(client: TestClient) -> 
         "/api/v1/conversations/{conversation_id}/confirm",
         "/api/v1/conversations/{conversation_id}/events",
         "/api/v1/conversations/{conversation_id}/coach-preview",
+        "/api/v1/conversations/{conversation_id}/coach-reports",
         "/api/v1/subscription/status",
         "/api/v1/subscription/purchase-context",
         "/api/v1/subscription/verify",

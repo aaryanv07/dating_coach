@@ -89,6 +89,15 @@ and signed Android AAB from the exact clean revision. Complete Phase 6A.3 plus
 authentication, store purchase, privacy, deletion/export, reduced-motion, and
 crash-free launch tests on representative physical iPhone and Android devices.
 
+For Google Play, use `scripts/create_android_upload_key.zsh` once and keep its
+keystore on encrypted internal storage with a tested encrypted offline backup.
+Build the reviewed Android revision with `scripts/build_google_play_bundle.zsh`;
+the script rejects placeholders, a dirty tree, missing Keychain credentials, an
+unsigned bundle, or failed mobile gates. Complete the Data Safety declaration,
+content rating, 18+ target audience, app-access instructions, in-app AI-output
+reporting review, and both in-app and external account-deletion paths. Follow
+`Google-Play-Release-Readiness.md`; an AAB alone is not deployment approval.
+
 For export qualification, sign in as two synthetic sandbox users. Create
 reviewed data for each, export from the first account, and verify the JSON is
 `account-export.v1`, contains only the first owner's records, opens through the

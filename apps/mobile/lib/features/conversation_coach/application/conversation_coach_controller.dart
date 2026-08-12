@@ -120,6 +120,30 @@ class ConversationCoachController extends Notifier<ConversationCoachState> {
     state = const ConversationCoachCancelled();
   }
 
+  Future<bool> reportOutput(
+    String responseId,
+    CoachOutputReportCategory category,
+  ) async {
+    final repository = ref.read(conversationCoachRepositoryProvider);
+    if (repository is! AIOutputReportingRepository) return false;
+    final reportingRepository = repository as AIOutputReportingRepository;
+    final token = ConversationCoachCancellationToken();
+    try {
+      return await reportingRepository
+          .reportOutput(
+            conversationId: conversationId,
+            responseId: responseId,
+            category: category,
+            cancellationToken: token,
+          )
+          .timeout(const Duration(seconds: 15), onTimeout: () => false);
+    } on Object {
+      return false;
+    } finally {
+      token.cancel();
+    }
+  }
+
   Future<void> grantExternalProcessingConsent() async {
     final repository = ref.read(conversationCoachRepositoryProvider);
     if (repository is! ExternalProcessingConsentRepository) {

@@ -11,7 +11,8 @@ const _maximumResponseBytes = 262144;
 class HttpConversationCoachRepository
     implements
         ConversationCoachRepository,
-        ExternalProcessingConsentRepository {
+        ExternalProcessingConsentRepository,
+        AIOutputReportingRepository {
   HttpConversationCoachRepository({
     required this.baseUri,
     required this.accessTokenProvider,
@@ -22,6 +23,75 @@ class HttpConversationCoachRepository
   final Future<String?> Function() accessTokenProvider;
   final HttpClient Function() _clientFactory;
   final Map<String, String> _idempotencyKeys = {};
+
+  @override
+  Future<bool> reportOutput({
+    required String conversationId,
+    required String responseId,
+    required CoachOutputReportCategory category,
+    required ConversationCoachCancellationToken cancellationToken,
+  }) async {
+    if (cancellationToken.isCancelled) return false;
+    final client = _clientFactory();
+    HttpClientRequest? request;
+    try {
+      final accessToken = await accessTokenProvider();
+      if (accessToken == null || accessToken.isEmpty) {
+        throw const ConversationCoachTransportException();
+      }
+      request = await client.postUrl(
+        baseUri.resolve(
+          '/api/v1/conversations/${Uri.encodeComponent(conversationId)}/coach-reports',
+        ),
+      );
+      final body = utf8.encode(
+        jsonEncode({
+          'schema_version': 'coach-output-report-request.v1',
+          'response_id': responseId,
+          'category': category.wireValue,
+        }),
+      );
+      request.headers
+        ..set(HttpHeaders.authorizationHeader, 'Bearer $accessToken')
+        ..set(HttpHeaders.acceptHeader, 'application/json')
+        ..set(HttpHeaders.contentTypeHeader, 'application/json')
+        ..contentLength = body.length;
+      request.add(body);
+      cancellationToken.bind(request.abort);
+      final response = await request.close();
+      if (cancellationToken.isCancelled) return false;
+      final bytes = <int>[];
+      await for (final chunk in response) {
+        bytes.addAll(chunk);
+        if (bytes.length > _maximumResponseBytes) {
+          request.abort();
+          throw const ConversationCoachTransportException();
+        }
+      }
+      if (response.statusCode != HttpStatus.created) return false;
+      final decoded = jsonDecode(utf8.decode(bytes));
+      if (decoded is! Map<String, Object?> ||
+          decoded.keys.toSet().difference({
+            'schema_version',
+            'report_id',
+            'status',
+            'created_at',
+          }).isNotEmpty ||
+          decoded.length != 4 ||
+          decoded['schema_version'] != 'coach-output-report-receipt.v1' ||
+          decoded['status'] != 'received' ||
+          decoded['report_id'] is! String ||
+          decoded['created_at'] is! String) {
+        throw const ConversationCoachTransportException();
+      }
+      return true;
+    } on FormatException {
+      throw const ConversationCoachTransportException();
+    } finally {
+      cancellationToken.clear();
+      client.close(force: true);
+    }
+  }
 
   @override
   Future<bool> grantExternalProcessingConsent({

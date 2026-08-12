@@ -2,7 +2,7 @@
   "schema_version": "production-launch-evidence.v1",
   "candidate_id": "phase20-production-launch",
   "source_revision": "0000000000000000000000000000000000000000",
-  "generated_at": "2026-08-03T17:28:11+05:30",
+  "generated_at": "2026-08-12T08:30:00+05:30",
   "oidc_tenant_configured": true,
   "google_oidc_registered": false,
   "apple_oidc_registered": false,
@@ -24,7 +24,7 @@
   "ios_distribution_signed": false,
   "android_distribution_signed": false,
   "ios_physical_qualification_passed": false,
-  "android_physical_qualification_passed": false,
+  "android_physical_qualification_passed": true,
   "privacy_policy_published": false,
   "terms_published": false,
   "account_export_deletion_verified": false,
@@ -36,6 +36,7 @@
   "evidence_ids": [
     "phase20.current-status",
     "phase20.auth0-tenant.jp.20260803",
-    "phase20.ios-development-launch.20260804"
+    "phase20.ios-development-launch.20260804",
+    "phase6a3.android.physical.20260812"
   ]
 }

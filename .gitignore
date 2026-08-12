@@ -40,3 +40,6 @@ redis_data/
 *.auto.tfvars
 crash.log
 apps/mobile/config/production.json
+apps/mobile/config/production.google-play.json
+release/google-play/*.aab
+release/google-play/*.sha256

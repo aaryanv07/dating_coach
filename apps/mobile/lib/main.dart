@@ -9,7 +9,12 @@ import 'package:intl/date_symbol_data_local.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    AppConfig.validateForStartup(releaseMode: kReleaseMode);
+    final platform = switch (defaultTargetPlatform) {
+      TargetPlatform.android => MobileReleasePlatform.android,
+      TargetPlatform.iOS => MobileReleasePlatform.ios,
+      _ => MobileReleasePlatform.all,
+    };
+    AppConfig.validateForStartup(releaseMode: kReleaseMode, platform: platform);
   } on MobileConfigurationError {
     runApp(const ConvoCoachConfigurationErrorApp());
     return;

@@ -236,7 +236,7 @@ def _required_string_claim(payload: Mapping[str, object], key: str) -> str:
 
 def _required_numeric_date(payload: Mapping[str, object], key: str) -> datetime:
     value = payload.get(key)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise AuthenticationError("authentication_failed")
     try:
         return datetime.fromtimestamp(value, UTC)

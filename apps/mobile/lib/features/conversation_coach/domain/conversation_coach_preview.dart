@@ -7,6 +7,22 @@ const conversationCoachRendererSchemaVersion =
 
 enum ConversationCoachSectionStatus { available, unavailable, notice }
 
+enum CoachOutputReportCategory {
+  harmfulOrUnsafe('harmful_or_unsafe', 'Harmful or unsafe'),
+  harassingOrHateful('harassing_or_hateful', 'Harassing or hateful'),
+  sexualContent('sexual_content', 'Sexual content'),
+  deceptiveOrManipulative(
+    'deceptive_or_manipulative',
+    'Deceptive or manipulative',
+  ),
+  other('other', 'Something else');
+
+  const CoachOutputReportCategory(this.wireValue, this.label);
+
+  final String wireValue;
+  final String label;
+}
+
 enum ConversationCoachErrorCode {
   featureDisabled,
   mockDisabled,

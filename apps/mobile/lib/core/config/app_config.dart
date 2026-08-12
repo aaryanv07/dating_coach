@@ -1,3 +1,5 @@
+enum MobileReleasePlatform { android, ios, all }
+
 final class MobileRuntimeConfiguration {
   const MobileRuntimeConfiguration({
     required this.name,
@@ -45,7 +47,10 @@ final class MobileRuntimeConfiguration {
   final String googleMonthlyProductId;
   final String googleYearlyProductId;
 
-  List<String> validationFailures({required bool releaseMode}) {
+  List<String> validationFailures({
+    required bool releaseMode,
+    MobileReleasePlatform platform = MobileReleasePlatform.all,
+  }) {
     final failures = <String>[];
     final normalizedEnvironment = environment.trim().toLowerCase();
     final normalizedAuthenticationMode = authenticationMode
@@ -140,17 +145,23 @@ final class MobileRuntimeConfiguration {
     }
     final productPattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$');
     if (billingMode == 'store') {
-      final productIds = [
-        appleMonthlyProductId,
-        appleYearlyProductId,
-        googleMonthlyProductId,
-        googleYearlyProductId,
-      ];
       final appleProductIds = {appleMonthlyProductId, appleYearlyProductId};
       final googleProductIds = {googleMonthlyProductId, googleYearlyProductId};
-      if (appleProductIds.length != 2 ||
-          googleProductIds.length != 2 ||
-          productIds.any((product) => !productPattern.hasMatch(product))) {
+      final requiredProductIds = switch (platform) {
+        MobileReleasePlatform.android => googleProductIds,
+        MobileReleasePlatform.ios => appleProductIds,
+        MobileReleasePlatform.all => {...appleProductIds, ...googleProductIds},
+      };
+      final productsAreDistinct = switch (platform) {
+        MobileReleasePlatform.android => googleProductIds.length == 2,
+        MobileReleasePlatform.ios => appleProductIds.length == 2,
+        MobileReleasePlatform.all =>
+          googleProductIds.length == 2 && appleProductIds.length == 2,
+      };
+      if (!productsAreDistinct ||
+          requiredProductIds.any(
+            (product) => !productPattern.hasMatch(product),
+          )) {
         failures.add('store_product_identifiers_invalid');
       }
       if (!authenticatedApiConfigured) {
@@ -182,8 +193,14 @@ final class MobileRuntimeConfiguration {
       if (oidcGoogleConnection.isEmpty && oidcAppleConnection.isEmpty) {
         failures.add('release_identity_connection_missing');
       }
-      if (oidcGoogleConnection.isNotEmpty && oidcAppleConnection.isEmpty) {
+      if (platform != MobileReleasePlatform.android &&
+          oidcGoogleConnection.isNotEmpty &&
+          oidcAppleConnection.isEmpty) {
         failures.add('release_apple_sign_in_missing');
+      }
+      if (platform == MobileReleasePlatform.android &&
+          oidcGoogleConnection.isEmpty) {
+        failures.add('release_google_sign_in_missing');
       }
       if (billingMode != 'store') {
         failures.add('release_store_billing_missing');
@@ -219,8 +236,14 @@ final class MobileRuntimeConfiguration {
 
   bool get storeBillingEnabled => billingMode == 'store';
 
-  void validate({required bool releaseMode}) {
-    final failures = validationFailures(releaseMode: releaseMode);
+  void validate({
+    required bool releaseMode,
+    MobileReleasePlatform platform = MobileReleasePlatform.all,
+  }) {
+    final failures = validationFailures(
+      releaseMode: releaseMode,
+      platform: platform,
+    );
     if (failures.isNotEmpty) {
       throw MobileConfigurationError(failures);
     }
@@ -366,7 +389,10 @@ abstract final class AppConfig {
     googleYearlyProductId: googleYearlyProductId,
   );
 
-  static void validateForStartup({required bool releaseMode}) {
-    runtime.validate(releaseMode: releaseMode);
+  static void validateForStartup({
+    required bool releaseMode,
+    MobileReleasePlatform platform = MobileReleasePlatform.all,
+  }) {
+    runtime.validate(releaseMode: releaseMode, platform: platform);
   }
 }

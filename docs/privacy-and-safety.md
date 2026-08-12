@@ -162,6 +162,14 @@ manufacture emotional dependency, or automate pressure. Generated content must
 remain a draft and should be framed as one possible response, not the correct
 interpretation of another person.
 
+Live generated responses expose an in-app safety-reporting action. A report sends
+only the authenticated owner, owned conversation identifier, opaque response
+identifier, and one bounded category. It cannot carry message text, screenshots,
+prompts, generated output, participant names, or free-form notes. Reports are
+included in the owner's export and cascade with conversation or account deletion.
+This content-free ledger supports moderation triage without creating a second
+store of intimate conversation content.
+
 Features involving crisis, abuse, self-harm, threats, stalking, minors, or sexual
 coercion require dedicated policy and escalation design before implementation.
 The current implementation contains on-device OCR, typed event review,

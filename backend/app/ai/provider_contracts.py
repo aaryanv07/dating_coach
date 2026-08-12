@@ -1,6 +1,6 @@
 """Immutable contracts for the Phase 12 provider abstraction foundation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Literal
 
@@ -205,7 +205,7 @@ class AIProviderHealthV1:
 class AIProviderRuntimeConfigurationV1:
     """Provider-neutral runtime configuration with no secrets or endpoints."""
 
-    feature_flags: AIProviderFeatureFlagsV1 = AIProviderFeatureFlagsV1()
+    feature_flags: AIProviderFeatureFlagsV1 = field(default_factory=AIProviderFeatureFlagsV1)
     default_provider_identifier: str = "mock-ai-provider.v1"
     schema_version: Literal["ai-provider-runtime-configuration.v1"] = (
         "ai-provider-runtime-configuration.v1"

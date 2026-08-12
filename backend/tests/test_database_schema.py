@@ -20,6 +20,7 @@ def test_phase_four_tables_are_registered() -> None:
         "messages",
         "subscription_entitlements",
         "ai_usage_records",
+        "ai_output_reports",
         "deletion_requests",
     }
 
@@ -109,6 +110,21 @@ def test_ai_usage_tables_are_content_free_and_owner_cascaded() -> None:
     for table in (entitlements, usage):
         user_fk = next(key for key in table.foreign_keys if key.column.table.name == "users")
         assert user_fk.ondelete == "CASCADE"
+
+
+def test_ai_output_reports_are_content_free_and_cascaded() -> None:
+    reports = Base.metadata.tables["ai_output_reports"]
+
+    assert {"response_id", "category", "status"}.issubset(reports.columns.keys())
+    assert not {
+        "message",
+        "prompt",
+        "response",
+        "screenshot",
+        "content",
+        "notes",
+    }.intersection(reports.columns.keys())
+    assert {key.ondelete for key in reports.foreign_keys} == {"CASCADE"}
 
 
 def test_user_metrics_need_no_parallel_identity_store() -> None:

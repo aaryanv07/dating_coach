@@ -245,3 +245,30 @@ class CoachLiveSuccessV2(BaseModel):
         ):
             return self
         raise ValueError("live_coach_provenance_mismatch")
+
+
+class CoachOutputReportRequestV1(BaseModel):
+    """Content-free report request; private conversation and output text are excluded."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal["coach-output-report-request.v1"] = "coach-output-report-request.v1"
+    response_id: UUID
+    category: Literal[
+        "harmful_or_unsafe",
+        "harassing_or_hateful",
+        "sexual_content",
+        "deceptive_or_manipulative",
+        "other",
+    ]
+
+
+class CoachOutputReportReceiptV1(BaseModel):
+    """Safe acknowledgement without echoing private or user-controlled text."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal["coach-output-report-receipt.v1"] = "coach-output-report-receipt.v1"
+    report_id: UUID
+    status: Literal["received"] = "received"
+    created_at: datetime

@@ -5,11 +5,15 @@ plugins {
 }
 
 val convoCoachMinSdk = 24
+fun secureReleaseValue(name: String): String? =
+    providers.environmentVariable(name).orNull
+        ?: providers.gradleProperty(name).orNull
+
 val releaseSigningValues = listOf(
-    providers.gradleProperty("CONVOCOACH_RELEASE_STORE_FILE").orNull,
-    providers.gradleProperty("CONVOCOACH_RELEASE_STORE_PASSWORD").orNull,
-    providers.gradleProperty("CONVOCOACH_RELEASE_KEY_ALIAS").orNull,
-    providers.gradleProperty("CONVOCOACH_RELEASE_KEY_PASSWORD").orNull,
+    secureReleaseValue("CONVOCOACH_RELEASE_STORE_FILE"),
+    secureReleaseValue("CONVOCOACH_RELEASE_STORE_PASSWORD"),
+    secureReleaseValue("CONVOCOACH_RELEASE_KEY_ALIAS"),
+    secureReleaseValue("CONVOCOACH_RELEASE_KEY_PASSWORD"),
 )
 val releaseSigningConfigured = releaseSigningValues.all { !it.isNullOrBlank() }
 val releaseSigningPartiallyConfigured = releaseSigningValues.any { !it.isNullOrBlank() }

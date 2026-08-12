@@ -10,11 +10,15 @@ erDiagram
     USERS ||--o| COMMUNICATION_PROFILES : owns
     USERS ||--o{ CONSENT_RECORDS : records
     USERS ||--o{ CONVERSATIONS : owns
+    USERS ||--o{ SUBSCRIPTION_ENTITLEMENTS : owns
+    USERS ||--o{ AI_USAGE_RECORDS : owns
+    USERS ||--o{ AI_OUTPUT_REPORTS : files
     USERS ||--o| DELETION_REQUESTS : requests
     CONVERSATIONS ||--|{ CONVERSATION_PARTICIPANTS : contains
     CONVERSATIONS ||--o{ MESSAGES : contains
     CONVERSATIONS ||--o{ CONVERSATION_SOURCES : records_disposal
     CONVERSATIONS ||--o{ CONVERSATION_EVENTS : contains
+    CONVERSATIONS ||--o{ AI_OUTPUT_REPORTS : concerns
     CONVERSATION_EVENTS ||--o{ CONVERSATION_EVENT_RELATIONSHIPS : source
     CONVERSATION_EVENTS ||--o{ CONVERSATION_EVENT_RELATIONSHIPS : target
     CONVERSATION_PARTICIPANTS ||--o{ MESSAGES : sends
@@ -32,6 +36,9 @@ erDiagram
 | `conversation_sources` | Content-free source type, order, size, MIME type, and deletion status | Cascade/conversation deletion |
 | `conversation_events` | Typed reviewed items, separate confidence values, provenance pointer, bounded metadata, review and soft-deletion state | Cascade/conversation deletion |
 | `conversation_event_relationships` | Typed source/target links for reactions, replies, edits, captions, calls, context, and duplicates | Cascade/event deletion |
+| `subscription_entitlements` | Server-verified paid entitlement metadata without raw receipts | Cascade/user deletion |
+| `ai_usage_records` | Content-free allowance, token, and cost ledger | Cascade/user deletion; conversation reference becomes null |
+| `ai_output_reports` | Opaque response ID, bounded safety category, and moderation status; no prompt, output, chat, screenshot, or free-form note | Cascade/user or conversation deletion |
 | `deletion_requests` | External identity-cleanup checkpoint | Retained while user is soft-deleted |
 
 `conversations` records source type, draft/confirmed state, readiness,
