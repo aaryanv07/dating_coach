@@ -20,10 +20,10 @@ void main() {
     );
   });
 
-  testWidgets('settings opens a truthful non-purchasing plan preview', (
+  testWidgets('profile opens a truthful non-purchasing plan preview', (
     tester,
   ) async {
-    await pumpConvoCoach(tester, initialLocation: '/settings');
+    await pumpConvoCoach(tester, initialLocation: '/profile');
 
     await tester.tap(find.text('Plan and usage'));
     await tester.pumpAndSettle();
@@ -65,7 +65,7 @@ void main() {
       tester.platformDispatcher.clearTextScaleFactorTestValue();
     });
 
-    await pumpConvoCoach(tester, initialLocation: '/settings/subscription');
+    await pumpConvoCoach(tester, initialLocation: '/profile/subscription');
 
     expect(find.text('Choose coaching that fits your pace.'), findsOneWidget);
     expect(tester.takeException(), isNull);

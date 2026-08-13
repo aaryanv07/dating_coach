@@ -16,8 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+class ProfileScreen extends ConsumerWidget {
+  const ProfileScreen({super.key});
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
@@ -145,23 +145,23 @@ class SettingsScreen extends ConsumerWidget {
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Profile')),
       body: ResponsiveContent(
         child: ListView(
           padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
           children: [
-            Text('You', style: Theme.of(context).textTheme.titleLarge),
+            Text('Your profile', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: AppSpacing.md),
             AppCard(
               padding: EdgeInsets.zero,
               child: ListTile(
                 leading: const Icon(Icons.account_circle_outlined),
-                title: const Text('Your profile'),
+                title: const Text('Edit profile'),
                 subtitle: const Text(
                   'Photo, name, job, likes and coaching preferences',
                 ),
                 trailing: const Icon(Icons.arrow_forward_rounded),
-                onTap: () => context.push('/settings/profile'),
+                onTap: () => context.push('/profile/edit'),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -172,7 +172,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('Plan and usage'),
                 subtitle: const Text('Preview Free and ConvoCoach Plus'),
                 trailing: const Icon(Icons.arrow_forward_rounded),
-                onTap: () => context.push('/settings/subscription'),
+                onTap: () => context.push('/profile/subscription'),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),

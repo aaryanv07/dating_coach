@@ -65,7 +65,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('navigation and settings fit a narrow phone viewport', (
+  testWidgets('navigation and profile fit a narrow phone viewport', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -78,7 +78,7 @@ void main() {
     await pumpConvoCoach(tester, initialLocation: '/home');
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Settings'));
+    await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
     expect(find.text('Appearance'), findsOneWidget);
     expect(tester.takeException(), isNull);

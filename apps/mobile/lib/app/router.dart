@@ -45,6 +45,15 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/auth',
         builder: (context, state) => const AuthenticationScreen(),
       ),
+      GoRoute(path: '/settings', redirect: (context, state) => '/profile'),
+      GoRoute(
+        path: '/settings/profile',
+        redirect: (context, state) => '/profile/edit',
+      ),
+      GoRoute(
+        path: '/settings/subscription',
+        redirect: (context, state) => '/profile/subscription',
+      ),
       GoRoute(
         path: '/import',
         builder: (context, state) => const ImportTypeScreen(),
@@ -120,11 +129,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
                 routes: [
                   GoRoute(
-                    path: 'profile',
+                    path: 'edit',
                     builder: (context, state) =>
                         const CommunicationProfileScreen(),
                   ),

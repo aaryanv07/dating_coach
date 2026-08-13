@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'helpers/pump_app.dart';
 
 void main() {
-  testWidgets('settings opens and saves the basic communication profile', (
+  testWidgets('profile hub opens and saves the communication profile', (
     tester,
   ) async {
-    await pumpConvoCoach(tester, initialLocation: '/settings');
+    await pumpConvoCoach(tester, initialLocation: '/profile');
 
-    await tester.tap(find.text('Your profile'));
+    await tester.tap(find.text('Edit profile'));
     await tester.pumpAndSettle();
 
     expect(find.text('Tell us what feels natural to you.'), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
         tester.platformDispatcher.clearTextScaleFactorTestValue();
       });
 
-      await pumpConvoCoach(tester, initialLocation: '/settings/profile');
+      await pumpConvoCoach(tester, initialLocation: '/profile/edit');
 
       expect(find.text('Your profile'), findsOneWidget);
       expect(find.text('Tell us what feels natural to you.'), findsOneWidget);

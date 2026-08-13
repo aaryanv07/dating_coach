@@ -21,8 +21,9 @@ void main() {
       expect(find.text('Overall stats'), findsOneWidget);
       expect(find.byKey(const Key('overall-score-hero')), findsOneWidget);
 
-      await tester.tap(find.text('Settings'));
+      await tester.tap(find.text('Profile'));
       await tester.pumpAndSettle();
+      expect(find.text('Edit profile'), findsOneWidget);
       expect(find.text('Appearance'), findsOneWidget);
 
       await tester.tap(find.text('Create'));
@@ -36,7 +37,7 @@ void main() {
   testWidgets('sign out is explicit and returns to authentication', (
     tester,
   ) async {
-    await pumpConvoCoach(tester, initialLocation: '/settings');
+    await pumpConvoCoach(tester, initialLocation: '/profile');
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('sign-out-action')),
@@ -53,10 +54,10 @@ void main() {
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 
-  testWidgets('settings exposes an explicit owner-controlled data export', (
+  testWidgets('profile exposes an explicit owner-controlled data export', (
     tester,
   ) async {
-    await pumpConvoCoach(tester, initialLocation: '/settings');
+    await pumpConvoCoach(tester, initialLocation: '/profile');
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('export-account-action')),
