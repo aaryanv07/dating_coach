@@ -44,6 +44,29 @@ final class OidcAuthenticationConfiguration {
         'audience': audience,
         ...?authorizationParameters[method],
       });
+
+  OidcAuthorizationRequestParameters requestParametersFor(
+    MobileAuthenticationMethod method,
+  ) {
+    final additionalParameters = Map<String, String>.of(parametersFor(method));
+    final prompt = additionalParameters.remove('prompt');
+    return OidcAuthorizationRequestParameters(
+      additionalParameters: Map.unmodifiable(additionalParameters),
+      promptValues: prompt == null || prompt.isEmpty
+          ? null
+          : List.unmodifiable([prompt]),
+    );
+  }
+}
+
+final class OidcAuthorizationRequestParameters {
+  const OidcAuthorizationRequestParameters({
+    required this.additionalParameters,
+    required this.promptValues,
+  });
+
+  final Map<String, String> additionalParameters;
+  final List<String>? promptValues;
 }
 
 final class OidcAuthenticationGateway
@@ -71,12 +94,12 @@ final class OidcAuthenticationGateway
   Future<MobileAuthenticationResult> signIn(
     MobileAuthenticationMethod method,
   ) async {
-    final methodParameters = configuration.parametersFor(method);
     if (!configuration.supports(method)) {
       return const MobileAuthenticationRejected(
         'authentication_method_unsupported',
       );
     }
+    final requestParameters = configuration.requestParametersFor(method);
     _sessions.add(
       MobileAuthenticationSession(
         lifecycle: MobileAuthenticationLifecycle.authenticating,
@@ -90,7 +113,8 @@ final class OidcAuthenticationGateway
           configuration.redirectUrl,
           discoveryUrl: configuration.discoveryUrl,
           scopes: configuration.scopes,
-          additionalParameters: methodParameters,
+          promptValues: requestParameters.promptValues,
+          additionalParameters: requestParameters.additionalParameters,
           externalUserAgent:
               ExternalUserAgent.ephemeralAsWebAuthenticationSession,
         ),

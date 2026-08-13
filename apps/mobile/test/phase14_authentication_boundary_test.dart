@@ -92,6 +92,7 @@ void main() {
           MobileAuthenticationMethod.apple: {'connection': 'apple'},
           MobileAuthenticationMethod.emailPassword: {
             'connection': 'Username-Password-Authentication',
+            'prompt': 'login',
           },
           MobileAuthenticationMethod.emailSignup: {
             'connection': 'Username-Password-Authentication',
@@ -124,6 +125,15 @@ void main() {
             .clear(),
         throwsUnsupportedError,
       );
+      final emailRequest = configuration.requestParametersFor(
+        MobileAuthenticationMethod.emailPassword,
+      );
+      expect(emailRequest.promptValues, ['login']);
+      expect(emailRequest.additionalParameters, {
+        'audience': 'convocoach-api',
+        'connection': 'Username-Password-Authentication',
+      });
+      expect(emailRequest.additionalParameters, isNot(contains('prompt')));
     });
 
     test('release build rejects the unavailable placeholder', () {
