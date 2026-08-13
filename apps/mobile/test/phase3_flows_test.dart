@@ -1,9 +1,49 @@
+import 'dart:async';
+
+import 'package:convo_coach/features/communication_profile/application/communication_profile_controller.dart';
+import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
+import 'package:convo_coach/features/communication_profile/domain/communication_profile_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/pump_app.dart';
 
 void main() {
+  testWidgets(
+    'first-login profile form renders while the API is still loading',
+    (tester) async {
+      final repository = _PendingCommunicationProfileRepository();
+      await pumpConvoCoach(
+        tester,
+        initialLocation: '/profile/setup',
+        overrides: [
+          communicationProfileRepositoryProvider.overrideWithValue(repository),
+        ],
+        settle: false,
+      );
+      await tester.pump();
+
+      expect(find.text('Set up your profile'), findsOneWidget);
+      expect(find.text('Preferred name'), findsOneWidget);
+      expect(find.text('Age'), findsOneWidget);
+      expect(
+        find.text(
+          'Loading any saved details in the background. You can start now.',
+        ),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField).first, 'Typed now');
+      repository.complete(
+        const CommunicationProfile.empty().copyWith(
+          preferredName: 'Loaded later',
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Typed now'), findsOneWidget);
+      expect(find.text('Loaded later'), findsNothing);
+    },
+  );
+
   testWidgets('profile hub opens and saves the communication profile', (
     tester,
   ) async {
@@ -102,4 +142,36 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _PendingCommunicationProfileRepository
+    implements CommunicationProfileRepository {
+  final Completer<CommunicationProfile> _fetch = Completer();
+
+  void complete([
+    CommunicationProfile profile = const CommunicationProfile.empty(),
+  ]) {
+    if (!_fetch.isCompleted) {
+      _fetch.complete(profile);
+    }
+  }
+
+  @override
+  Future<CommunicationProfile> fetch() => _fetch.future;
+
+  @override
+  Future<CommunicationProfile> save(CommunicationProfile profile) async =>
+      profile;
+
+  @override
+  Future<CommunicationProfile> updatePhoto(
+    CommunicationProfile profile,
+    List<int> bytes,
+    String contentType,
+  ) async => profile;
+
+  @override
+  Future<CommunicationProfile> deletePhoto(
+    CommunicationProfile profile,
+  ) async => profile;
 }

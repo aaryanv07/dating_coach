@@ -34,13 +34,25 @@ class CommunicationProfileScreen extends ConsumerWidget {
       ),
       body: AppBackground(
         child: profile.when(
-          loading: () => const _ProfileSkeleton(),
-          error: (error, stackTrace) => AppErrorState(
-            title: 'Your profile is unavailable.',
-            message: 'Try loading your preferences again.',
-            actionLabel: 'Retry',
-            onAction: () => ref.invalidate(communicationProfileProvider),
-          ),
+          loading: () => setupMode
+              ? const _ProfileForm(
+                  profile: CommunicationProfile.empty(),
+                  setupMode: true,
+                  existingProfileLoading: true,
+                )
+              : const _ProfileSkeleton(),
+          error: (error, stackTrace) => setupMode
+              ? const _ProfileForm(
+                  profile: CommunicationProfile.empty(),
+                  setupMode: true,
+                  existingProfileUnavailable: true,
+                )
+              : AppErrorState(
+                  title: 'Your profile is unavailable.',
+                  message: 'Try loading your preferences again.',
+                  actionLabel: 'Retry',
+                  onAction: () => ref.invalidate(communicationProfileProvider),
+                ),
           data: (value) {
             if (setupMode && value.profileSetupCompleted) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -57,10 +69,17 @@ class CommunicationProfileScreen extends ConsumerWidget {
 }
 
 class _ProfileForm extends ConsumerStatefulWidget {
-  const _ProfileForm({required this.profile, required this.setupMode});
+  const _ProfileForm({
+    required this.profile,
+    required this.setupMode,
+    this.existingProfileLoading = false,
+    this.existingProfileUnavailable = false,
+  });
 
   final CommunicationProfile profile;
   final bool setupMode;
+  final bool existingProfileLoading;
+  final bool existingProfileUnavailable;
 
   @override
   ConsumerState<_ProfileForm> createState() => _ProfileFormState();
@@ -92,6 +111,48 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late Uint8List? _photoBytes = widget.profile.profilePhotoBytes;
   bool _photoChanged = false;
   String _photoContentType = 'image/jpeg';
+
+  @override
+  void didUpdateWidget(covariant _ProfileForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.existingProfileLoading || widget.existingProfileLoading) {
+      return;
+    }
+    final loaded = widget.profile;
+    if (_nameController.text.trim().isEmpty) {
+      _nameController.text = loaded.preferredName;
+    }
+    if (_ageController.text.trim().isEmpty && loaded.age != null) {
+      _ageController.text = loaded.age.toString();
+    }
+    if (_genderController.text.trim().isEmpty) {
+      _genderController.text = loaded.gender;
+    }
+    if (_jobController.text.trim().isEmpty) {
+      _jobController.text = loaded.jobTitle;
+    }
+    if (_likesController.text.trim().isEmpty) {
+      _likesController.text = loaded.likes.join(', ');
+    }
+    if (_lookingForController.text.trim().isEmpty) {
+      _lookingForController.text = loaded.lookingFor.join(', ');
+    }
+    if (_intention == oldWidget.profile.relationshipIntention) {
+      _intention = loaded.relationshipIntention;
+    }
+    if (_tone == oldWidget.profile.communicationTone) {
+      _tone = loaded.communicationTone;
+    }
+    if (_messageLength == oldWidget.profile.messageLength) {
+      _messageLength = loaded.messageLength;
+    }
+    if (_usesEmojis == oldWidget.profile.usesEmojis) {
+      _usesEmojis = loaded.usesEmojis;
+    }
+    if (!_photoChanged && _photoBytes == null) {
+      _photoBytes = loaded.profilePhotoBytes;
+    }
+  }
 
   @override
   void dispose() {
@@ -239,6 +300,37 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
+          if (widget.existingProfileLoading ||
+              widget.existingProfileUnavailable) ...[
+            const SizedBox(height: AppSpacing.md),
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox.square(
+                    dimension: 20,
+                    child: widget.existingProfileLoading
+                        ? const CircularProgressIndicator(strokeWidth: 2)
+                        : Icon(
+                            Icons.cloud_off_outlined,
+                            size: 20,
+                            color: context.appColors.risk,
+                          ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      widget.existingProfileLoading
+                          ? 'Loading any saved details in the background. You can start now.'
+                          : 'Saved details could not be loaded. Check your connection before saving.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xl),
           AppReveal(
             delay: const Duration(milliseconds: 120),
@@ -447,10 +539,14 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           AppReveal(
             delay: const Duration(milliseconds: 240),
             child: AppButton(
-              label: 'Save profile',
+              label: widget.existingProfileLoading
+                  ? 'Preparing profile…'
+                  : 'Save profile',
               icon: Icons.check_rounded,
               isLoading: _saving,
-              onPressed: _saving ? null : _save,
+              onPressed: _saving || widget.existingProfileLoading
+                  ? null
+                  : _save,
             ),
           ),
         ],

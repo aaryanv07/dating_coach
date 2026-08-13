@@ -13,6 +13,7 @@ import 'package:convo_coach/features/conversation_coach/domain/conversation_coac
 import 'package:convo_coach/features/progress/application/progress_dashboard_controller.dart';
 import 'package:convo_coach/features/progress/domain/progress_journal_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,6 +27,8 @@ Future<GoRouter> pumpConvoCoach(
   ConversationCoachRepository? conversationCoachRepository,
   bool? conversationCoachEntryAvailable,
   ProgressJournalRepository? progressJournalRepository,
+  List<Override> overrides = const [],
+  bool settle = true,
 }) async {
   final router = createAppRouter(initialLocation: initialLocation);
   addTearDown(router.dispose);
@@ -56,10 +59,15 @@ Future<GoRouter> pumpConvoCoach(
         progressJournalRepositoryProvider.overrideWithValue(
           progressJournalRepository ?? MemoryProgressJournalRepository(),
         ),
+        ...overrides,
       ],
       child: ConvoCoachApp(router: router),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return router;
 }

@@ -134,6 +134,15 @@ void main() {
         'connection': 'Username-Password-Authentication',
       });
       expect(emailRequest.additionalParameters, isNot(contains('prompt')));
+      final signupRequest = configuration.requestParametersFor(
+        MobileAuthenticationMethod.emailSignup,
+      );
+      expect(signupRequest.promptValues, isNull);
+      expect(signupRequest.additionalParameters, {
+        'audience': 'convocoach-api',
+        'connection': 'Username-Password-Authentication',
+        'screen_hint': 'signup',
+      });
     });
 
     test('release build rejects the unavailable placeholder', () {

@@ -34,7 +34,6 @@ final authenticationGatewayProvider = Provider<MobileAuthenticationGateway>((
             MobileAuthenticationMethod.emailSignup: {
               AppConfig.oidcProviderParameter: AppConfig.oidcDatabaseConnection,
               'screen_hint': 'signup',
-              'prompt': 'login',
             },
         },
       ),

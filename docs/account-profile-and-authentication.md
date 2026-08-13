@@ -25,6 +25,9 @@ Set the public connection names with
 `CONVOCOACH_OIDC_DATABASE_CONNECTION`. The email/password button opens the
 protected Auth0 page, where the user can create an account or choose **Forgot
 password**. No provider password enters the Flutter process or backend.
+The create-account action supplies Auth0's signup screen hint without a
+conflicting forced-login prompt. The database connection must be enabled for
+the native client before email login or registration can qualify.
 
 ## First-login profile contract
 
