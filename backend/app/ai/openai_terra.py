@@ -13,6 +13,7 @@ from uuid import UUID
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.ai.coaching_profile import UserCoachingProfileV1
 from app.core.config import OPENAI_TERRA_MODEL
 from app.domain.conversation_events import (
     ConfirmedConversationEvent,
@@ -42,7 +43,8 @@ safety guidance. Never reconstruct deleted or omitted content.
 
 Return only the requested structured response. Keep reply drafts natural, concise,
 and editable. Do not include names, personal identifiers, or facts absent from the
-reviewed messages."""
+reviewed messages or explicit user_profile. Use profile fields only to tailor the
+user's draft; never treat them as facts about the other person."""
 
 
 class TerraProviderFailureCode(StrEnum):
@@ -84,6 +86,7 @@ class TerraConversationContextV1(BaseModel):
     ]
     earlier_messages_omitted: bool
     message_text_truncated: bool
+    user_profile: UserCoachingProfileV1 | None = None
 
 
 class TerraObservationV1(BaseModel):
@@ -252,6 +255,7 @@ class OpenAITerraProvider:
 
 def build_terra_context(
     events: tuple[ConfirmedConversationEvent, ...],
+    user_profile: UserCoachingProfileV1 | None = None,
 ) -> TerraConversationContextV1:
     """Select the newest bounded reviewed messages without source metadata."""
     eligible = tuple(
@@ -292,6 +296,7 @@ def build_terra_context(
         messages=selected,
         earlier_messages_omitted=len(selected) < len(eligible),
         message_text_truncated=text_truncated,
+        user_profile=user_profile,
     )
 
 

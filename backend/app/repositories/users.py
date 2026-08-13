@@ -89,6 +89,9 @@ class UserRepository:
         texting_style: str | None,
         preferred_message_length: str | None,
         uses_emojis: bool | None,
+        job_title: str | None,
+        likes: list[str] | None,
+        looking_for: list[str] | None,
     ) -> CommunicationProfile:
         profile = await self.get_profile(user_id)
         if preferred_name is not None:
@@ -103,6 +106,27 @@ class UserRepository:
             profile.preferred_message_length = preferred_message_length
         if uses_emojis is not None:
             profile.uses_emojis = uses_emojis
+        if job_title is not None:
+            profile.job_title = job_title
+        if likes is not None:
+            profile.likes = likes
+        if looking_for is not None:
+            profile.looking_for = looking_for
+        await self._session.flush()
+        return profile
+
+    async def update_profile_photo(
+        self,
+        user_id: UUID,
+        *,
+        content: bytes | None,
+        content_type: str | None,
+    ) -> CommunicationProfile:
+        """Replace or remove an owner-scoped private profile photo."""
+        profile = await self.get_profile(user_id)
+        profile.profile_photo_bytes = content
+        profile.profile_photo_content_type = content_type
+        profile.profile_photo_updated_at = utc_now() if content is not None else None
         await self._session.flush()
         return profile
 

@@ -1,4 +1,11 @@
-enum MobileAuthenticationMethod { apple, google, emailLink, oidc }
+enum MobileAuthenticationMethod {
+  apple,
+  google,
+  emailPassword,
+  emailSignup,
+  emailLink,
+  oidc,
+}
 
 enum MobileAuthenticationLifecycle {
   signedOut,

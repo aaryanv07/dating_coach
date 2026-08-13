@@ -4,4 +4,12 @@ abstract interface class CommunicationProfileRepository {
   Future<CommunicationProfile> fetch();
 
   Future<CommunicationProfile> save(CommunicationProfile profile);
+
+  Future<CommunicationProfile> updatePhoto(
+    CommunicationProfile profile,
+    List<int> bytes,
+    String contentType,
+  );
+
+  Future<CommunicationProfile> deletePhoto(CommunicationProfile profile);
 }

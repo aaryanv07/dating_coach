@@ -131,3 +131,18 @@ def test_user_metrics_need_no_parallel_identity_store() -> None:
     """Operator aggregates must keep the existing users table as source of truth."""
     assert "operator_users" not in Base.metadata.tables
     assert "analytics_users" not in Base.metadata.tables
+
+
+def test_account_profile_remains_mapped_to_the_existing_user_id() -> None:
+    profiles = Base.metadata.tables["communication_profiles"]
+
+    assert {
+        "user_id",
+        "job_title",
+        "likes",
+        "looking_for",
+        "profile_photo_bytes",
+        "profile_photo_content_type",
+    }.issubset(profiles.columns.keys())
+    user_fk = next(key for key in profiles.foreign_keys if key.column.table.name == "users")
+    assert user_fk.ondelete == "CASCADE"

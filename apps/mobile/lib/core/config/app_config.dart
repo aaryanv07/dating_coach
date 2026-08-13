@@ -18,6 +18,7 @@ final class MobileRuntimeConfiguration {
     this.oidcProviderParameter = 'connection',
     this.oidcGoogleConnection = '',
     this.oidcAppleConnection = '',
+    this.oidcDatabaseConnection = '',
     this.billingMode = 'unavailable',
     this.appleMonthlyProductId = '',
     this.appleYearlyProductId = '',
@@ -41,6 +42,7 @@ final class MobileRuntimeConfiguration {
   final String oidcProviderParameter;
   final String oidcGoogleConnection;
   final String oidcAppleConnection;
+  final String oidcDatabaseConnection;
   final String billingMode;
   final String appleMonthlyProductId;
   final String appleYearlyProductId;
@@ -133,7 +135,11 @@ final class MobileRuntimeConfiguration {
       if (!providerValuePattern.hasMatch(oidcProviderParameter)) {
         failures.add('oidc_provider_parameter_invalid');
       }
-      for (final connection in [oidcGoogleConnection, oidcAppleConnection]) {
+      for (final connection in [
+        oidcGoogleConnection,
+        oidcAppleConnection,
+        oidcDatabaseConnection,
+      ]) {
         if (connection.isNotEmpty &&
             !providerValuePattern.hasMatch(connection)) {
           failures.add('oidc_provider_connection_invalid');
@@ -233,6 +239,9 @@ final class MobileRuntimeConfiguration {
 
   bool get appleSignInEnabled =>
       oidcAuthenticationEnabled && oidcAppleConnection.isNotEmpty;
+
+  bool get emailPasswordSignInEnabled =>
+      oidcAuthenticationEnabled && oidcDatabaseConnection.isNotEmpty;
 
   bool get storeBillingEnabled => billingMode == 'store';
 
@@ -340,6 +349,11 @@ abstract final class AppConfig {
     defaultValue: '',
   );
 
+  static const String oidcDatabaseConnection = String.fromEnvironment(
+    'CONVOCOACH_OIDC_DATABASE_CONNECTION',
+    defaultValue: '',
+  );
+
   static const String billingMode = String.fromEnvironment(
     'CONVOCOACH_BILLING_MODE',
     defaultValue: 'unavailable',
@@ -382,6 +396,7 @@ abstract final class AppConfig {
     oidcProviderParameter: oidcProviderParameter,
     oidcGoogleConnection: oidcGoogleConnection,
     oidcAppleConnection: oidcAppleConnection,
+    oidcDatabaseConnection: oidcDatabaseConnection,
     billingMode: billingMode,
     appleMonthlyProductId: appleMonthlyProductId,
     appleYearlyProductId: appleYearlyProductId,

@@ -25,6 +25,7 @@ logged.
 | `GET` | `/users/me` | Read current user |
 | `GET/PATCH` | `/users/me/preferences` | Read/update user preferences |
 | `GET/PATCH` | `/communication-profile` | Read/update explicit profile choices |
+| `GET/PUT/DELETE` | `/communication-profile/photo` | Read, replace, or remove the authenticated owner's private profile photo |
 | `POST/GET` | `/consents` | Append/list consent decisions |
 | `POST/GET` | `/conversations` | Create/list owner-scoped conversations |
 | `GET/DELETE` | `/conversations/{id}` | Read/delete one owned conversation |
@@ -131,3 +132,9 @@ requires the independently verified `read:user-metrics` OAuth permission and
 never returns identity fields, account rows, private content, or provider
 payloads. Metric definitions and Auth0 setup are documented in
 `docs/operator-user-metrics.md`.
+The communication profile is keyed by the server-generated `users.id` and may
+contain `preferred_name`, `job_title`, up to 12 user-authored `likes`, up to 12
+user-authored `looking_for` items, and communication preferences. The response
+exposes only `has_profile_photo` and its update timestamp; image bytes are
+available only from the authenticated photo route. Photos accept JPEG, PNG, or
+WebP up to 900 KiB and are never included in AI context or logs.

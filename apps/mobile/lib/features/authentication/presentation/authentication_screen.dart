@@ -120,6 +120,50 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
                             _continueSecurely(MobileAuthenticationMethod.apple),
                 ),
               ],
+              if (AppConfig.runtime.emailPasswordSignInEnabled) ...[
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  key: const Key('production-email-password-sign-in'),
+                  label: 'Continue with email & password',
+                  icon: Icons.mail_outline_rounded,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: _authenticating
+                      ? null
+                      : () => _continueSecurely(
+                          MobileAuthenticationMethod.emailPassword,
+                        ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: AppSpacing.md,
+                  children: [
+                    TextButton(
+                      key: const Key('production-create-account'),
+                      onPressed: _authenticating
+                          ? null
+                          : () => _continueSecurely(
+                              MobileAuthenticationMethod.emailSignup,
+                            ),
+                      child: const Text('Create account'),
+                    ),
+                    TextButton(
+                      key: const Key('production-forgot-password'),
+                      onPressed: _authenticating
+                          ? null
+                          : () => _continueSecurely(
+                              MobileAuthenticationMethod.emailPassword,
+                            ),
+                      child: const Text('Forgot password?'),
+                    ),
+                  ],
+                ),
+                Text(
+                  'The protected sign-in page lets you reset your password by email. ConvoCoach never sees it.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
               if (_authenticationError case final message?) ...[
                 const SizedBox(height: AppSpacing.md),
                 Semantics(

@@ -13,6 +13,7 @@ from uuid import UUID
 from openai import AsyncOpenAI
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from app.ai.coaching_profile import UserCoachingProfileV1
 from app.ai.external_safety import (
     ExternalSafetyViolation,
     assess_reviewed_messages,
@@ -49,7 +50,9 @@ is non-empty, return no reply drafts and provide safety guidance that respects t
 boundary or redirects away from harm. Never reconstruct deleted or omitted content.
 
 Return one object matching the required JSON schema. Keep drafts natural, concise,
-editable, and free of names, identifiers, or facts absent from the reviewed messages."""
+editable, and free of names, identifiers, or facts absent from the reviewed messages
+or explicit user_profile. Use profile fields only to tailor the user's draft;
+never treat them as facts about the other person."""
 
 
 class OpenRouterProviderFailureCode(StrEnum):
@@ -94,6 +97,7 @@ class OpenRouterConversationContextV1(BaseModel):
     ]
     earlier_messages_omitted: bool
     message_text_truncated: bool
+    user_profile: UserCoachingProfileV1 | None = None
 
 
 class OpenRouterObservationV1(BaseModel):
@@ -322,6 +326,7 @@ class OpenRouterTieredProvider:
 
 def build_openrouter_context(
     events: tuple[ConfirmedConversationEvent, ...],
+    user_profile: UserCoachingProfileV1 | None = None,
 ) -> OpenRouterConversationContextV1:
     """Select the newest bounded reviewed messages without source metadata."""
     eligible = tuple(
@@ -362,6 +367,7 @@ def build_openrouter_context(
         messages=selected,
         earlier_messages_omitted=len(selected) < len(eligible),
         message_text_truncated=text_truncated,
+        user_profile=user_profile,
     )
 
 

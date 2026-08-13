@@ -17,6 +17,10 @@ void main() {
       communicationTone: CommunicationTone.thoughtful,
       messageLength: MessageLength.short,
       usesEmojis: false,
+      jobTitle: 'Designer',
+      likes: ['music', 'hiking'],
+      lookingFor: ['kind conversation'],
+      profilePhotoBytes: null,
     );
 
     final dto = CommunicationProfileDto.fromDomain(profile);
@@ -32,6 +36,8 @@ void main() {
     expect(restored.communicationTone, CommunicationTone.thoughtful);
     expect(restored.messageLength, MessageLength.short);
     expect(restored.usesEmojis, isFalse);
+    expect(restored.jobTitle, 'Designer');
+    expect(restored.likes, ['music', 'hiking']);
   });
 
   test('profile repository saves through its API client abstraction', () async {
@@ -44,6 +50,10 @@ void main() {
       communicationTone: CommunicationTone.calm,
       messageLength: MessageLength.medium,
       usesEmojis: true,
+      jobTitle: 'Engineer',
+      likes: ['books'],
+      lookingFor: ['serious dating'],
+      profilePhotoBytes: null,
     );
 
     await repository.save(updated);

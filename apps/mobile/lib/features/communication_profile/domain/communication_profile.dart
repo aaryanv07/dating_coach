@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum RelationshipIntention {
   serious,
   exploring,
@@ -26,6 +28,10 @@ class CommunicationProfile {
     required this.communicationTone,
     required this.messageLength,
     required this.usesEmojis,
+    required this.jobTitle,
+    required this.likes,
+    required this.lookingFor,
+    required this.profilePhotoBytes,
   });
 
   const CommunicationProfile.empty()
@@ -33,13 +39,21 @@ class CommunicationProfile {
       relationshipIntention = RelationshipIntention.unsure,
       communicationTone = CommunicationTone.natural,
       messageLength = MessageLength.medium,
-      usesEmojis = true;
+      usesEmojis = true,
+      jobTitle = '',
+      likes = const [],
+      lookingFor = const [],
+      profilePhotoBytes = null;
 
   final String preferredName;
   final RelationshipIntention relationshipIntention;
   final CommunicationTone communicationTone;
   final MessageLength messageLength;
   final bool usesEmojis;
+  final String jobTitle;
+  final List<String> likes;
+  final List<String> lookingFor;
+  final Uint8List? profilePhotoBytes;
 
   CommunicationProfile copyWith({
     String? preferredName,
@@ -47,6 +61,11 @@ class CommunicationProfile {
     CommunicationTone? communicationTone,
     MessageLength? messageLength,
     bool? usesEmojis,
+    String? jobTitle,
+    List<String>? likes,
+    List<String>? lookingFor,
+    Uint8List? profilePhotoBytes,
+    bool clearProfilePhoto = false,
   }) {
     return CommunicationProfile(
       preferredName: preferredName ?? this.preferredName,
@@ -55,6 +74,12 @@ class CommunicationProfile {
       communicationTone: communicationTone ?? this.communicationTone,
       messageLength: messageLength ?? this.messageLength,
       usesEmojis: usesEmojis ?? this.usesEmojis,
+      jobTitle: jobTitle ?? this.jobTitle,
+      likes: List.unmodifiable(likes ?? this.likes),
+      lookingFor: List.unmodifiable(lookingFor ?? this.lookingFor),
+      profilePhotoBytes: clearProfilePhoto
+          ? null
+          : profilePhotoBytes ?? this.profilePhotoBytes,
     );
   }
 }

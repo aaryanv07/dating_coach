@@ -9,17 +9,25 @@ void main() {
   ) async {
     await pumpConvoCoach(tester, initialLocation: '/settings');
 
-    await tester.tap(find.text('Communication profile'));
+    await tester.tap(find.text('Your profile'));
     await tester.pumpAndSettle();
 
     expect(find.text('Tell us what feels natural to you.'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Ari');
-    await tester.drag(find.byType(ListView), const Offset(0, -520));
+    await tester.enterText(find.byType(TextField).first, 'Ari');
+    expect(find.text('Job or occupation'), findsOneWidget);
+    expect(find.text('Things you like'), findsOneWidget);
+    expect(find.text('What you want'), findsOneWidget);
+    final saveButton = find.text('Save profile');
+    await tester.scrollUntilVisible(
+      saveButton,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save profile'));
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Communication profile saved.'), findsOneWidget);
+    expect(find.text('Profile saved.'), findsOneWidget);
   });
 
   testWidgets(
@@ -58,7 +66,7 @@ void main() {
 
       await pumpConvoCoach(tester, initialLocation: '/settings/profile');
 
-      expect(find.text('Communication profile'), findsOneWidget);
+      expect(find.text('Your profile'), findsOneWidget);
       expect(find.text('Tell us what feels natural to you.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from app.ai.coaching_profile import UserCoachingProfileV1
 from app.ai.openrouter import (
     OPENROUTER_PROVIDER_IDENTIFIER,
     OpenRouterCoachOutputV1,
@@ -88,6 +89,33 @@ def _context(
             _event(_EVENT_B, 1, ConversationEventSpeaker.OTHER, second),
         )
     )
+
+
+def test_explicit_profile_context_is_bounded_and_excludes_identity_and_photo() -> None:
+    profile = UserCoachingProfileV1(
+        preferred_name="Ari",
+        job_title="Designer",
+        likes=("live music", "hiking"),
+        looking_for=("kind communication",),
+        relationship_intention="serious",
+        communication_tone="thoughtful",
+        preferred_message_length="short",
+        uses_emojis=True,
+    )
+    context = build_openrouter_context(
+        (
+            _event(_EVENT_A, 0, ConversationEventSpeaker.USER, "Synthetic hello"),
+            _event(_EVENT_B, 1, ConversationEventSpeaker.OTHER, "Synthetic reply"),
+        ),
+        profile,
+    )
+
+    dumped = context.model_dump(mode="json")
+    assert dumped["user_profile"]["job_title"] == "Designer"
+    assert dumped["user_profile"]["likes"] == ["live music", "hiking"]
+    assert "user_id" not in str(dumped)
+    assert "auth_subject" not in str(dumped)
+    assert "photo" not in str(dumped)
 
 
 def _output(

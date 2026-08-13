@@ -15,6 +15,7 @@
   "CONVOCOACH_OIDC_PROVIDER_PARAMETER": "connection",
   "CONVOCOACH_OIDC_GOOGLE_CONNECTION": "google-oauth2",
   "CONVOCOACH_OIDC_APPLE_CONNECTION": "apple",
+  "CONVOCOACH_OIDC_DATABASE_CONNECTION": "Username-Password-Authentication",
   "CONVOCOACH_BILLING_MODE": "store",
   "CONVOCOACH_APPLE_MONTHLY_PRODUCT_ID": "com.convocoach.plus.monthly",
   "CONVOCOACH_APPLE_YEARLY_PRODUCT_ID": "com.convocoach.plus.yearly",

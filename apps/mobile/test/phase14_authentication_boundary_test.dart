@@ -38,6 +38,7 @@ void main() {
         oidcPostLogoutRedirectUrl: 'com.convocoach.convo-coach:/logout',
         oidcGoogleConnection: 'google-oauth2',
         oidcAppleConnection: 'apple',
+        oidcDatabaseConnection: 'Username-Password-Authentication',
         billingMode: 'store',
         appleMonthlyProductId: 'com.convocoach.plus.monthly.ios',
         appleYearlyProductId: 'com.convocoach.plus.yearly.ios',
@@ -50,6 +51,7 @@ void main() {
       expect(configuration.oidcAuthenticationEnabled, isTrue);
       expect(configuration.googleSignInEnabled, isTrue);
       expect(configuration.appleSignInEnabled, isTrue);
+      expect(configuration.emailPasswordSignInEnabled, isTrue);
     });
 
     test('release refuses Google sign-in without the Apple alternative', () {
@@ -88,11 +90,26 @@ void main() {
         authorizationParameters: const {
           MobileAuthenticationMethod.google: {'connection': 'google-oauth2'},
           MobileAuthenticationMethod.apple: {'connection': 'apple'},
+          MobileAuthenticationMethod.emailPassword: {
+            'connection': 'Username-Password-Authentication',
+          },
+          MobileAuthenticationMethod.emailSignup: {
+            'connection': 'Username-Password-Authentication',
+            'screen_hint': 'signup',
+          },
         },
       );
 
       expect(configuration.supports(MobileAuthenticationMethod.google), isTrue);
       expect(configuration.supports(MobileAuthenticationMethod.apple), isTrue);
+      expect(
+        configuration.supports(MobileAuthenticationMethod.emailPassword),
+        isTrue,
+      );
+      expect(
+        configuration.supports(MobileAuthenticationMethod.emailSignup),
+        isTrue,
+      );
       expect(
         configuration.supports(MobileAuthenticationMethod.emailLink),
         isFalse,

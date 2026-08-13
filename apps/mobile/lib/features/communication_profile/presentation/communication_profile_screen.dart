@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_colors.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
@@ -12,6 +14,7 @@ import 'package:convo_coach/features/communication_profile/application/communica
 import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CommunicationProfileScreen extends ConsumerWidget {
   const CommunicationProfileScreen({super.key});
@@ -22,7 +25,7 @@ class CommunicationProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Communication profile')),
+      appBar: AppBar(title: const Text('Your profile')),
       body: AppBackground(
         child: profile.when(
           loading: () => const _ProfileSkeleton(),
@@ -52,21 +55,84 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final TextEditingController _nameController = TextEditingController(
     text: widget.profile.preferredName,
   );
+  late final TextEditingController _jobController = TextEditingController(
+    text: widget.profile.jobTitle,
+  );
+  late final TextEditingController _likesController = TextEditingController(
+    text: widget.profile.likes.join(', '),
+  );
+  late final TextEditingController _lookingForController =
+      TextEditingController(text: widget.profile.lookingFor.join(', '));
   late RelationshipIntention _intention = widget.profile.relationshipIntention;
   late CommunicationTone _tone = widget.profile.communicationTone;
   late MessageLength _messageLength = widget.profile.messageLength;
   late bool _usesEmojis = widget.profile.usesEmojis;
   bool _saving = false;
+  late Uint8List? _photoBytes = widget.profile.profilePhotoBytes;
+  bool _photoChanged = false;
+  String _photoContentType = 'image/jpeg';
 
   @override
   void dispose() {
     _nameController.dispose();
+    _jobController.dispose();
+    _likesController.dispose();
+    _lookingForController.dispose();
     super.dispose();
   }
 
+  List<String> _items(TextEditingController controller) {
+    final seen = <String>{};
+    return controller.text
+        .split(',')
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty && seen.add(value.toLowerCase()))
+        .toList(growable: false);
+  }
+
+  Future<void> _pickPhoto() async {
+    final selected = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 78,
+    );
+    if (selected == null || !mounted) return;
+    final bytes = await selected.readAsBytes();
+    if (!mounted) return;
+    if (bytes.isEmpty || bytes.length > 900 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose a photo smaller than 900 KB.')),
+      );
+      return;
+    }
+    final extension = selected.path.toLowerCase();
+    setState(() {
+      _photoBytes = bytes;
+      _photoChanged = true;
+      _photoContentType = extension.endsWith('.png')
+          ? 'image/png'
+          : extension.endsWith('.webp')
+          ? 'image/webp'
+          : 'image/jpeg';
+    });
+  }
+
   Future<void> _save() async {
+    final likes = _items(_likesController);
+    final lookingFor = _items(_lookingForController);
+    if ([...likes, ...lookingFor].any((item) => item.length > 48) ||
+        likes.length > 12 ||
+        lookingFor.length > 12) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Use up to 12 items, with 48 characters per item.'),
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
-    final saved = await ref
+    var saved = await ref
         .read(communicationProfileProvider.notifier)
         .save(
           CommunicationProfile(
@@ -75,17 +141,24 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             communicationTone: _tone,
             messageLength: _messageLength,
             usesEmojis: _usesEmojis,
+            jobTitle: _jobController.text.trim(),
+            likes: likes,
+            lookingFor: lookingFor,
+            profilePhotoBytes: widget.profile.profilePhotoBytes,
           ),
         );
+    if (saved && _photoChanged) {
+      saved = _photoBytes == null
+          ? await ref.read(communicationProfileProvider.notifier).deletePhoto()
+          : await ref
+                .read(communicationProfileProvider.notifier)
+                .updatePhoto(_photoBytes!, _photoContentType);
+    }
     if (!mounted) return;
     setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          saved
-              ? 'Communication profile saved.'
-              : 'Profile could not be saved.',
-        ),
+        content: Text(saved ? 'Profile saved.' : 'Profile could not be saved.'),
       ),
     );
   }
@@ -122,6 +195,48 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             child: AppCard(
               child: Column(
                 children: [
+                  Semantics(
+                    label: _photoBytes == null
+                        ? 'No profile picture selected'
+                        : 'Selected profile picture',
+                    child: CircleAvatar(
+                      radius: 52,
+                      backgroundColor: context.appColors.surfaceRaised,
+                      backgroundImage: _photoBytes == null
+                          ? null
+                          : MemoryImage(_photoBytes!),
+                      child: _photoBytes == null
+                          ? const Icon(Icons.person_outline_rounded, size: 48)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _saving ? null : _pickPhoto,
+                        icon: const Icon(Icons.add_a_photo_outlined),
+                        label: Text(
+                          _photoBytes == null ? 'Add photo' : 'Change photo',
+                        ),
+                      ),
+                      if (_photoBytes != null)
+                        TextButton.icon(
+                          onPressed: _saving
+                              ? null
+                              : () => setState(() {
+                                  _photoBytes = null;
+                                  _photoChanged = true;
+                                }),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          label: const Text('Remove'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   TextField(
                     controller: _nameController,
                     maxLength: 80,
@@ -129,6 +244,42 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                     decoration: const InputDecoration(
                       labelText: 'Preferred name',
                       hintText: 'Optional',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _jobController,
+                    maxLength: 100,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Job or occupation',
+                      hintText: 'Optional',
+                      prefixIcon: Icon(Icons.work_outline_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _likesController,
+                    maxLength: 600,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Things you like',
+                      hintText: 'Music, hiking, coffee (comma separated)',
+                      prefixIcon: Icon(Icons.favorite_border_rounded),
+                      helperText: 'Up to 12. Used only to tailor your drafts.',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _lookingForController,
+                    maxLength: 600,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'What you want',
+                      hintText: 'Honesty, serious dating (comma separated)',
+                      prefixIcon: Icon(Icons.explore_outlined),
+                      helperText:
+                          'Your stated preferences, never an AI conclusion.',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),

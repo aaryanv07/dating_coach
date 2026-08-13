@@ -352,3 +352,12 @@ The user-facing launch policy remains a counsel-review draft at
 `docs/Privacy-Policy-Draft.md`; related service terms and the independent AI safety
 protocol live alongside it. Placeholders or developer-only approval cannot pass the
 production legal/privacy or independent-safety gates.
+Account profile data is always scoped by the verified Auth0 subject's existing
+server user UUID. Name, job, likes, wants, and communication preferences are
+user-authored and editable. A profile photo is optional, limited to JPEG, PNG,
+or WebP under 900 KiB, returned only through an authenticated no-store response,
+and removed with the profile during account deletion. Photo bytes, email,
+Auth0 subject, and application UUID are never sent to an AI provider. Only the
+bounded user-authored text profile may be included after the existing external
+AI processing consent gate, and it must be treated as context about the user,
+not evidence about another person.

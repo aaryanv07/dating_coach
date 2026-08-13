@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -114,8 +115,21 @@ class CommunicationProfile(TimestampMixin, Base):
     texting_style: Mapped[str | None] = mapped_column(String(32), nullable=True)
     preferred_message_length: Mapped[str | None] = mapped_column(String(16), nullable=True)
     uses_emojis: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    job_title: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    likes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    looking_for: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    profile_photo_bytes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    profile_photo_content_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    profile_photo_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     user: Mapped[User] = relationship(back_populates="communication_profile")
+
+    @property
+    def has_profile_photo(self) -> bool:
+        """Expose photo presence without serializing private image bytes."""
+        return self.profile_photo_bytes is not None
 
 
 class ConsentRecord(Base):

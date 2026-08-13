@@ -13,7 +13,13 @@ def test_account_export_is_owner_scoped_portable_and_non_cacheable(
     api_client.patch(
         "/api/v1/communication-profile",
         headers=auth_a,
-        json={"preferred_name": "Synthetic owner", "communication_tone": "calm"},
+        json={
+            "preferred_name": "Synthetic owner",
+            "communication_tone": "calm",
+            "job_title": "Synthetic role",
+            "likes": ["books"],
+            "looking_for": ["kind communication"],
+        },
     )
     consent = api_client.post(
         "/api/v1/consents",
@@ -62,6 +68,8 @@ def test_account_export_is_owner_scoped_portable_and_non_cacheable(
     body = response.json()
     assert body["schema_version"] == "account-export.v1"
     assert body["data"]["communication_profile"]["preferred_name"] == "Synthetic owner"
+    assert body["data"]["communication_profile"]["job_title"] == "Synthetic role"
+    assert body["data"]["communication_profile"]["likes"] == ["books"]
     assert body["data"]["consents"][0]["policy_version"] == "export-test-v1"
     exported = json.dumps(body)
     assert "Owned synthetic conversation" in exported

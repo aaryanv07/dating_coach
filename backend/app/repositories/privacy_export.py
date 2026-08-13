@@ -120,6 +120,11 @@ class PrivacyExportRepository:
                 "texting_style": profile.texting_style,
                 "preferred_message_length": profile.preferred_message_length,
                 "uses_emojis": profile.uses_emojis,
+                "job_title": profile.job_title,
+                "likes": cast(JsonValue, profile.likes),
+                "looking_for": cast(JsonValue, profile.looking_for),
+                "has_profile_photo": profile.has_profile_photo,
+                "profile_photo_updated_at": _timestamp(profile.profile_photo_updated_at),
                 "updated_at": _timestamp(profile.updated_at),
             }
 

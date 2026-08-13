@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+ProfileItem = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=48)]
 Language = Literal["english", "mostly_english", "hinglish", "roman_hindi"]
 CoachingStyle = Literal["gentle", "balanced", "direct"]
 
@@ -53,6 +54,11 @@ class CommunicationProfileRead(BaseModel):
     texting_style: str | None
     preferred_message_length: str | None
     uses_emojis: bool | None
+    job_title: str | None
+    likes: list[str]
+    looking_for: list[str]
+    has_profile_photo: bool
+    profile_photo_updated_at: datetime | None
     updated_at: datetime
 
 
@@ -72,6 +78,12 @@ class CommunicationProfileUpdate(BaseModel):
     texting_style: Literal["concise", "balanced", "detailed"] | None = None
     preferred_message_length: Literal["short", "medium", "long"] | None = None
     uses_emojis: bool | None = None
+    job_title: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+        | None
+    ) = None
+    likes: Annotated[list[ProfileItem], Field(max_length=12)] | None = None
+    looking_for: Annotated[list[ProfileItem], Field(max_length=12)] | None = None
 
 
 class ConsentCreate(BaseModel):

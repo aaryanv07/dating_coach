@@ -24,6 +24,18 @@ final authenticationGatewayProvider = Provider<MobileAuthenticationGateway>((
             MobileAuthenticationMethod.apple: {
               AppConfig.oidcProviderParameter: AppConfig.oidcAppleConnection,
             },
+          if (AppConfig.runtime.emailPasswordSignInEnabled)
+            MobileAuthenticationMethod.emailPassword: {
+              AppConfig.oidcProviderParameter: AppConfig.oidcDatabaseConnection,
+              'screen_hint': 'login',
+              'prompt': 'login',
+            },
+          if (AppConfig.runtime.emailPasswordSignInEnabled)
+            MobileAuthenticationMethod.emailSignup: {
+              AppConfig.oidcProviderParameter: AppConfig.oidcDatabaseConnection,
+              'screen_hint': 'signup',
+              'prompt': 'login',
+            },
         },
       ),
     );

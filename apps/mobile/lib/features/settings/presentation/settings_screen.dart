@@ -155,9 +155,11 @@ class SettingsScreen extends ConsumerWidget {
             AppCard(
               padding: EdgeInsets.zero,
               child: ListTile(
-                leading: const Icon(Icons.tune_rounded),
-                title: const Text('Communication profile'),
-                subtitle: const Text('Tone, intention and message preferences'),
+                leading: const Icon(Icons.account_circle_outlined),
+                title: const Text('Your profile'),
+                subtitle: const Text(
+                  'Photo, name, job, likes and coaching preferences',
+                ),
                 trailing: const Icon(Icons.arrow_forward_rounded),
                 onTap: () => context.push('/settings/profile'),
               ),

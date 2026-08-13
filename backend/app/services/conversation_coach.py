@@ -9,6 +9,7 @@ from uuid import NAMESPACE_URL, UUID, uuid4, uuid5
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.coaching_profile import UserCoachingProfileV1, build_user_coaching_profile
 from app.ai.contracts import (
     AIPromptTemplateV1,
     AIRequestIntentV1,
@@ -55,7 +56,7 @@ from app.ai.zai_glm import (
 )
 from app.core.config import OPENAI_TERRA_MODEL, ZAI_GLM_MODEL, Settings
 from app.core.observability import OPERATIONAL_LOGGER_NAME
-from app.db.models import Conversation
+from app.db.models import CommunicationProfile, Conversation
 from app.domain.conversation_analytics import (
     AnalyticsInputV1,
     AnalyticsReviewStatus,
@@ -214,6 +215,9 @@ class ConversationCoachPreviewService:
                 422,
             ) from error
 
+        stored_profile = await self._session.get(CommunicationProfile, owner_id)
+        user_profile = build_user_coaching_profile(stored_profile)
+
         if self._settings.ai_provider_mode in _EXTERNAL_PROVIDER_MODES:
             if not self._settings.ai_usage_enforcement_enabled:
                 raise CoachPreviewServiceFailure(
@@ -233,6 +237,7 @@ class ConversationCoachPreviewService:
                 (
                     f"conversation-coach.v2:{conversation.id}:"
                     f"{conversation.updated_at.isoformat()}:"
+                    f"{stored_profile.updated_at.isoformat() if stored_profile else 'no-profile'}:"
                     + ",".join(str(event.id) for event in sequence.events)
                 ).encode()
             ).hexdigest()
@@ -271,6 +276,7 @@ class ConversationCoachPreviewService:
                     correlation_id=correlation_id,
                     usage_repository=usage_repository,
                     reservation=reservation,
+                    user_profile=user_profile,
                 )
             if self._settings.ai_provider_mode == "openrouter_tiered":
                 return await self._execute_openrouter(
@@ -279,6 +285,7 @@ class ConversationCoachPreviewService:
                     correlation_id=correlation_id,
                     usage_repository=usage_repository,
                     reservation=reservation,
+                    user_profile=user_profile,
                 )
             return await self._execute_terra(
                 sequence=sequence,
@@ -286,6 +293,7 @@ class ConversationCoachPreviewService:
                 correlation_id=correlation_id,
                 usage_repository=usage_repository,
                 reservation=reservation,
+                user_profile=user_profile,
             )
 
         request_id = uuid5(
@@ -358,9 +366,10 @@ class ConversationCoachPreviewService:
         correlation_id: UUID,
         usage_repository: AIUsageRepository,
         reservation: UsageReservation,
+        user_profile: UserCoachingProfileV1 | None,
     ) -> CoachLiveSuccessV2:
         try:
-            context = build_terra_context(sequence.events)
+            context = build_terra_context(sequence.events, user_profile)
             provider = self._terra_provider or OpenAITerraProvider(
                 api_key=self._settings.openai_api_key,
                 timeout_seconds=self._settings.openai_request_timeout_seconds,
@@ -497,9 +506,10 @@ class ConversationCoachPreviewService:
         correlation_id: UUID,
         usage_repository: AIUsageRepository,
         reservation: UsageReservation,
+        user_profile: UserCoachingProfileV1 | None,
     ) -> CoachLiveSuccessV2:
         try:
-            context = build_glm_context(sequence.events)
+            context = build_glm_context(sequence.events, user_profile)
             provider = self._glm_provider or ZaiGLMProvider(
                 api_key=self._settings.zai_api_key,
                 timeout_seconds=self._settings.zai_request_timeout_seconds,
@@ -635,6 +645,7 @@ class ConversationCoachPreviewService:
         correlation_id: UUID,
         usage_repository: AIUsageRepository,
         reservation: UsageReservation,
+        user_profile: UserCoachingProfileV1 | None,
     ) -> CoachLiveSuccessV2:
         model = reservation.model_identifier
         configured_models = {
@@ -654,7 +665,7 @@ class ConversationCoachPreviewService:
         )
         reasoning_effort = None if configured_effort == "none" else configured_effort
         try:
-            context = build_openrouter_context(sequence.events)
+            context = build_openrouter_context(sequence.events, user_profile)
             provider = self._openrouter_provider or OpenRouterTieredProvider(
                 api_key=self._settings.openrouter_api_key,
                 timeout_seconds=self._settings.openrouter_request_timeout_seconds,

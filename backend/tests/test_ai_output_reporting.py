@@ -12,7 +12,7 @@ def _conversation(client: TestClient, headers: dict[str, str]) -> str:
         json={"title": "Synthetic report fixture"},
     )
     assert response.status_code == 201
-    return response.json()["id"]
+    return str(response.json()["id"])
 
 
 def test_report_is_owner_scoped_content_free_and_idempotent(
