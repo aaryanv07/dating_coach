@@ -28,7 +28,7 @@ erDiagram
 | --- | --- | --- |
 | `users` | Verified auth subject and minimal account identity | Soft-deleted during account deletion |
 | `user_preferences` | Language, coaching style, history preference | Cascade/user deletion |
-| `communication_profiles` | Explicit name, job, likes, wants, communication choices, and bounded private profile photo mapped one-to-one to `users.id` | Cascade/user deletion |
+| `communication_profiles` | First-login completion, adult age, optional self-described gender, name, job, hobbies, wants, communication choices, and bounded private profile photo mapped one-to-one to `users.id` | Cascade/user deletion |
 | `consent_records` | Append-only consent grant/withdrawal history | Cascade/user deletion |
 | `conversations` | Owner-scoped private container | Immediate hard deletion |
 | `conversation_participants` | User-controlled participant labels | Cascade/conversation deletion |

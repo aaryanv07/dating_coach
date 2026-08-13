@@ -13,6 +13,9 @@ void main() {
   test('communication profile DTO round-trips explicit choices', () {
     const profile = CommunicationProfile(
       preferredName: 'Ari',
+      age: 27,
+      gender: 'Man',
+      profileSetupCompleted: true,
       relationshipIntention: RelationshipIntention.friendshipFirst,
       communicationTone: CommunicationTone.thoughtful,
       messageLength: MessageLength.short,
@@ -27,6 +30,9 @@ void main() {
     final restored = CommunicationProfileDto.fromJson(dto.toJson()).toDomain();
 
     expect(restored.preferredName, 'Ari');
+    expect(restored.age, 27);
+    expect(restored.gender, 'Man');
+    expect(restored.profileSetupCompleted, isTrue);
     expect(dto.toJson()['relationship_intention'], 'friendship_first');
     expect(dto.toJson()['preferred_message_length'], MessageLength.short.name);
     expect(
@@ -46,6 +52,9 @@ void main() {
     );
     const updated = CommunicationProfile(
       preferredName: 'Mira',
+      age: 29,
+      gender: 'Woman',
+      profileSetupCompleted: true,
       relationshipIntention: RelationshipIntention.serious,
       communicationTone: CommunicationTone.calm,
       messageLength: MessageLength.medium,

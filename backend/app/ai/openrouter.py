@@ -52,7 +52,8 @@ boundary or redirects away from harm. Never reconstruct deleted or omitted conte
 Return one object matching the required JSON schema. Keep drafts natural, concise,
 editable, and free of names, identifiers, or facts absent from the reviewed messages
 or explicit user_profile. Use profile fields only to tailor the user's draft;
-never treat them as facts about the other person."""
+never treat them as facts about the other person. Never use age or gender to
+stereotype the user, infer compatibility, or make claims about either person."""
 
 
 class OpenRouterProviderFailureCode(StrEnum):

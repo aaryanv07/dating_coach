@@ -15,6 +15,9 @@ def test_account_export_is_owner_scoped_portable_and_non_cacheable(
         headers=auth_a,
         json={
             "preferred_name": "Synthetic owner",
+            "age": 31,
+            "gender": "Non-binary",
+            "profile_setup_completed": True,
             "communication_tone": "calm",
             "job_title": "Synthetic role",
             "likes": ["books"],
@@ -68,6 +71,8 @@ def test_account_export_is_owner_scoped_portable_and_non_cacheable(
     body = response.json()
     assert body["schema_version"] == "account-export.v1"
     assert body["data"]["communication_profile"]["preferred_name"] == "Synthetic owner"
+    assert body["data"]["communication_profile"]["age"] == 31
+    assert body["data"]["communication_profile"]["gender"] == "Non-binary"
     assert body["data"]["communication_profile"]["job_title"] == "Synthetic role"
     assert body["data"]["communication_profile"]["likes"] == ["books"]
     assert body["data"]["consents"][0]["policy_version"] == "export-test-v1"

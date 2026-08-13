@@ -16,7 +16,7 @@ from app.core.lifecycle import (
     RedisReadinessStatus,
 )
 
-EXPECTED_DATABASE_REVISION = "20260813_0007"
+EXPECTED_DATABASE_REVISION = "20260813_0008"
 
 
 class InfrastructureOperationalReadinessChecker:

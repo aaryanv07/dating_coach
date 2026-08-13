@@ -24,7 +24,7 @@ logged.
 | `POST` | `/auth/session/verify` | Verify token and resolve server user |
 | `GET` | `/users/me` | Read current user |
 | `GET/PATCH` | `/users/me/preferences` | Read/update user preferences |
-| `GET/PATCH` | `/communication-profile` | Read/update explicit profile choices |
+| `GET/PATCH` | `/communication-profile` | Read/update owner-scoped onboarding and explicit profile choices; age is restricted to 18–120 |
 | `GET/PUT/DELETE` | `/communication-profile/photo` | Read, replace, or remove the authenticated owner's private profile photo |
 | `POST/GET` | `/consents` | Append/list consent decisions |
 | `POST/GET` | `/conversations` | Create/list owner-scoped conversations |

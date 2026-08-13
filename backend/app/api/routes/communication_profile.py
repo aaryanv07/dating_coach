@@ -45,6 +45,9 @@ async def update_communication_profile(
     profile = await UserRepository(session).update_profile(
         user.id,
         preferred_name=payload.preferred_name,
+        age=payload.age,
+        gender=payload.gender,
+        profile_setup_completed=payload.profile_setup_completed,
         relationship_intention=payload.relationship_intention,
         communication_tone=payload.communication_tone,
         texting_style=payload.texting_style,

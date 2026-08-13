@@ -5,6 +5,9 @@ import 'package:convo_coach/features/communication_profile/domain/communication_
 class CommunicationProfileDto {
   const CommunicationProfileDto({
     required this.preferredName,
+    required this.age,
+    required this.gender,
+    required this.profileSetupCompleted,
     required this.relationshipIntention,
     required this.communicationTone,
     required this.messageLength,
@@ -18,6 +21,9 @@ class CommunicationProfileDto {
   factory CommunicationProfileDto.fromJson(Map<String, Object?> json) {
     return CommunicationProfileDto(
       preferredName: json['preferred_name'] as String? ?? '',
+      age: json['age'] as int?,
+      gender: json['gender'] as String? ?? '',
+      profileSetupCompleted: json['profile_setup_completed'] as bool? ?? false,
       relationshipIntention: _enumByName(
         RelationshipIntention.values,
         _camelCaseEnumName(json['relationship_intention']),
@@ -44,6 +50,9 @@ class CommunicationProfileDto {
   factory CommunicationProfileDto.fromDomain(CommunicationProfile profile) {
     return CommunicationProfileDto(
       preferredName: profile.preferredName,
+      age: profile.age,
+      gender: profile.gender,
+      profileSetupCompleted: profile.profileSetupCompleted,
       relationshipIntention: profile.relationshipIntention,
       communicationTone: profile.communicationTone,
       messageLength: profile.messageLength,
@@ -56,6 +65,9 @@ class CommunicationProfileDto {
   }
 
   final String preferredName;
+  final int? age;
+  final String gender;
+  final bool profileSetupCompleted;
   final RelationshipIntention relationshipIntention;
   final CommunicationTone communicationTone;
   final MessageLength messageLength;
@@ -68,6 +80,9 @@ class CommunicationProfileDto {
   CommunicationProfile toDomain({List<int>? profilePhotoBytes}) {
     return CommunicationProfile(
       preferredName: preferredName,
+      age: age,
+      gender: gender,
+      profileSetupCompleted: profileSetupCompleted,
       relationshipIntention: relationshipIntention,
       communicationTone: communicationTone,
       messageLength: messageLength,
@@ -84,6 +99,9 @@ class CommunicationProfileDto {
   Map<String, Object?> toJson() {
     return {
       'preferred_name': preferredName.trim().isEmpty ? null : preferredName,
+      'age': age,
+      'gender': gender.trim().isEmpty ? null : gender,
+      'profile_setup_completed': profileSetupCompleted,
       'relationship_intention': _snakeCaseEnumName(relationshipIntention),
       'communication_tone': communicationTone.name,
       'preferred_message_length': messageLength.name,

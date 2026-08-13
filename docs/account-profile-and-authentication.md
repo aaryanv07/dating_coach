@@ -26,11 +26,13 @@ Set the public connection names with
 protected Auth0 page, where the user can create an account or choose **Forgot
 password**. No provider password enters the Flutter process or backend.
 
-## Profile contract
+## First-login profile contract
 
-The authenticated profile screen supports an optional preferred name, job,
-likes, what the user wants, relationship intention, communication tone, message
-length, emoji preference, and profile photo. Lists are bounded to 12 entries and
+After successful authentication, an incomplete account must finish profile setup
+before entering the main app. Name, age 18–120, and at least one hobby are
+required. Optional self-described gender, job, what the user wants, relationship
+intention, communication tone, message length, emoji preference, and profile
+photo can also be supplied and edited later. Lists are bounded to 12 entries and
 the photo to 900 KiB. The photo is stored in the encrypted relational database
 for the controlled launch, is never public, and is excluded from JSON account
 responses and AI prompts. A later private object-storage migration must preserve

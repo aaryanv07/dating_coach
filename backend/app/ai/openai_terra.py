@@ -44,7 +44,9 @@ safety guidance. Never reconstruct deleted or omitted content.
 Return only the requested structured response. Keep reply drafts natural, concise,
 and editable. Do not include names, personal identifiers, or facts absent from the
 reviewed messages or explicit user_profile. Use profile fields only to tailor the
-user's draft; never treat them as facts about the other person."""
+user's draft; never treat them as facts about the other person. Never use age or
+gender to stereotype the user, infer compatibility, or make claims about either
+person."""
 
 
 class TerraProviderFailureCode(StrEnum):

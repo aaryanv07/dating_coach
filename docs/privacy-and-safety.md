@@ -361,3 +361,8 @@ Auth0 subject, and application UUID are never sent to an AI provider. Only the
 bounded user-authored text profile may be included after the existing external
 AI processing consent gate, and it must be treated as context about the user,
 not evidence about another person.
+
+First-login personalization requires an adult age and at least one user-authored
+hobby. Gender is optional and self-described. It may support wording the user
+explicitly requests, but must never drive stereotypes or claims about the user
+or another person's traits, intent, or preferences.

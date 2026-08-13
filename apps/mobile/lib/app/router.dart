@@ -45,6 +45,11 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
         path: '/auth',
         builder: (context, state) => const AuthenticationScreen(),
       ),
+      GoRoute(
+        path: '/profile/setup',
+        builder: (context, state) =>
+            const CommunicationProfileScreen(setupMode: true),
+      ),
       GoRoute(path: '/settings', redirect: (context, state) => '/profile'),
       GoRoute(
         path: '/settings/profile',

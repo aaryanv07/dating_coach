@@ -94,6 +94,8 @@ def _context(
 def test_explicit_profile_context_is_bounded_and_excludes_identity_and_photo() -> None:
     profile = UserCoachingProfileV1(
         preferred_name="Ari",
+        age=27,
+        gender="Man",
         job_title="Designer",
         likes=("live music", "hiking"),
         looking_for=("kind communication",),
@@ -112,6 +114,8 @@ def test_explicit_profile_context_is_bounded_and_excludes_identity_and_photo() -
 
     dumped = context.model_dump(mode="json")
     assert dumped["user_profile"]["job_title"] == "Designer"
+    assert dumped["user_profile"]["age"] == 27
+    assert dumped["user_profile"]["gender"] == "Man"
     assert dumped["user_profile"]["likes"] == ["live music", "hiking"]
     assert "user_id" not in str(dumped)
     assert "auth_subject" not in str(dumped)

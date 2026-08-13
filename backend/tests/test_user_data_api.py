@@ -22,6 +22,9 @@ def test_preferences_profile_and_consent_are_user_scoped(
         headers=auth_a,
         json={
             "preferred_name": "Ari",
+            "age": 27,
+            "gender": "Man",
+            "profile_setup_completed": True,
             "relationship_intention": "exploring",
             "communication_tone": "thoughtful",
             "texting_style": "balanced",
@@ -46,6 +49,9 @@ def test_preferences_profile_and_consent_are_user_scoped(
     assert preferences.json()["preferred_language"] == "hinglish"
     assert profile.status_code == 200
     assert profile.json()["preferred_name"] == "Ari"
+    assert profile.json()["age"] == 27
+    assert profile.json()["gender"] == "Man"
+    assert profile.json()["profile_setup_completed"] is True
     assert profile.json()["job_title"] == "Product designer"
     assert profile.json()["likes"] == ["live music", "weekend hikes"]
     assert profile.json()["looking_for"] == [
@@ -81,6 +87,28 @@ def test_preference_and_profile_enums_reject_unknown_values(
 
     assert preference.status_code == 422
     assert profile.status_code == 422
+
+
+def test_profile_rejects_underage_setup(api_client: TestClient, auth_a: dict[str, str]) -> None:
+    response = api_client.patch(
+        "/api/v1/communication-profile",
+        headers=auth_a,
+        json={"age": 17, "profile_setup_completed": True},
+    )
+
+    assert response.status_code == 422
+
+
+def test_profile_rejects_incomplete_completed_setup(
+    api_client: TestClient, auth_a: dict[str, str]
+) -> None:
+    response = api_client.patch(
+        "/api/v1/communication-profile",
+        headers=auth_a,
+        json={"preferred_name": "Ari", "profile_setup_completed": True},
+    )
+
+    assert response.status_code == 422
 
 
 def test_private_profile_photo_is_owner_scoped_and_removable(

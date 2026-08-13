@@ -115,6 +115,9 @@ class PrivacyExportRepository:
         if profile is not None:
             profile_payload = {
                 "preferred_name": profile.preferred_name,
+                "age": profile.age,
+                "gender": profile.gender,
+                "profile_setup_completed": profile.profile_setup_completed,
                 "relationship_intention": profile.relationship_intention,
                 "communication_tone": profile.communication_tone,
                 "texting_style": profile.texting_style,

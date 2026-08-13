@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
@@ -49,6 +49,9 @@ class CommunicationProfileRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     preferred_name: str | None
+    age: int | None
+    gender: str | None
+    profile_setup_completed: bool
     relationship_intention: str | None
     communication_tone: str | None
     texting_style: str | None
@@ -66,6 +69,11 @@ class CommunicationProfileUpdate(BaseModel):
     """Partial communication profile update."""
 
     preferred_name: ShortText | None = None
+    age: Annotated[int, Field(ge=18, le=120)] | None = None
+    gender: (
+        Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)] | None
+    ) = None
+    profile_setup_completed: bool | None = None
     relationship_intention: (
         Literal["serious", "exploring", "casual", "friendship_first", "unsure"] | None
     ) = None
@@ -84,6 +92,18 @@ class CommunicationProfileUpdate(BaseModel):
     ) = None
     likes: Annotated[list[ProfileItem], Field(max_length=12)] | None = None
     looking_for: Annotated[list[ProfileItem], Field(max_length=12)] | None = None
+
+    @model_validator(mode="after")
+    def completed_setup_has_required_fields(self) -> "CommunicationProfileUpdate":
+        if self.profile_setup_completed is not True:
+            return self
+        if self.preferred_name is None:
+            raise ValueError("preferred_name is required to complete profile setup")
+        if self.age is None:
+            raise ValueError("adult age is required to complete profile setup")
+        if not self.likes:
+            raise ValueError("at least one hobby or interest is required to complete profile setup")
+        return self
 
 
 class ConsentCreate(BaseModel):

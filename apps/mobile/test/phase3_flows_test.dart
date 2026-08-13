@@ -30,6 +30,37 @@ void main() {
     expect(find.text('Profile saved.'), findsOneWidget);
   });
 
+  testWidgets('first login requires adult profile basics before home', (
+    tester,
+  ) async {
+    final router = await pumpConvoCoach(
+      tester,
+      initialLocation: '/profile/setup',
+    );
+
+    expect(find.text('Set up your profile'), findsOneWidget);
+    expect(find.text('Age'), findsOneWidget);
+    expect(find.text('Gender or self-description'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'Ari');
+    await tester.enterText(find.byType(TextField).at(1), '17');
+    await tester.enterText(find.byType(TextField).at(4), 'music');
+    final saveButton = find.text('Save profile');
+    await tester.scrollUntilVisible(
+      saveButton,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    expect(find.text('ConvoCoach is only for adults 18+.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(1), '24');
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/home');
+  });
+
   testWidgets(
     'conversation list renders mock summaries and supports deletion',
     (tester) async {

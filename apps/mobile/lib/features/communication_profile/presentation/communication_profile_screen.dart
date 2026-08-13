@@ -14,10 +14,13 @@ import 'package:convo_coach/features/communication_profile/application/communica
 import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CommunicationProfileScreen extends ConsumerWidget {
-  const CommunicationProfileScreen({super.key});
+  const CommunicationProfileScreen({this.setupMode = false, super.key});
+
+  final bool setupMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +28,10 @@ class CommunicationProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Your profile')),
+      appBar: AppBar(
+        automaticallyImplyLeading: !setupMode,
+        title: Text(setupMode ? 'Set up your profile' : 'Your profile'),
+      ),
       body: AppBackground(
         child: profile.when(
           loading: () => const _ProfileSkeleton(),
@@ -35,7 +41,15 @@ class CommunicationProfileScreen extends ConsumerWidget {
             actionLabel: 'Retry',
             onAction: () => ref.invalidate(communicationProfileProvider),
           ),
-          data: (value) => _ProfileForm(profile: value),
+          data: (value) {
+            if (setupMode && value.profileSetupCompleted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) context.go('/home');
+              });
+              return const _ProfileSkeleton();
+            }
+            return _ProfileForm(profile: value, setupMode: setupMode);
+          },
         ),
       ),
     );
@@ -43,9 +57,10 @@ class CommunicationProfileScreen extends ConsumerWidget {
 }
 
 class _ProfileForm extends ConsumerStatefulWidget {
-  const _ProfileForm({required this.profile});
+  const _ProfileForm({required this.profile, required this.setupMode});
 
   final CommunicationProfile profile;
+  final bool setupMode;
 
   @override
   ConsumerState<_ProfileForm> createState() => _ProfileFormState();
@@ -57,6 +72,12 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   );
   late final TextEditingController _jobController = TextEditingController(
     text: widget.profile.jobTitle,
+  );
+  late final TextEditingController _ageController = TextEditingController(
+    text: widget.profile.age?.toString() ?? '',
+  );
+  late final TextEditingController _genderController = TextEditingController(
+    text: widget.profile.gender,
   );
   late final TextEditingController _likesController = TextEditingController(
     text: widget.profile.likes.join(', '),
@@ -76,6 +97,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   void dispose() {
     _nameController.dispose();
     _jobController.dispose();
+    _ageController.dispose();
+    _genderController.dispose();
     _likesController.dispose();
     _lookingForController.dispose();
     super.dispose();
@@ -131,12 +154,34 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       );
       return;
     }
+    final name = _nameController.text.trim();
+    final age = int.tryParse(_ageController.text.trim());
+    final gender = _genderController.text.trim();
+    if (widget.setupMode && (name.isEmpty || age == null || likes.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter your name, adult age, and at least one hobby.'),
+        ),
+      );
+      return;
+    }
+    if (age != null && (age < 18 || age > 120)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ConvoCoach is only for adults 18+.')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     var saved = await ref
         .read(communicationProfileProvider.notifier)
         .save(
           CommunicationProfile(
-            preferredName: _nameController.text.trim(),
+            preferredName: name,
+            age: age,
+            gender: gender,
+            profileSetupCompleted: widget.setupMode
+                ? true
+                : widget.profile.profileSetupCompleted,
             relationshipIntention: _intention,
             communicationTone: _tone,
             messageLength: _messageLength,
@@ -161,6 +206,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
         content: Text(saved ? 'Profile saved.' : 'Profile could not be saved.'),
       ),
     );
+    if (saved && widget.setupMode && context.mounted) {
+      context.go('/home');
+    }
   }
 
   @override
@@ -185,7 +233,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           AppReveal(
             delay: const Duration(milliseconds: 60),
             child: Text(
-              'These are your choices, not personality conclusions.',
+              widget.setupMode
+                  ? 'A few details help tailor your drafts. You stay in control and can edit them later.'
+                  : 'These are your choices, not personality conclusions.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -243,7 +293,33 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
                       labelText: 'Preferred name',
-                      hintText: 'Optional',
+                      hintText: 'What should we call you?',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _ageController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 3,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Age',
+                      hintText: '18 or older',
+                      prefixIcon: Icon(Icons.cake_outlined),
+                      helperText: 'Required for first-time setup.',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  TextField(
+                    controller: _genderController,
+                    maxLength: 64,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender or self-description',
+                      hintText: 'Optional and self-described',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                      helperText:
+                          'Used only for wording you request, never stereotypes.',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -266,7 +342,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                       labelText: 'Things you like',
                       hintText: 'Music, hiking, coffee (comma separated)',
                       prefixIcon: Icon(Icons.favorite_border_rounded),
-                      helperText: 'Up to 12. Used only to tailor your drafts.',
+                      helperText:
+                          'At least one during setup. Used only to tailor your drafts.',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),

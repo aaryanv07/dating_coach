@@ -84,6 +84,9 @@ class UserRepository:
         user_id: UUID,
         *,
         preferred_name: str | None,
+        age: int | None,
+        gender: str | None,
+        profile_setup_completed: bool | None,
         relationship_intention: str | None,
         communication_tone: str | None,
         texting_style: str | None,
@@ -96,6 +99,12 @@ class UserRepository:
         profile = await self.get_profile(user_id)
         if preferred_name is not None:
             profile.preferred_name = preferred_name
+        if age is not None:
+            profile.age = age
+        if gender is not None:
+            profile.gender = gender
+        if profile_setup_completed is not None:
+            profile.profile_setup_completed = profile_setup_completed
         if relationship_intention is not None:
             profile.relationship_intention = relationship_intention
         if communication_tone is not None:

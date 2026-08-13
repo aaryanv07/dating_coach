@@ -13,6 +13,8 @@ class UserCoachingProfileV1(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
     preferred_name: Annotated[str, Field(max_length=80)] = ""
+    age: Annotated[int, Field(ge=18, le=120)] | None = None
+    gender: Annotated[str, Field(max_length=64)] = ""
     job_title: Annotated[str, Field(max_length=100)] = ""
     likes: Annotated[tuple[Annotated[str, Field(max_length=48)], ...], Field(max_length=12)] = ()
     looking_for: Annotated[
@@ -32,6 +34,8 @@ def build_user_coaching_profile(
         return None
     context = UserCoachingProfileV1(
         preferred_name=profile.preferred_name or "",
+        age=profile.age,
+        gender=profile.gender or "",
         job_title=profile.job_title or "",
         likes=tuple(profile.likes),
         looking_for=tuple(profile.looking_for),
@@ -43,6 +47,8 @@ def build_user_coaching_profile(
     if not any(
         (
             context.preferred_name,
+            context.age is not None,
+            context.gender,
             context.job_title,
             context.likes,
             context.looking_for,

@@ -110,6 +110,9 @@ class CommunicationProfile(TimestampMixin, Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     preferred_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    profile_setup_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     relationship_intention: Mapped[str | None] = mapped_column(String(32), nullable=True)
     communication_tone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     texting_style: Mapped[str | None] = mapped_column(String(32), nullable=True)

@@ -138,6 +138,9 @@ def test_account_profile_remains_mapped_to_the_existing_user_id() -> None:
 
     assert {
         "user_id",
+        "age",
+        "gender",
+        "profile_setup_completed",
         "job_title",
         "likes",
         "looking_for",

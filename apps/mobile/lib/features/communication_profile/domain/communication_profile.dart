@@ -24,6 +24,9 @@ enum MessageLength { short, medium, long }
 class CommunicationProfile {
   const CommunicationProfile({
     required this.preferredName,
+    required this.age,
+    required this.gender,
+    required this.profileSetupCompleted,
     required this.relationshipIntention,
     required this.communicationTone,
     required this.messageLength,
@@ -36,6 +39,9 @@ class CommunicationProfile {
 
   const CommunicationProfile.empty()
     : preferredName = '',
+      age = null,
+      gender = '',
+      profileSetupCompleted = false,
       relationshipIntention = RelationshipIntention.unsure,
       communicationTone = CommunicationTone.natural,
       messageLength = MessageLength.medium,
@@ -46,6 +52,9 @@ class CommunicationProfile {
       profilePhotoBytes = null;
 
   final String preferredName;
+  final int? age;
+  final String gender;
+  final bool profileSetupCompleted;
   final RelationshipIntention relationshipIntention;
   final CommunicationTone communicationTone;
   final MessageLength messageLength;
@@ -57,6 +66,9 @@ class CommunicationProfile {
 
   CommunicationProfile copyWith({
     String? preferredName,
+    int? age,
+    String? gender,
+    bool? profileSetupCompleted,
     RelationshipIntention? relationshipIntention,
     CommunicationTone? communicationTone,
     MessageLength? messageLength,
@@ -69,6 +81,10 @@ class CommunicationProfile {
   }) {
     return CommunicationProfile(
       preferredName: preferredName ?? this.preferredName,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      profileSetupCompleted:
+          profileSetupCompleted ?? this.profileSetupCompleted,
       relationshipIntention:
           relationshipIntention ?? this.relationshipIntention,
       communicationTone: communicationTone ?? this.communicationTone,

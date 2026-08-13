@@ -48,7 +48,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     }
     ref.read(mockAuthProvider.notifier).signIn(method);
     ref.read(hapticsProvider).success();
-    context.go('/home');
+    context.go('/profile/setup');
   }
 
   Future<void> _continueSecurely(MobileAuthenticationMethod method) async {
@@ -60,7 +60,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     final result = await ref.read(authenticationGatewayProvider).signIn(method);
     if (!mounted) return;
     if (result is MobileAuthenticationSucceeded) {
-      context.go('/home');
+      context.go('/profile/setup');
       return;
     }
     setState(() {
