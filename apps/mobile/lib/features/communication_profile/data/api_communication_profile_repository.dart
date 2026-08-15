@@ -14,9 +14,15 @@ class ApiCommunicationProfileRepository
   @override
   Future<CommunicationProfile> fetch() async {
     final dto = await _apiClient.fetchProfile();
-    final photo = dto.hasProfilePhoto
-        ? await _apiClient.fetchProfilePhoto()
-        : null;
+    List<int>? photo;
+    if (dto.hasProfilePhoto) {
+      try {
+        photo = await _apiClient.fetchProfilePhoto();
+      } on Object {
+        // An optional photo failure must not hide valid text profile fields.
+        photo = null;
+      }
+    }
     return dto.toDomain(profilePhotoBytes: photo);
   }
 

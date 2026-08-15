@@ -77,6 +77,10 @@ final class MobileRuntimeConfiguration {
             !parsedApiBaseUrl.hasAuthority)) {
       failures.add('api_base_url_invalid');
     }
+    if (normalizedEnvironment == 'production' &&
+        _isReservedReleaseHost(parsedApiBaseUrl?.host)) {
+      failures.add('production_api_url_placeholder');
+    }
     if (!const {
       'mock',
       'oidc',
@@ -193,6 +197,12 @@ final class MobileRuntimeConfiguration {
           parsedApiBaseUrl.hasFragment) {
         failures.add('release_api_url_not_https');
       }
+      if (!scopes.contains('offline_access')) {
+        failures.add('release_oidc_offline_access_scope_missing');
+      }
+      if (_isReservedReleaseHost(discoveryUrl?.host)) {
+        failures.add('release_oidc_discovery_url_placeholder');
+      }
       if (apiAccessToken.isNotEmpty) {
         failures.add('release_embedded_access_token');
       }
@@ -214,6 +224,21 @@ final class MobileRuntimeConfiguration {
     }
 
     return List.unmodifiable(failures);
+  }
+
+  static bool _isReservedReleaseHost(String? host) {
+    final normalized = host?.trim().toLowerCase() ?? '';
+    return normalized.isEmpty ||
+        normalized == 'example.com' ||
+        normalized.endsWith('.example.com') ||
+        normalized == 'example.org' ||
+        normalized.endsWith('.example.org') ||
+        normalized == 'example.net' ||
+        normalized.endsWith('.example.net') ||
+        normalized.endsWith('.invalid') ||
+        normalized == 'localhost' ||
+        normalized == '127.0.0.1' ||
+        normalized == '::1';
   }
 
   bool get previewAuthenticationEnabled =>
@@ -271,7 +296,7 @@ final class MobileConfigurationError implements Exception {
 abstract final class AppConfig {
   static const String name = String.fromEnvironment(
     'CONVOCOACH_APP_NAME',
-    defaultValue: 'ConvoCoach',
+    defaultValue: 'ELLIS',
   );
 
   static const bool mockMode = bool.fromEnvironment(

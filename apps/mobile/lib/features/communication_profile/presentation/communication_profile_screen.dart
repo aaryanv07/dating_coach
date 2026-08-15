@@ -11,6 +11,7 @@ import 'package:convo_coach/core/widgets/app_skeleton.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:convo_coach/features/communication_profile/application/communication_profile_controller.dart';
+import 'package:convo_coach/features/communication_profile/data/http_communication_profile_api_client.dart';
 import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,10 +43,10 @@ class CommunicationProfileScreen extends ConsumerWidget {
                 )
               : const _ProfileSkeleton(),
           error: (error, stackTrace) => setupMode
-              ? const _ProfileForm(
+              ? _ProfileForm(
                   profile: CommunicationProfile.empty(),
                   setupMode: true,
-                  existingProfileUnavailable: true,
+                  existingProfileError: error,
                 )
               : AppErrorState(
                   title: 'Your profile is unavailable.',
@@ -73,13 +74,13 @@ class _ProfileForm extends ConsumerStatefulWidget {
     required this.profile,
     required this.setupMode,
     this.existingProfileLoading = false,
-    this.existingProfileUnavailable = false,
+    this.existingProfileError,
   });
 
   final CommunicationProfile profile;
   final bool setupMode;
   final bool existingProfileLoading;
-  final bool existingProfileUnavailable;
+  final Object? existingProfileError;
 
   @override
   ConsumerState<_ProfileForm> createState() => _ProfileFormState();
@@ -111,6 +112,16 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late Uint8List? _photoBytes = widget.profile.profilePhotoBytes;
   bool _photoChanged = false;
   String _photoContentType = 'image/jpeg';
+
+  bool get _existingProfileUnavailable => widget.existingProfileError != null;
+
+  bool get _authenticationRecoveryNeeded =>
+      switch (widget.existingProfileError) {
+        CommunicationProfileApiException(code: 'authentication_required') =>
+          true,
+        CommunicationProfileApiException(statusCode: 401) => true,
+        _ => false,
+      };
 
   @override
   void didUpdateWidget(covariant _ProfileForm oldWidget) {
@@ -203,6 +214,16 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   }
 
   Future<void> _save() async {
+    if (_existingProfileUnavailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Reconnect and retry loading your saved profile before continuing.',
+          ),
+        ),
+      );
+      return;
+    }
     final likes = _items(_likesController);
     final lookingFor = _items(_lookingForController);
     if ([...likes, ...lookingFor].any((item) => item.length > 48) ||
@@ -218,6 +239,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     final name = _nameController.text.trim();
     final age = int.tryParse(_ageController.text.trim());
     final gender = _genderController.text.trim();
+    final job = _jobController.text.trim();
     if (widget.setupMode && (name.isEmpty || age == null || likes.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -228,7 +250,17 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     }
     if (age != null && (age < 18 || age > 120)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ConvoCoach is only for adults 18+.')),
+        const SnackBar(content: Text('ELLIS is only for adults 18+.')),
+      );
+      return;
+    }
+    if (name.length > 80 || gender.length > 64 || job.length > 100) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Use up to 80 characters for name, 64 for gender, and 100 for job.',
+          ),
+        ),
       );
       return;
     }
@@ -247,7 +279,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             communicationTone: _tone,
             messageLength: _messageLength,
             usesEmojis: _usesEmojis,
-            jobTitle: _jobController.text.trim(),
+            jobTitle: job,
             likes: likes,
             lookingFor: lookingFor,
             profilePhotoBytes: widget.profile.profilePhotoBytes,
@@ -300,33 +332,64 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          if (widget.existingProfileLoading ||
-              widget.existingProfileUnavailable) ...[
+          if (widget.existingProfileLoading || _existingProfileUnavailable) ...[
             const SizedBox(height: AppSpacing.md),
             Semantics(
               liveRegion: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox.square(
-                    dimension: 20,
-                    child: widget.existingProfileLoading
-                        ? const CircularProgressIndicator(strokeWidth: 2)
-                        : Icon(
-                            Icons.cloud_off_outlined,
-                            size: 20,
-                            color: context.appColors.risk,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox.square(
+                        dimension: 20,
+                        child: widget.existingProfileLoading
+                            ? const CircularProgressIndicator(strokeWidth: 2)
+                            : Icon(
+                                _authenticationRecoveryNeeded
+                                    ? Icons.lock_clock_outlined
+                                    : Icons.cloud_off_outlined,
+                                size: 20,
+                                color: context.appColors.risk,
+                              ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          widget.existingProfileLoading
+                              ? 'Loading any saved details in the background. You can start now.'
+                              : _authenticationRecoveryNeeded
+                              ? 'Your sign-in could not be verified. Retry, or sign in again to load your saved details.'
+                              : 'Saved details could not be loaded. Retry your connection before saving.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_existingProfileUnavailable) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        TextButton.icon(
+                          key: const Key('profile-load-retry'),
+                          onPressed: () =>
+                              ref.invalidate(communicationProfileProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Retry'),
+                        ),
+                        if (_authenticationRecoveryNeeded)
+                          TextButton.icon(
+                            key: const Key('profile-sign-in-again'),
+                            onPressed: () => context.go('/auth'),
+                            icon: const Icon(Icons.login_rounded),
+                            label: const Text('Sign in again'),
                           ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      widget.existingProfileLoading
-                          ? 'Loading any saved details in the background. You can start now.'
-                          : 'Saved details could not be loaded. Check your connection before saving.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      ],
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

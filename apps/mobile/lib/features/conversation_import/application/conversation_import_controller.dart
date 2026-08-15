@@ -837,7 +837,7 @@ final conversationImportProvider =
 
 const _localConversationSaveMessage =
     'The development server could not be reached. On iPhone, open Settings > '
-    'Privacy & Security > Local Network and enable ConvoCoach, then keep the '
+    'Privacy & Security > Local Network and enable ELLIS, then keep the '
     'iPhone and Mac on the same Wi-Fi and try again.';
 
 String _conversationSaveApiMessage(ConversationApiException error) {

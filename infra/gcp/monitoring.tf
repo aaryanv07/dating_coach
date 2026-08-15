@@ -24,7 +24,7 @@ resource "google_monitoring_uptime_check_config" "readiness" {
   monitored_resource {
     type = "uptime_url"
     labels = {
-      host       = var.api_domain
+      host       = local.api_hostname
       project_id = var.project_id
     }
   }

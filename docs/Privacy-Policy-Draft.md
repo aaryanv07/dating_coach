@@ -1,4 +1,4 @@
-# ConvoCoach Privacy Policy — launch draft
+# ELLIS Privacy Policy — launch draft
 
 **Status:** blocked from publication until the legal entity, contact details,
 jurisdictions, OpenRouter and underlying model-provider terms, store disclosures,
@@ -8,9 +8,9 @@ and retention schedule are reviewed by qualified privacy counsel.
 **Controller:** [LEGAL ENTITY AND ADDRESS]
 **Privacy contact:** [EMAIL]
 
-## What ConvoCoach does
+## What ELLIS does
 
-ConvoCoach is an adult communication-coaching app. It helps a user reflect on
+ELLIS is an adult communication-coaching app. It helps a user reflect on
 conversations and prepare drafts that the user may edit or choose not to send.
 It does not send messages on the user's behalf and does not guarantee romantic
 interest, compatibility, or an outcome.
@@ -22,7 +22,7 @@ interest, compatibility, or an outcome.
 - Conversation text that the user explicitly imports, corrects, and confirms.
 - Communication preferences and private reflections the user chooses to save.
 - Subscription state and pseudonymous, one-way transaction references. Apple and
-  Google process payment details; ConvoCoach does not store full card details or
+  Google process payment details; ELLIS does not store full card details or
   raw store receipts.
 - Security and reliability metadata such as correlation IDs, timestamps, response
   status, app version, and aggregate usage. Logs must not contain message bodies,
@@ -48,9 +48,9 @@ model provider selected for the user's server-verified plan. Current development
 configuration uses GPT-4o mini for welcome/Free coaching and GPT-5.6 Terra for
 Plus coaching. Account names, email addresses, raw screenshots, local paths,
 credentials, and store receipts are excluded. A keyed pseudonymous identifier is
-used where needed for abuse controls. ConvoCoach requests zero-data-retention
+used where needed for abuse controls. ELLIS requests zero-data-retention
 routing and denies provider data collection; user data is not used for model
-training by ConvoCoach.
+training by ELLIS.
 
 Launch is blocked until the controller has confirmed OpenRouter's and each
 eligible underlying provider's applicable contract, processing locations,
@@ -75,19 +75,19 @@ the final schedule.
 
 Data is shared only with providers necessary to operate the service: the chosen
 identity provider, Apple or Google for purchases, cloud infrastructure providers,
-and the disclosed AI processor for a user-requested coaching action. ConvoCoach
+and the disclosed AI processor for a user-requested coaching action. ELLIS
 does not sell conversation content or use it for targeted advertising.
 
 ## Age and safety
 
-ConvoCoach is for adults aged 18 and older. It is not a dating service, emergency
+ELLIS is for adults aged 18 and older. It is not a dating service, emergency
 service, therapist, or source of professional advice. Safety controls may refuse
 requests involving minors, coercion, harassment, stalking, deception, sexual
 exploitation, or evasion of another person's boundary.
 
 ## Security, transfers, and rights
 
-ConvoCoach uses encryption in transit and at rest, least-privilege access,
+ELLIS uses encryption in transit and at rest, least-privilege access,
 content-safe logging, managed backups, and audited production access. Depending on
 location, a user may have rights to access, correct, export, delete, restrict, or
 object to processing, and to complain to a regulator. The final policy must list

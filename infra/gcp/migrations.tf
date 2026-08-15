@@ -10,8 +10,11 @@ resource "google_cloud_run_v2_job" "migrations" {
       max_retries     = 0
 
       vpc_access {
-        connector = google_vpc_access_connector.run.id
-        egress    = "PRIVATE_RANGES_ONLY"
+        network_interfaces {
+          network    = google_compute_network.production.name
+          subnetwork = google_compute_subnetwork.production.name
+        }
+        egress = "PRIVATE_RANGES_ONLY"
       }
 
       volumes {

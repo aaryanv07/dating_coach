@@ -14,6 +14,24 @@ if [[ -n "$(git -C "$ROOT" status --porcelain)" ]]; then
   exit 1
 fi
 
+python3 - "$CONFIG" <<'PY'
+import json
+import sys
+from urllib.parse import urlparse
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    config = json.load(handle)
+api = urlparse(str(config.get("CONVOCOACH_API_BASE_URL", "")))
+host = (api.hostname or "").lower()
+reserved = (
+    not host
+    or host in {"example.com", "example.org", "example.net", "localhost", "127.0.0.1", "::1"}
+    or host.endswith((".example.com", ".example.org", ".example.net", ".invalid"))
+)
+if api.scheme != "https" or reserved or api.username or api.query or api.fragment:
+    raise SystemExit("Release artifacts require a real HTTPS production API URL.")
+PY
+
 cd "$MOBILE"
 flutter pub get
 dart format --output=none --set-exit-if-changed lib test benchmark tool

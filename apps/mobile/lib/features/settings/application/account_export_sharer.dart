@@ -36,8 +36,8 @@ class AccountExportSharer {
       await file.writeAsString(exportJson, flush: true);
       await _shareInvoker(
         ShareParams(
-          subject: 'ConvoCoach account export',
-          title: 'Export ConvoCoach data',
+          subject: 'ELLIS account export',
+          title: 'Export ELLIS data',
           files: [XFile(file.path, mimeType: 'application/json')],
           sharePositionOrigin: sharePositionOrigin,
         ),

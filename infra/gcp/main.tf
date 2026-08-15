@@ -1,5 +1,8 @@
 locals {
-  service_name = "convocoach-api"
+  service_name       = "convocoach-api"
+  cloud_run_hostname = "${local.service_name}-${data.google_project.current.number}.${var.region}.run.app"
+  api_hostname       = var.enable_custom_domain ? var.api_domain : local.cloud_run_hostname
+  api_base_url       = "https://${local.api_hostname}"
   required_apis = toset([
     "androidpublisher.googleapis.com",
     "artifactregistry.googleapis.com",
@@ -67,15 +70,6 @@ resource "google_compute_subnetwork" "production" {
   private_ip_google_access = true
 }
 
-resource "google_vpc_access_connector" "run" {
-  name          = "convocoach-run"
-  region        = var.region
-  network       = google_compute_network.production.name
-  ip_cidr_range = "10.20.1.0/28"
-  min_instances = 2
-  max_instances = 3
-}
-
 resource "google_compute_global_address" "private_services" {
   name          = "convocoach-private-services"
   purpose       = "VPC_PEERING"
@@ -98,10 +92,11 @@ resource "google_sql_database_instance" "postgres" {
   deletion_protection = true
 
   settings {
-    tier              = "db-custom-2-7680"
-    availability_type = "REGIONAL"
+    edition           = "ENTERPRISE"
+    tier              = var.database_tier
+    availability_type = var.database_availability_type
     disk_type         = "PD_SSD"
-    disk_size         = 20
+    disk_size         = var.database_disk_size_gb
     disk_autoresize   = true
 
     backup_configuration {
@@ -161,7 +156,7 @@ resource "google_sql_user" "application" {
 resource "google_redis_instance" "cache" {
   name                    = "convocoach-production"
   region                  = var.region
-  tier                    = "STANDARD_HA"
+  tier                    = var.redis_tier
   memory_size_gb          = 1
   redis_version           = "REDIS_7_2"
   authorized_network      = google_compute_network.production.id
@@ -278,7 +273,7 @@ resource "google_cloud_run_v2_service" "api" {
   name                = local.service_name
   location            = var.region
   deletion_protection = true
-  ingress             = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  ingress             = var.enable_custom_domain ? "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER" : "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account                  = google_service_account.api.email
@@ -291,8 +286,11 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     vpc_access {
-      connector = google_vpc_access_connector.run.id
-      egress    = "PRIVATE_RANGES_ONLY"
+      network_interfaces {
+        network    = google_compute_network.production.name
+        subnetwork = google_compute_subnetwork.production.name
+      }
+      egress = "PRIVATE_RANGES_ONLY"
     }
 
     volumes {
@@ -348,7 +346,7 @@ resource "google_cloud_run_v2_service" "api" {
           path = "/health/live"
           http_headers {
             name  = "Host"
-            value = var.api_domain
+            value = local.api_hostname
           }
         }
       }
@@ -361,64 +359,64 @@ resource "google_cloud_run_v2_service" "api" {
           path = "/health/live"
           http_headers {
             name  = "Host"
-            value = var.api_domain
+            value = local.api_hostname
           }
         }
       }
 
       dynamic "env" {
         for_each = {
-          APP_NAME                                        = "ConvoCoach API"
-          APP_ENVIRONMENT                                 = "production"
-          APP_DEBUG                                       = "false"
-          APP_LOG_LEVEL                                   = "INFO"
-          OPENAPI_ENABLED                                 = "false"
-          OPERATIONAL_CHECKS_ENABLED                      = "true"
-          REDIS_CA_CERTIFICATE_PATH                       = "/etc/convocoach/redis-ca/server-ca.pem"
-          MAX_REQUEST_BODY_BYTES                          = "1048576"
-          ALLOWED_HOSTS                                   = var.api_domain
-          DEVELOPMENT_AUTH_TOKEN                          = ""
-          DEVELOPMENT_AUTH_SUBJECT                        = ""
-          DEVELOPMENT_AUTH_EMAIL                          = ""
-          AUTHENTICATION_VERIFIER_MODE                    = "production_contract"
-          AUTHENTICATION_ISSUER                           = var.authentication_issuer
-          AUTHENTICATION_AUDIENCE                         = var.authentication_audience
-          AUTHENTICATION_JWKS_URL                         = var.authentication_jwks_url
-          AUTHENTICATION_ALLOWED_ALGORITHMS               = "ES256,RS256"
-          AUTHENTICATION_CLOCK_SKEW_SECONDS               = "60"
-          AUTHENTICATION_MAXIMUM_TOKEN_LIFETIME_SECONDS   = "3600"
-          AI_COACHING_ENABLED                             = tostring(var.ai_coaching_enabled)
-          AI_MOCK_EXECUTION_ENABLED                       = "false"
-          AI_PROVIDER_MODE                                = "openrouter_tiered"
-          AI_EXTERNAL_PROCESSING_APPROVED                 = tostring(var.external_ai_processing_approved)
-          AI_SAFETY_EVALUATION_APPROVED                   = tostring(var.ai_safety_evaluation_approved)
-          AI_USAGE_ENFORCEMENT_ENABLED                    = "true"
-          AI_NEW_REQUESTS_PER_MINUTE                      = "5"
-          AI_RESERVATION_COST_MICROUSD                    = "100000"
-          AI_USER_MONTHLY_BUDGET_MICROUSD                 = "2000000"
-          AI_GLOBAL_MONTHLY_BUDGET_MICROUSD               = "100000000"
-          AI_BUDGET_ALERT_PERCENT                         = "80"
-          OPENROUTER_FREE_MODEL                           = "openai/gpt-4o-mini"
-          OPENROUTER_PAID_MODEL                           = "openai/gpt-5.6-terra"
-          OPENROUTER_FREE_REASONING_EFFORT                = "none"
-          OPENROUTER_PAID_REASONING_EFFORT                = "medium"
-          OPENROUTER_REQUEST_TIMEOUT_SECONDS              = "30"
+          APP_NAME                                                 = "ELLIS API"
+          APP_ENVIRONMENT                                          = "production"
+          APP_DEBUG                                                = "false"
+          APP_LOG_LEVEL                                            = "INFO"
+          OPENAPI_ENABLED                                          = "false"
+          OPERATIONAL_CHECKS_ENABLED                               = "true"
+          REDIS_CA_CERTIFICATE_PATH                                = "/etc/convocoach/redis-ca/server-ca.pem"
+          MAX_REQUEST_BODY_BYTES                                   = "1048576"
+          ALLOWED_HOSTS                                            = local.api_hostname
+          DEVELOPMENT_AUTH_TOKEN                                   = ""
+          DEVELOPMENT_AUTH_SUBJECT                                 = ""
+          DEVELOPMENT_AUTH_EMAIL                                   = ""
+          AUTHENTICATION_VERIFIER_MODE                             = "production_contract"
+          AUTHENTICATION_ISSUER                                    = var.authentication_issuer
+          AUTHENTICATION_AUDIENCE                                  = var.authentication_audience
+          AUTHENTICATION_JWKS_URL                                  = var.authentication_jwks_url
+          AUTHENTICATION_ALLOWED_ALGORITHMS                        = "ES256,RS256"
+          AUTHENTICATION_CLOCK_SKEW_SECONDS                        = "60"
+          AUTHENTICATION_MAXIMUM_TOKEN_LIFETIME_SECONDS            = "3600"
+          AI_COACHING_ENABLED                                      = tostring(var.ai_coaching_enabled)
+          AI_MOCK_EXECUTION_ENABLED                                = "false"
+          AI_PROVIDER_MODE                                         = "openrouter_tiered"
+          AI_EXTERNAL_PROCESSING_APPROVED                          = tostring(var.external_ai_processing_approved)
+          AI_SAFETY_EVALUATION_APPROVED                            = tostring(var.ai_safety_evaluation_approved)
+          AI_USAGE_ENFORCEMENT_ENABLED                             = "true"
+          AI_NEW_REQUESTS_PER_MINUTE                               = "5"
+          AI_RESERVATION_COST_MICROUSD                             = "100000"
+          AI_USER_MONTHLY_BUDGET_MICROUSD                          = "2000000"
+          AI_GLOBAL_MONTHLY_BUDGET_MICROUSD                        = "100000000"
+          AI_BUDGET_ALERT_PERCENT                                  = "80"
+          OPENROUTER_FREE_MODEL                                    = "openai/gpt-4o-mini"
+          OPENROUTER_PAID_MODEL                                    = "openai/gpt-5.6-terra"
+          OPENROUTER_FREE_REASONING_EFFORT                         = "none"
+          OPENROUTER_PAID_REASONING_EFFORT                         = "medium"
+          OPENROUTER_REQUEST_TIMEOUT_SECONDS                       = "30"
           OPENROUTER_FREE_INPUT_PRICE_MICROUSD_PER_MILLION_TOKENS  = "150000"
           OPENROUTER_FREE_OUTPUT_PRICE_MICROUSD_PER_MILLION_TOKENS = "600000"
           OPENROUTER_PAID_INPUT_PRICE_MICROUSD_PER_MILLION_TOKENS  = "1000000"
           OPENROUTER_PAID_OUTPUT_PRICE_MICROUSD_PER_MILLION_TOKENS = "6000000"
-          STORE_BILLING_ENABLED                           = "true"
-          STORE_VERIFICATION_TIMEOUT_SECONDS              = "15"
-          APPLE_IAP_BUNDLE_ID                             = "com.convocoach.convoCoach"
-          APPLE_IAP_APP_ID                                = tostring(var.apple_app_store_id)
-          APPLE_IAP_ENVIRONMENT                           = "production"
-          APPLE_IAP_PRODUCT_IDS                           = join(",", var.apple_product_ids)
-          GOOGLE_PLAY_PACKAGE_NAME                        = "com.convocoach.convo_coach"
-          GOOGLE_PLAY_PRODUCT_IDS                         = join(",", var.google_product_ids)
-          GOOGLE_PLAY_USE_APPLICATION_DEFAULT_CREDENTIALS = "true"
-          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON                = ""
-          GOOGLE_PLAY_PUBSUB_AUDIENCE                     = "https://${var.api_domain}/api/v1/subscription/notifications/google"
-          GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT              = google_service_account.play_push.email
+          STORE_BILLING_ENABLED                                    = tostring(var.store_billing_enabled)
+          STORE_VERIFICATION_TIMEOUT_SECONDS                       = "15"
+          APPLE_IAP_BUNDLE_ID                                      = "com.convocoach.convoCoach"
+          APPLE_IAP_APP_ID                                         = tostring(var.apple_app_store_id)
+          APPLE_IAP_ENVIRONMENT                                    = "production"
+          APPLE_IAP_PRODUCT_IDS                                    = join(",", var.apple_product_ids)
+          GOOGLE_PLAY_PACKAGE_NAME                                 = "com.convocoach.convo_coach"
+          GOOGLE_PLAY_PRODUCT_IDS                                  = join(",", var.google_product_ids)
+          GOOGLE_PLAY_USE_APPLICATION_DEFAULT_CREDENTIALS          = tostring(var.store_billing_enabled)
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON                         = ""
+          GOOGLE_PLAY_PUBSUB_AUDIENCE                              = var.store_billing_enabled ? "${local.api_base_url}/api/v1/subscription/notifications/google" : ""
+          GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT                       = var.store_billing_enabled ? google_service_account.play_push.email : ""
         }
         content {
           name  = env.key
@@ -428,10 +426,10 @@ resource "google_cloud_run_v2_service" "api" {
 
       dynamic "env" {
         for_each = {
-          DATABASE_URL                  = "database-url"
-          REDIS_URL                     = "redis-url"
-          STORE_TRANSACTION_HASH_SECRET = "store-transaction-hash-secret"
-          OPENROUTER_API_KEY             = "openrouter-api-key"
+          DATABASE_URL                      = "database-url"
+          REDIS_URL                         = "redis-url"
+          STORE_TRANSACTION_HASH_SECRET     = "store-transaction-hash-secret"
+          OPENROUTER_API_KEY                = "openrouter-api-key"
           OPENROUTER_USER_IDENTIFIER_SECRET = "openrouter-user-identifier-secret"
         }
         content {
@@ -493,6 +491,7 @@ resource "google_cloud_run_v2_service_iam_member" "play_push_invoker" {
 }
 
 resource "google_pubsub_subscription" "play_push" {
+  count = var.store_billing_enabled ? 1 : 0
   name  = "convocoach-play-rtdn-push"
   topic = google_pubsub_topic.play_rtdn.name
 
@@ -510,10 +509,10 @@ resource "google_pubsub_subscription" "play_push" {
   }
 
   push_config {
-    push_endpoint = "https://${var.api_domain}/api/v1/subscription/notifications/google"
+    push_endpoint = "${local.api_base_url}/api/v1/subscription/notifications/google"
     oidc_token {
       service_account_email = google_service_account.play_push.email
-      audience              = "https://${var.api_domain}/api/v1/subscription/notifications/google"
+      audience              = "${local.api_base_url}/api/v1/subscription/notifications/google"
     }
   }
 

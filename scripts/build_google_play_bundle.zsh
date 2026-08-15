@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="${0:A:h:h}"
 MOBILE="$ROOT/apps/mobile"
 CONFIG="${CONVOCOACH_MOBILE_PRODUCTION_CONFIG:-$MOBILE/config/production.google-play.json}"
-KEYSTORE="${CONVOCOACH_ANDROID_UPLOAD_KEYSTORE:-$HOME/Library/Application Support/ConvoCoach/signing/android-upload.jks}"
+KEYSTORE="${CONVOCOACH_ANDROID_UPLOAD_KEYSTORE:-$HOME/Library/Application Support/ELLIS/signing/android-upload.jks}"
 ALIAS="${CONVOCOACH_ANDROID_UPLOAD_ALIAS:-convocoach-upload}"
 ACCOUNT="${USER:-$(id -un)}"
 OUTPUT_DIR="$ROOT/release/google-play"

@@ -57,17 +57,29 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
       _authenticating = true;
       _authenticationError = null;
     });
-    final result = await ref.read(authenticationGatewayProvider).signIn(method);
-    if (!mounted) return;
-    if (result is MobileAuthenticationSucceeded) {
-      context.go('/profile/setup');
-      return;
+    try {
+      final result = await ref
+          .read(authenticationGatewayProvider)
+          .signIn(method);
+      if (!mounted) return;
+      if (result is MobileAuthenticationSucceeded) {
+        context.go('/profile/setup');
+        return;
+      }
+      setState(() {
+        _authenticationError = authenticationFailureMessage(
+          (result as MobileAuthenticationRejected).code,
+        );
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _authenticationError =
+            'Secure sign-in is temporarily unavailable. Try again without re-entering your details.';
+      });
+    } finally {
+      if (mounted) setState(() => _authenticating = false);
     }
-    setState(() {
-      _authenticating = false;
-      _authenticationError =
-          'Secure sign-in did not finish. No account data was saved.';
-    });
   }
 
   @override
@@ -85,7 +97,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Continue to the protected sign-in page. ConvoCoach uses authorization code with PKCE and stores session credentials in your device keychain.',
+                'Continue to the protected sign-in page. ELLIS uses authorization code with PKCE and stores session credentials in your device keychain.',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: AppSpacing.xxl),
@@ -159,7 +171,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
                   ],
                 ),
                 Text(
-                  'The protected sign-in page lets you reset your password by email. ConvoCoach never sees it.',
+                  'The protected sign-in page lets you reset your password by email. ELLIS never sees it.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -176,7 +188,7 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Your identity provider may offer Apple, Google, or email sign-in. ConvoCoach never receives your provider password.',
+                'Your identity provider may offer Apple, Google, or email sign-in. ELLIS never receives your provider password.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -316,3 +328,18 @@ class _AuthenticationScreenState extends ConsumerState<AuthenticationScreen> {
     );
   }
 }
+
+String authenticationFailureMessage(String code) => switch (code) {
+  'authentication_session_incomplete' =>
+    'Sign-in reached Auth0, but a persistent session was not returned. Enable offline access for the API, then try again.',
+  'authentication_configuration_invalid' =>
+    'Secure sign-in configuration was rejected. Check the Auth0 native client, callback, audience, and allowed grants.',
+  'authentication_provider_unavailable' =>
+    'The sign-in provider is temporarily unavailable. Try again shortly.',
+  'authentication_access_denied' =>
+    'Google did not authorize this sign-in. Choose the intended account and approve the request.',
+  'authentication_cancelled' =>
+    'Sign-in was cancelled. Your existing session and account data were kept.',
+  _ =>
+    'Secure sign-in did not finish. Your existing session and account data were kept.',
+};

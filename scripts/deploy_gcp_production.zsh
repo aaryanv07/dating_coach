@@ -30,11 +30,11 @@ gcloud run jobs execute convocoach-migrations \
   --region "$REGION" \
   --wait
 
-api_domain="$(sed -n 's/^api_domain[[:space:]]*=[[:space:]]*"\(.*\)"/\1/p' "$TFVARS" | head -n 1)"
-if [[ -z "$api_domain" ]]; then
-  print -u2 "Deployment applied, but api_domain could not be read for the smoke check."
+api_base_url="$(terraform output -raw public_api_base_url)"
+if [[ "$api_base_url" != https://* ]]; then
+  print -u2 "Deployment applied, but the public HTTPS API URL was unavailable."
   exit 1
 fi
 
-"$ROOT/scripts/verify_production_endpoint.zsh" "https://$api_domain"
+"$ROOT/scripts/verify_production_endpoint.zsh" "$api_base_url"
 print "production_deployment=verified"

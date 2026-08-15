@@ -83,6 +83,7 @@ class UserRepository:
         self,
         user_id: UUID,
         *,
+        fields_to_update: frozenset[str],
         preferred_name: str | None,
         age: int | None,
         gender: str | None,
@@ -97,29 +98,29 @@ class UserRepository:
         looking_for: list[str] | None,
     ) -> CommunicationProfile:
         profile = await self.get_profile(user_id)
-        if preferred_name is not None:
+        if "preferred_name" in fields_to_update:
             profile.preferred_name = preferred_name
-        if age is not None:
+        if "age" in fields_to_update:
             profile.age = age
-        if gender is not None:
+        if "gender" in fields_to_update:
             profile.gender = gender
-        if profile_setup_completed is not None:
+        if "profile_setup_completed" in fields_to_update and profile_setup_completed is not None:
             profile.profile_setup_completed = profile_setup_completed
-        if relationship_intention is not None:
+        if "relationship_intention" in fields_to_update:
             profile.relationship_intention = relationship_intention
-        if communication_tone is not None:
+        if "communication_tone" in fields_to_update:
             profile.communication_tone = communication_tone
-        if texting_style is not None:
+        if "texting_style" in fields_to_update:
             profile.texting_style = texting_style
-        if preferred_message_length is not None:
+        if "preferred_message_length" in fields_to_update:
             profile.preferred_message_length = preferred_message_length
-        if uses_emojis is not None:
+        if "uses_emojis" in fields_to_update:
             profile.uses_emojis = uses_emojis
-        if job_title is not None:
+        if "job_title" in fields_to_update:
             profile.job_title = job_title
-        if likes is not None:
+        if "likes" in fields_to_update and likes is not None:
             profile.likes = likes
-        if looking_for is not None:
+        if "looking_for" in fields_to_update and looking_for is not None:
             profile.looking_for = looking_for
         await self._session.flush()
         return profile

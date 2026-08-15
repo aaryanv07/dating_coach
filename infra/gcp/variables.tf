@@ -10,12 +10,26 @@ variable "region" {
 }
 
 variable "api_domain" {
-  description = "Verified HTTPS API hostname, without scheme or path."
+  description = "Optional verified HTTPS API hostname, without scheme or path."
   type        = string
+  default     = ""
 
   validation {
-    condition     = can(regex("^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$", var.api_domain))
-    error_message = "api_domain must be a lowercase DNS hostname."
+    condition = var.api_domain == "" || can(
+      regex("^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$", var.api_domain)
+    )
+    error_message = "api_domain must be empty or a lowercase DNS hostname."
+  }
+}
+
+variable "enable_custom_domain" {
+  description = "Create a global HTTPS load balancer for api_domain. Keep false for the lowest-cost run.app launch."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !var.enable_custom_domain || var.api_domain != ""
+    error_message = "api_domain is required when enable_custom_domain is true."
   }
 }
 
@@ -48,6 +62,57 @@ variable "authentication_jwks_url" {
 variable "apple_app_store_id" {
   description = "Numeric App Store Connect app identifier."
   type        = number
+  default     = 0
+}
+
+variable "store_billing_enabled" {
+  description = "Enable store verification and Play notification resources only after products are configured."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !var.store_billing_enabled || var.apple_app_store_id > 0
+    error_message = "apple_app_store_id is required when store billing is enabled."
+  }
+}
+
+variable "database_tier" {
+  description = "Cloud SQL tier. One dedicated core is the controlled-launch production floor."
+  type        = string
+  default     = "db-custom-1-3840"
+}
+
+variable "database_availability_type" {
+  description = "ZONAL for the cost-controlled launch; upgrade to REGIONAL after traffic justifies HA."
+  type        = string
+  default     = "ZONAL"
+
+  validation {
+    condition     = contains(["ZONAL", "REGIONAL"], var.database_availability_type)
+    error_message = "database_availability_type must be ZONAL or REGIONAL."
+  }
+}
+
+variable "database_disk_size_gb" {
+  description = "Initial autoscaling PostgreSQL SSD capacity."
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.database_disk_size_gb >= 10
+    error_message = "database_disk_size_gb must be at least 10."
+  }
+}
+
+variable "redis_tier" {
+  description = "BASIC for disposable controlled-launch cache; upgrade to STANDARD_HA when needed."
+  type        = string
+  default     = "BASIC"
+
+  validation {
+    condition     = contains(["BASIC", "STANDARD_HA"], var.redis_tier)
+    error_message = "redis_tier must be BASIC or STANDARD_HA."
+  }
 }
 
 variable "apple_product_ids" {
@@ -102,13 +167,13 @@ variable "ai_safety_evaluation_approved" {
 }
 
 variable "minimum_instances" {
-  description = "Warm API instances. Set to one for controlled launch."
+  description = "Warm API instances. Keep zero for request-based scale-to-zero billing."
   type        = number
-  default     = 1
+  default     = 0
 }
 
 variable "maximum_instances" {
   description = "Hard spend and connection ceiling for API autoscaling."
   type        = number
-  default     = 5
+  default     = 3
 }

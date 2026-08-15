@@ -9,6 +9,7 @@ import 'package:convo_coach/core/widgets/app_overlays.dart';
 import 'package:convo_coach/core/widgets/responsive_content.dart';
 import 'package:convo_coach/features/authentication/application/mock_auth_controller.dart';
 import 'package:convo_coach/features/conversations/application/conversation_list_controller.dart';
+import 'package:convo_coach/features/communication_profile/application/communication_profile_controller.dart';
 import 'package:convo_coach/features/progress/application/progress_dashboard_controller.dart';
 import 'package:convo_coach/features/settings/application/account_actions.dart';
 import 'package:convo_coach/features/settings/application/account_export_sharer.dart';
@@ -49,6 +50,7 @@ class ProfileScreen extends ConsumerWidget {
     ref.read(mockAuthProvider.notifier).signOut();
     ref.invalidate(progressDashboardProvider);
     ref.invalidate(conversationListProvider);
+    ref.invalidate(communicationProfileProvider);
     context.go('/auth');
   }
 
@@ -86,6 +88,7 @@ class ProfileScreen extends ConsumerWidget {
     ref.read(mockAuthProvider.notifier).signOut();
     ref.invalidate(progressDashboardProvider);
     ref.invalidate(conversationListProvider);
+    ref.invalidate(communicationProfileProvider);
     context.go('/auth');
   }
 
@@ -95,7 +98,7 @@ class ProfileScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Export your data?'),
         content: const Text(
-          'The export can contain your profile and saved conversation text. Choose a private destination in the system share sheet. ConvoCoach deletes its temporary export after sharing.',
+          'The export can contain your profile and saved conversation text. Choose a private destination in the system share sheet. ELLIS deletes its temporary export after sharing.',
         ),
         actions: [
           TextButton(
@@ -170,7 +173,7 @@ class ProfileScreen extends ConsumerWidget {
               child: ListTile(
                 leading: const Icon(Icons.workspace_premium_outlined),
                 title: const Text('Plan and usage'),
-                subtitle: const Text('Preview Free and ConvoCoach Plus'),
+                subtitle: const Text('Preview Free and ELLIS Plus'),
                 trailing: const Icon(Icons.arrow_forward_rounded),
                 onTap: () => context.push('/profile/subscription'),
               ),

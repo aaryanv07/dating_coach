@@ -948,3 +948,34 @@ remained the resumed process after 15 seconds, and produced no fatal Android or
 Flutter log. Android native extraction is qualified by this evidence; iOS
 native extraction and both platforms' physical accessibility smoke checks still
 block full Phase 6A.3 and production-store qualification.
+
+## 2026-08-15 Android Auth0 session and profile qualification
+
+Auth0 offline access was enabled for the `convocoach-api` resource server, and
+the native application's Refresh Token grant was confirmed. The resource
+server's access-token and implicit/hybrid lifetimes were reduced from 86,400 and
+7,200 seconds to 3,600 seconds so issued tokens satisfy the backend's maximum
+token-lifetime policy.
+
+On the physical Xiaomi `21091116I`, Google sign-in completed the PKCE callback
+and returned to profile setup. A content-free relay confirmed RS256, the exact
+Auth0 issuer, the `convocoach-api` audience, and a 3,600-second lifetime without
+retaining the bearer token or identity claims. The local backend initially
+returned 401 from a stale container process; after Docker recovery and service
+restart, the same strict token verification path returned 200 for the profile
+request. PostgreSQL and Redis were healthy.
+
+ADB forwarding was restored directly from device port 8000 to local backend
+port 8001. After force-stopping and relaunching the app, it restored the secure
+session, skipped login, rendered profile setup, and the backend again returned
+200 for `GET /api/v1/communication-profile`. This is physical Android/local-API
+qualification only, not production-hosted API or Play Store deployment evidence.
+
+The owner then completed the real profile setup on the device. The app left the
+setup flow and rendered the authenticated Profile surface. After another full
+Android force-stop and cold relaunch, it restored the same protected session and
+opened Home without returning to login or profile setup. No profile field,
+provider subject, email address, or bearer credential was read into or retained
+by the qualification evidence. This verifies save-and-reload behavior through
+the configured USB-local authenticated backend; production PostgreSQL
+deployment and restoration qualification remain separate gates.

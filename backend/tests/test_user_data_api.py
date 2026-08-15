@@ -89,6 +89,34 @@ def test_preference_and_profile_enums_reject_unknown_values(
     assert profile.status_code == 422
 
 
+def test_profile_patch_distinguishes_omitted_fields_from_explicit_clear(
+    api_client: TestClient, auth_a: dict[str, str]
+) -> None:
+    created = api_client.patch(
+        "/api/v1/communication-profile",
+        headers=auth_a,
+        json={"gender": "Man", "job_title": "Designer", "looking_for": ["Kindness"]},
+    )
+    omitted = api_client.patch(
+        "/api/v1/communication-profile",
+        headers=auth_a,
+        json={"uses_emojis": True},
+    )
+    cleared = api_client.patch(
+        "/api/v1/communication-profile",
+        headers=auth_a,
+        json={"gender": None, "job_title": None, "looking_for": []},
+    )
+
+    assert created.status_code == 200
+    assert omitted.json()["gender"] == "Man"
+    assert omitted.json()["job_title"] == "Designer"
+    assert cleared.status_code == 200
+    assert cleared.json()["gender"] is None
+    assert cleared.json()["job_title"] is None
+    assert cleared.json()["looking_for"] == []
+
+
 def test_profile_rejects_underage_setup(api_client: TestClient, auth_a: dict[str, str]) -> None:
     response = api_client.patch(
         "/api/v1/communication-profile",

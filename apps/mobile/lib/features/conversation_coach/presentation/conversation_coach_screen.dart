@@ -190,7 +190,7 @@ class _ExternalProcessingConsent extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           const AppCard(
             child: Text(
-              'If you continue, the server will send only the reviewed message text, speaker labels, and opaque event IDs needed for this request through OpenRouter to the model provider selected for your plan. Free coaching uses GPT-4o mini and Plus coaching uses GPT-5.6 Terra. Screenshot bytes, contact names, source paths, OCR metadata, and your ConvoCoach account ID are not sent. ConvoCoach requests zero-data-retention routing, denies provider data collection, and does not save the generated result. OpenRouter and the selected provider process the request under their applicable terms.',
+              'If you continue, the server will send only the reviewed message text, speaker labels, and opaque event IDs needed for this request through OpenRouter to the model provider selected for your plan. Free coaching uses GPT-4o mini and Plus coaching uses GPT-5.6 Terra. Screenshot bytes, contact names, source paths, OCR metadata, and your ELLIS account ID are not sent. ELLIS requests zero-data-retention routing, denies provider data collection, and does not save the generated result. OpenRouter and the selected provider process the request under their applicable terms.',
             ),
           ),
           const SizedBox(height: AppSpacing.md),

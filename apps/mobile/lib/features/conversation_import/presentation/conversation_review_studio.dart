@@ -372,7 +372,7 @@ class ConversationReviewStudio extends ConsumerWidget {
                               'Keep this reviewed conversation',
                             ),
                             subtitle: const Text(
-                              'Keep the reviewed messages in ConvoCoach so you can analyze them now and revisit them later. Original screenshots are deleted.',
+                              'Keep the reviewed messages in ELLIS so you can analyze them now and revisit them later. Original screenshots are deleted.',
                             ),
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
@@ -469,7 +469,7 @@ class _ReviewIntro extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Read through the conversation and correct anything that looks wrong. ConvoCoach handles the technical setup underneath.',
+            'Read through the conversation and correct anything that looks wrong. ELLIS handles the technical setup underneath.',
             textAlign: TextAlign.center,
             style: Theme.of(
               context,

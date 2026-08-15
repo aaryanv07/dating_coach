@@ -21,6 +21,30 @@
 The Auth0 dashboard displayed a successful-save confirmation for the native
 application settings. No secret or user record is included in this evidence.
 
+## Android persistent-session qualification
+
+- Evidence ID: `phase20.auth0-android-session.20260815`
+- Observed on: `2026-08-15`
+- Auth0 saved **Allow Offline Access** for `ConvoCoach API Production`.
+- The native application had the **Refresh Token** grant enabled.
+- The API maximum access-token lifetime and implicit/hybrid lifetime were both
+  set to 3,600 seconds to match the backend's fail-closed verifier policy.
+- A Google authorization-code-with-PKCE flow returned through
+  `com.convocoach.convo-coach:/oauthredirect` on the physical Xiaomi
+  `21091116I`.
+- The resulting RS256 token exposed the expected issuer and `convocoach-api`
+  audience to a content-free diagnostic check. No token, subject, email, or
+  profile content was retained in the evidence.
+- The USB-local backend returned `200` for
+  `GET /api/v1/communication-profile`. After a full Android force-stop and
+  relaunch, the app restored the protected session without showing login and
+  the backend returned `200` again.
+
+This qualifies Android callback and local persistent-session behavior for the
+observed device. The API was reached through ADB reverse forwarding to a local
+backend; this is not production HTTPS deployment, Google production-OAuth
+qualification, logout qualification, iOS qualification, or store approval.
+
 ## Physical iPhone development launch
 
 - Evidence ID: `phase20.ios-development-launch.20260804`
@@ -49,7 +73,8 @@ permission to mark any corresponding production gate as passed.
   registration.
 - An Apple connection has not been created because the production Apple Services
   ID, team, key ID, and private signing key are not yet available.
-- Callback handling and login/logout have not passed a physical-device flow.
+- Android login callback and cold-relaunch restoration passed on the observed
+  physical device. Logout and iOS authentication flows remain unqualified.
 - The Auth0 trial is not evidence of an approved long-term production plan.
 - The `read:user-metrics` API permission, least-privilege operator role, and
   separate private operator client still require dashboard configuration and

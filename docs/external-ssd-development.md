@@ -5,7 +5,7 @@ APFS volume mounted at `/Volumes/ConvoCoachDev`.
 
 ## SSD-backed paths
 
-- Repository: `/Volumes/ConvoCoachDev/dating_coach`
+- Active repository: `/Volumes/ConvoCoachDev/dating_coach_github`
 - Flutter SDK: `/Volumes/ConvoCoachDev/Developer/toolchains/flutter`
 - Android SDK: `/Volumes/ConvoCoachDev/Developer/android/sdk`
 - Android Studio: `/Volumes/ConvoCoachDev/Developer/Applications/Android Studio.app`
@@ -17,6 +17,8 @@ APFS volume mounted at `/Volumes/ConvoCoachDev`.
 - Xcode iOS Device Support: `/Volumes/ConvoCoachDev/Developer/caches/xcode/iOS DeviceSupport`
 - CoreSimulator user data: `/Volumes/ConvoCoachDev/Developer/caches/xcode/CoreSimulator`
 - Development temporary directory: `/Volumes/ConvoCoachDev/Developer/tmp`
+- ELLIS documents, caches, verification logs, and legacy archives:
+  `/Volumes/ConvoCoachDev/ELLIS`
 
 Compatibility symlinks preserve the standard Homebrew, Applications, CocoaPods,
 and Xcode paths. Shell configuration is loaded from
@@ -35,7 +37,7 @@ leave every shell with invalid environment variables.
 For the repository-managed toolchain and local AI runtime, run:
 
 ```bash
-cd /Volumes/ConvoCoachDev/dating_coach
+cd /Volumes/ConvoCoachDev/dating_coach_github
 ./scripts/setup_local_development.zsh
 ./scripts/configure_local_ai_secrets.zsh
 ```
@@ -83,10 +85,12 @@ all development applications and commands stop.
 
 The SSD is APFS but is not encrypted. Apple Keychain material, signing
 credentials, Android ADB keys, and the Android debug keystore therefore remain
-system-managed on the internal Mac storage. Only synthetic qualification
-fixtures may be used until the SSD is encrypted. Do not place production signing
-keys, tokens, real conversation screenshots, or other private user data on the
-unencrypted SSD.
+system-managed on the internal Mac storage. The Android upload keystore is stored
+at `~/Library/Application Support/ELLIS/signing/android-upload.jks` with owner-only
+permissions; the build scripts use that protected location by default. Only
+synthetic qualification fixtures may be used until the SSD is encrypted. Do not
+place production signing keys, tokens, real conversation screenshots, or other
+private user data on the unencrypted SSD.
 
 ## Verification record
 

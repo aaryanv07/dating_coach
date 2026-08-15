@@ -83,6 +83,7 @@ final class OidcAuthenticationGateway
   final FlutterSecureStorage _storage;
   final StreamController<MobileAuthenticationSession> _sessions =
       StreamController.broadcast();
+  Future<String?>? _accessTokenOperation;
 
   @override
   Stream<MobileAuthenticationSession> watchSession() async* {
@@ -115,12 +116,18 @@ final class OidcAuthenticationGateway
           scopes: configuration.scopes,
           promptValues: requestParameters.promptValues,
           additionalParameters: requestParameters.additionalParameters,
-          externalUserAgent:
-              ExternalUserAgent.ephemeralAsWebAuthenticationSession,
+          externalUserAgent: ExternalUserAgent.asWebAuthenticationSession,
         ),
       );
-      if (result.accessToken == null) {
-        return _reject('authentication_cancelled');
+      if (result.accessToken == null ||
+          result.refreshToken == null ||
+          result.refreshToken!.isEmpty ||
+          result.idToken == null ||
+          result.idToken!.isEmpty ||
+          result.accessTokenExpirationDateTime == null) {
+        return _rejectPreservingStoredSession(
+          'authentication_session_incomplete',
+        );
       }
       await _storeTokens(
         accessToken: result.accessToken!,
@@ -135,14 +142,35 @@ final class OidcAuthenticationGateway
       );
       _sessions.add(session);
       return MobileAuthenticationSucceeded(session);
+    } on FlutterAppAuthUserCancelledException {
+      return _rejectPreservingStoredSession('authentication_cancelled');
+    } on FlutterAppAuthPlatformException catch (error) {
+      return _rejectPreservingStoredSession(
+        _safeInteractiveFailureCode(error.platformErrorDetails.error),
+      );
     } on Object {
-      await _clearTokens();
-      return _reject('authentication_failed');
+      // A failed account switch or provider outage must not destroy a valid
+      // session that was already protected on this device.
+      return _rejectPreservingStoredSession('authentication_failed');
     }
   }
 
   @override
   Future<String?> accessToken() async {
+    final inFlight = _accessTokenOperation;
+    if (inFlight != null) return inFlight;
+    final operation = _resolveAccessToken();
+    _accessTokenOperation = operation;
+    try {
+      return await operation;
+    } finally {
+      if (identical(_accessTokenOperation, operation)) {
+        _accessTokenOperation = null;
+      }
+    }
+  }
+
+  Future<String?> _resolveAccessToken() async {
     final token = await _storage.read(key: _accessTokenKey);
     final expiryText = await _storage.read(key: _accessTokenExpiryKey);
     final expiry = expiryText == null
@@ -173,7 +201,7 @@ final class OidcAuthenticationGateway
         ),
       );
       if (result.accessToken == null) {
-        throw StateError('token_refresh_failed');
+        return null;
       }
       await _storeTokens(
         accessToken: result.accessToken!,
@@ -182,16 +210,41 @@ final class OidcAuthenticationGateway
         accessTokenExpirationDateTime: result.accessTokenExpirationDateTime,
       );
       return result.accessToken;
+    } on FlutterAppAuthPlatformException catch (error) {
+      if (_isTerminalRefreshFailure(error)) {
+        await _expireSession();
+      }
+      return null;
     } on Object {
-      await _clearTokens();
-      _sessions.add(
-        const MobileAuthenticationSession(
-          lifecycle: MobileAuthenticationLifecycle.expired,
-          method: MobileAuthenticationMethod.oidc,
-        ),
-      );
+      // Keep protected credentials on temporary connectivity, discovery, and
+      // provider failures so a later request can recover without another login.
       return null;
     }
+  }
+
+  bool _isTerminalRefreshFailure(FlutterAppAuthPlatformException error) =>
+      error.platformErrorDetails.error == FlutterAppAuthOAuthError.invalidGrant;
+
+  String _safeInteractiveFailureCode(String? error) => switch (error) {
+    'access_denied' => 'authentication_access_denied',
+    FlutterAppAuthOAuthError.invalidRequest ||
+    FlutterAppAuthOAuthError.invalidClient ||
+    FlutterAppAuthOAuthError.unauthorizedClient ||
+    FlutterAppAuthOAuthError.invalidScope =>
+      'authentication_configuration_invalid',
+    'server_error' ||
+    'temporarily_unavailable' => 'authentication_provider_unavailable',
+    _ => 'authentication_failed',
+  };
+
+  Future<void> _expireSession() async {
+    await _clearTokens();
+    _sessions.add(
+      const MobileAuthenticationSession(
+        lifecycle: MobileAuthenticationLifecycle.expired,
+        method: MobileAuthenticationMethod.oidc,
+      ),
+    );
   }
 
   @override
@@ -204,8 +257,7 @@ final class OidcAuthenticationGateway
             idTokenHint: idToken,
             postLogoutRedirectUrl: configuration.postLogoutRedirectUrl,
             discoveryUrl: configuration.discoveryUrl,
-            externalUserAgent:
-                ExternalUserAgent.ephemeralAsWebAuthenticationSession,
+            externalUserAgent: ExternalUserAgent.asWebAuthenticationSession,
           ),
         );
       }
@@ -219,17 +271,27 @@ final class OidcAuthenticationGateway
 
   Future<MobileAuthenticationSession> _restoredSession() async {
     final token = await accessToken();
-    return token == null
-        ? const MobileAuthenticationSession.signedOut()
-        : const MobileAuthenticationSession(
+    if (token != null) {
+      return const MobileAuthenticationSession(
+        lifecycle: MobileAuthenticationLifecycle.authenticated,
+        method: MobileAuthenticationMethod.oidc,
+        opaqueAccountReference: 'current-account',
+      );
+    }
+    final recoverableCredential = await _storage.read(key: _refreshTokenKey);
+    return recoverableCredential != null && recoverableCredential.isNotEmpty
+        ? const MobileAuthenticationSession(
             lifecycle: MobileAuthenticationLifecycle.authenticated,
             method: MobileAuthenticationMethod.oidc,
             opaqueAccountReference: 'current-account',
-          );
+          )
+        : const MobileAuthenticationSession.signedOut();
   }
 
-  MobileAuthenticationRejected _reject(String code) {
-    _sessions.add(const MobileAuthenticationSession.signedOut());
+  Future<MobileAuthenticationRejected> _rejectPreservingStoredSession(
+    String code,
+  ) async {
+    _sessions.add(await _restoredSession());
     return MobileAuthenticationRejected(code);
   }
 

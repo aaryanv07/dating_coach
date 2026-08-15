@@ -36,7 +36,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ConvoCoach Plus'), findsOneWidget);
+    expect(find.text('ELLIS Plus'), findsOneWidget);
     expect(find.text('₹999 / month'), findsOneWidget);
 
     await tester.tap(find.text('Yearly'));

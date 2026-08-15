@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-KEYSTORE="${CONVOCOACH_ANDROID_UPLOAD_KEYSTORE:-$HOME/Library/Application Support/ConvoCoach/signing/android-upload.jks}"
+KEYSTORE="${CONVOCOACH_ANDROID_UPLOAD_KEYSTORE:-$HOME/Library/Application Support/ELLIS/signing/android-upload.jks}"
 ALIAS="${CONVOCOACH_ANDROID_UPLOAD_ALIAS:-convocoach-upload}"
 STORE_SERVICE="convocoach.android.upload.store-password"
 KEY_SERVICE="convocoach.android.upload.key-password"

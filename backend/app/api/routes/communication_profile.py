@@ -44,6 +44,7 @@ async def update_communication_profile(
     """Persist a partial communication profile update."""
     profile = await UserRepository(session).update_profile(
         user.id,
+        fields_to_update=frozenset(payload.model_fields_set),
         preferred_name=payload.preferred_name,
         age=payload.age,
         gender=payload.gender,

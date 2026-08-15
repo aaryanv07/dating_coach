@@ -45,7 +45,7 @@ class _AppPrivacyShieldState extends State<AppPrivacyShield>
             key: const Key('app-privacy-shield'),
             color: Theme.of(context).colorScheme.surface,
             child: Semantics(
-              label: 'ConvoCoach is hidden to protect your privacy',
+              label: 'ELLIS is hidden to protect your privacy',
               container: true,
               child: const Center(
                 child: ExcludeSemantics(

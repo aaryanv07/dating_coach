@@ -1,4 +1,4 @@
-# ConvoCoach Terms of Service — launch draft
+# ELLIS Terms of Service — launch draft
 
 **Status:** not approved legal terms. Publication and store submission are blocked
 until qualified counsel replaces all placeholders and approves the complete text.
@@ -14,11 +14,11 @@ upload another person's private content unless you have a lawful basis to do so.
 
 ## Coaching service
 
-ConvoCoach provides communication reflection and editable draft suggestions. AI
+ELLIS provides communication reflection and editable draft suggestions. AI
 outputs may be inaccurate, incomplete, or inappropriate. They are not facts about
 another person's feelings or intent and do not guarantee interest, compatibility,
 reply rates, dates, or any other outcome. You decide whether and how to use a
-suggestion. ConvoCoach does not send messages for you.
+suggestion. ELLIS does not send messages for you.
 
 The service is not medical, mental-health, legal, safety, or emergency advice. If
 someone may be in immediate danger, contact local emergency services or an
@@ -26,7 +26,7 @@ appropriate professional.
 
 ## Acceptable use
 
-You may not use ConvoCoach to facilitate interactions involving minors; harass,
+You may not use ELLIS to facilitate interactions involving minors; harass,
 threaten, stalk, coerce, deceive, impersonate, exploit, or discriminate; create or
 share non-consensual sexual content; evade another person's refusal or boundary;
 violate privacy or intellectual-property rights; probe or disrupt the service; or

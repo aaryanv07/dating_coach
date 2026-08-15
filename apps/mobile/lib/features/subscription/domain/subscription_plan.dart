@@ -68,7 +68,7 @@ abstract final class SubscriptionCatalog {
 
   static const plus = SubscriptionPlan(
     id: 'plus',
-    name: 'ConvoCoach Plus',
+    name: 'ELLIS Plus',
     description:
         'More coaching across conversations without claiming unlimited AI use.',
     monthlyPriceInr: 999,

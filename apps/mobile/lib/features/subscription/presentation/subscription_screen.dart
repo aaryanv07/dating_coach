@@ -118,7 +118,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           AppConfig.runtime.storeBillingEnabled
-                              ? 'ConvoCoach never receives card details. Store-signed evidence is verified by the backend before Plus is activated.'
+                              ? 'ELLIS never receives card details. Store-signed evidence is verified by the backend before Plus is activated.'
                               : 'A future release will verify purchases on the server. This preview cannot activate or renew a subscription.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),

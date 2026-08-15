@@ -8,6 +8,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Phase 14 mobile authentication boundary', () {
+    test(
+      'incomplete persistent login explains the Auth0 offline-access gate',
+      () {
+        expect(
+          authenticationFailureMessage('authentication_session_incomplete'),
+          contains('Enable offline access'),
+        );
+        expect(
+          authenticationFailureMessage('authentication_failed'),
+          isNot(contains('token')),
+        );
+      },
+    );
+
     test('session contract exposes no credential field', () {
       const session = MobileAuthenticationSession(
         lifecycle: MobileAuthenticationLifecycle.authenticated,
@@ -28,10 +42,10 @@ void main() {
         mockMode: false,
         conversationCoachPreviewEnabled: false,
         authenticationMode: 'oidc',
-        apiBaseUrl: 'https://api.example.invalid',
+        apiBaseUrl: 'https://api.convocoach.app',
         apiAccessToken: '',
         oidcDiscoveryUrl:
-            'https://identity.example.invalid/.well-known/openid-configuration',
+            'https://convocoach.jp.auth0.com/.well-known/openid-configuration',
         oidcClientId: 'convocoach-mobile',
         oidcAudience: 'convocoach-api',
         oidcRedirectUrl: 'com.convocoach.convo-coach:/oauthredirect',
@@ -52,6 +66,66 @@ void main() {
       expect(configuration.googleSignInEnabled, isTrue);
       expect(configuration.appleSignInEnabled, isTrue);
       expect(configuration.emailPasswordSignInEnabled, isTrue);
+    });
+
+    test('production refuses placeholder API and OIDC hosts', () {
+      const configuration = MobileRuntimeConfiguration(
+        name: 'ConvoCoach',
+        environment: 'production',
+        mockMode: false,
+        conversationCoachPreviewEnabled: false,
+        authenticationMode: 'oidc',
+        apiBaseUrl: 'https://api.example.com',
+        apiAccessToken: '',
+        oidcDiscoveryUrl:
+            'https://identity.example.invalid/.well-known/openid-configuration',
+        oidcClientId: 'convocoach-mobile',
+        oidcAudience: 'convocoach-api',
+        oidcRedirectUrl: 'com.convocoach.convo-coach:/oauthredirect',
+        oidcPostLogoutRedirectUrl: 'com.convocoach.convo-coach:/logout',
+        oidcGoogleConnection: 'google-oauth2',
+        oidcAppleConnection: 'apple',
+        billingMode: 'store',
+        appleMonthlyProductId: 'com.convocoach.plus.monthly.ios',
+        appleYearlyProductId: 'com.convocoach.plus.yearly.ios',
+        googleMonthlyProductId: 'com.convocoach.plus.monthly.android',
+        googleYearlyProductId: 'com.convocoach.plus.yearly.android',
+      );
+
+      final failures = configuration.validationFailures(releaseMode: true);
+      expect(failures, contains('production_api_url_placeholder'));
+      expect(failures, contains('release_oidc_discovery_url_placeholder'));
+    });
+
+    test('release requires offline access for restart-safe sessions', () {
+      const configuration = MobileRuntimeConfiguration(
+        name: 'ConvoCoach',
+        environment: 'production',
+        mockMode: false,
+        conversationCoachPreviewEnabled: false,
+        authenticationMode: 'oidc',
+        apiBaseUrl: 'https://api.convocoach.app',
+        apiAccessToken: '',
+        oidcDiscoveryUrl:
+            'https://convocoach.jp.auth0.com/.well-known/openid-configuration',
+        oidcClientId: 'convocoach-mobile',
+        oidcAudience: 'convocoach-api',
+        oidcRedirectUrl: 'com.convocoach.convo-coach:/oauthredirect',
+        oidcPostLogoutRedirectUrl: 'com.convocoach.convo-coach:/logout',
+        oidcScopes: 'openid,profile,email',
+        oidcGoogleConnection: 'google-oauth2',
+        oidcAppleConnection: 'apple',
+        billingMode: 'store',
+        appleMonthlyProductId: 'com.convocoach.plus.monthly.ios',
+        appleYearlyProductId: 'com.convocoach.plus.yearly.ios',
+        googleMonthlyProductId: 'com.convocoach.plus.monthly.android',
+        googleYearlyProductId: 'com.convocoach.plus.yearly.android',
+      );
+
+      expect(
+        configuration.validationFailures(releaseMode: true),
+        contains('release_oidc_offline_access_scope_missing'),
+      );
     });
 
     test('release refuses Google sign-in without the Apple alternative', () {

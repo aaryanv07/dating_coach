@@ -2,7 +2,7 @@
 
 ## Approved commercial model
 
-ConvoCoach launches with a useful permanent Free plan and one paid plan. It has
+ELLIS launches with a useful permanent Free plan and one paid plan. It has
 no weekly subscription and makes no unlimited-AI claim.
 
 ### Thirty-day welcome allowance
@@ -28,7 +28,7 @@ not remove saved data or previously generated results.
 - Unlimited access to existing saved results and connection workspaces, subject
   to the user's explicit retention choices.
 
-### ConvoCoach Plus
+### ELLIS Plus
 
 - Monthly price: INR 999.
 - Annual price: INR 8,999, approximately INR 750 per month.

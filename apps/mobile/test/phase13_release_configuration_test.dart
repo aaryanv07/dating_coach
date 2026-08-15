@@ -9,10 +9,10 @@ MobileRuntimeConfiguration productionConfiguration({
   bool mockMode = false,
   bool conversationCoachPreviewEnabled = false,
   String authenticationMode = 'oidc',
-  String apiBaseUrl = 'https://api.example.invalid',
+  String apiBaseUrl = 'https://api.convocoach.app',
   String apiAccessToken = '',
   String oidcDiscoveryUrl =
-      'https://identity.example.invalid/.well-known/openid-configuration',
+      'https://convocoach.jp.auth0.com/.well-known/openid-configuration',
   String oidcClientId = 'convocoach-mobile',
   String oidcAudience = 'convocoach-api',
   String oidcRedirectUrl = 'com.convocoach.convo-coach:/oauthredirect',

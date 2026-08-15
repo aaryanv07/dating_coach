@@ -29,6 +29,28 @@ The create-account action supplies Auth0's signup screen hint without a
 conflicting forced-login prompt. The database connection must be enabled for
 the native client before email login or registration can qualify.
 
+## Session continuity
+
+Access, refresh, and ID tokens remain in platform-protected secure storage and
+never enter application logs. Cold start resolves the protected session before
+navigation: a recoverable account continues to profile setup (which redirects a
+completed profile to Home), while an account with no credential continues
+through onboarding and sign-in.
+
+Refresh is single-flight because the configured Auth0 tenant rotates refresh
+tokens with no reuse overlap. Temporary network, discovery, or provider failures
+retain the protected refresh credential and keep the offline shell available;
+only an OAuth `invalid_grant` terminal failure clears the session. Release
+configuration requires `offline_access`, and interactive cancellation or a
+failed account-switch attempt preserves the prior session. The shared system
+authentication session provides normal identity-provider SSO continuity without
+exposing provider credentials to ConvoCoach.
+
+The tenant's current 15-day idle and 30-day absolute refresh-token lifetimes
+still require deliberate reauthentication at those limits. Uninstalling the app
+also removes device-protected credentials. These are expected security
+boundaries, not silent session loss.
+
 ## First-login profile contract
 
 After successful authentication, an incomplete account must finish profile setup
@@ -54,3 +76,13 @@ until the Auth0 database connection is enabled for the native client. Production
 qualification must test sign-up, email verification, login, reset, logout,
 account linking, expired tokens, and deletion on physical Android and iPhone
 devices.
+
+No store or production-profile build may use reserved example, invalid,
+loopback, or localhost API hosts. A real HTTPS API and a private ignored mobile
+production configuration are required; checked-in `*.example.json` files are
+documentation only. The backend is the durable source of profile fields.
+Optional profile-photo download failures no longer hide valid text fields, and
+profile writes are blocked when the app cannot first verify a returning user's
+server profile. Profile PATCH semantics distinguish omitted fields from an
+explicit clear, so users can remove optional self-described fields without
+accidentally resetting unrelated choices.

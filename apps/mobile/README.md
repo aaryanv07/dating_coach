@@ -1,6 +1,6 @@
-# ConvoCoach Mobile
+# ELLIS Mobile
 
-Flutter Android/iOS application for the ConvoCoach consumer experience.
+Flutter Android/iOS application for the ELLIS consumer experience.
 
 The current build includes premium onboarding, privacy and age gates,
 mock authentication, GoRouter navigation, light/dark/system themes, reusable UI

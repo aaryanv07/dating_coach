@@ -72,6 +72,21 @@ void main() {
     expect(fetched.communicationTone, CommunicationTone.calm);
   });
 
+  test(
+    'profile text still loads when the optional photo request fails',
+    () async {
+      final repository = ApiCommunicationProfileRepository(
+        _FailingPhotoProfileClient(),
+      );
+
+      final fetched = await repository.fetch();
+
+      expect(fetched.preferredName, 'Mira');
+      expect(fetched.profileSetupCompleted, isTrue);
+      expect(fetched.profilePhotoBytes, isNull);
+    },
+  );
+
   test('Riverpod profile provider exposes mock repository state', () async {
     final client = MockCommunicationProfileApiClient();
     final container = ProviderContainer(
@@ -126,4 +141,21 @@ void main() {
     expect(deleted, isTrue);
     expect(container.read(conversationListProvider).value, hasLength(1));
   });
+}
+
+final class _FailingPhotoProfileClient
+    extends MockCommunicationProfileApiClient {
+  _FailingPhotoProfileClient()
+    : super(
+        initialProfile: CommunicationProfileDto.fromJson(const {
+          'preferred_name': 'Mira',
+          'age': 29,
+          'profile_setup_completed': true,
+          'has_profile_photo': true,
+        }),
+      );
+
+  @override
+  Future<List<int>?> fetchProfilePhoto() =>
+      Future<List<int>?>.error(StateError('synthetic_photo_failure'));
 }

@@ -482,3 +482,19 @@ This integration is a tested local release candidate, not evidence of App Store
 deployment. Apple Distribution membership/signing, a production TLS backend,
 production OIDC, verified store products, published legal URLs, and independent
 AI-safety approval remain external launch gates.
+
+## 2026-08-15: ELLIS becomes the customer-facing name
+
+The customer-facing application name is now `ELLIS` across the mobile display
+name, product copy, safe configuration examples, and public policy drafts. The
+existing Android application ID, Apple bundle ID, Auth0 audience, callback
+scheme, secure-storage keys, backend resource names, and store product IDs remain
+unchanged. Those values are stable technical identities; renaming them together
+with the display name would break installed-app continuity, login callbacks,
+signing, stored sessions, and future in-place upgrades.
+
+This decision is a product display-name change, not trademark or store-name
+clearance. Preliminary Apple App Store and Google Play searches contain
+unrelated products using ELLIS, so exclusivity is not claimed. Final store
+metadata still requires owner, legal, domain, and trademark review before
+submission.

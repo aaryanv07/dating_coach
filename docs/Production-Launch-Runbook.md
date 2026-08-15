@@ -59,15 +59,22 @@ purchase.
 4. Initialize/apply the foundation, then use
    `scripts/configure_gcp_production_secrets.zsh` to add the OpenRouter key without
    printing it. Apply the full plan.
-5. Point the API domain A record to `api_load_balancer_ip` and wait for the managed
-   certificate to become active.
+5. For the cost-controlled launch, use the `public_api_base_url` Terraform output,
+   which is the stable deterministic Cloud Run HTTPS URL. A custom domain and its
+   global load balancer remain optional and should be enabled only when their
+   fixed cost is justified.
 6. Execute the migration job, then run `scripts/verify_production_endpoint.zsh`.
 
-Terraform provisions regional PostgreSQL 16 with SSD, point-in-time recovery and
-14 backups; HA Redis with AUTH and transport encryption; Cloud Run with workload
-identity and bounded scaling; Secret Manager; authenticated Play RTDN; managed TLS;
-and uptime/5xx alert policies. The first apply incurs cloud cost and therefore
-requires the account owner to approve the project and billing scope.
+The default cost-controlled Terraform profile provisions Cloud SQL Enterprise
+PostgreSQL 16 on the smallest dedicated-core tier, zonally, with SSD,
+point-in-time recovery and 14 backups; Basic Redis with AUTH and
+transport encryption; Cloud Run with Direct VPC egress, request-based
+scale-to-zero billing and bounded scaling; Secret Manager; the stable Cloud Run
+TLS endpoint; and uptime/5xx alert policies. Store notification resources remain
+disabled until products exist. Upgrade PostgreSQL and Redis to regional/HA tiers
+when measured traffic and recovery requirements justify their fixed cost. The
+first apply incurs cloud cost and therefore requires the account owner to approve
+the project and billing scope.
 
 ## 4. Backup restoration and alerts
 

@@ -20,7 +20,7 @@ void main() {
 
     expect(find.byKey(const Key('app-privacy-shield')), findsOneWidget);
     expect(
-      find.bySemanticsLabel('ConvoCoach is hidden to protect your privacy'),
+      find.bySemanticsLabel('ELLIS is hidden to protect your privacy'),
       findsOneWidget,
     );
 
@@ -86,7 +86,7 @@ void main() {
       isNot(contains('com.apple.developer.default-data-protection')),
     );
     expect(iosLocalInfo, contains('NSAllowsLocalNetworking'));
-    expect(iosLocalInfo, contains('ConvoCoach development server'));
+    expect(iosLocalInfo, contains('ELLIS development server'));
     expect(iosReleaseInfo, isNot(contains('NSAllowsLocalNetworking')));
     expect(iosReleaseInfo, contains('NSPhotoLibraryUsageDescription'));
     expect(

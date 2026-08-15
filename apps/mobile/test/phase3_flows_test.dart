@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:convo_coach/features/communication_profile/application/communication_profile_controller.dart';
+import 'package:convo_coach/features/communication_profile/data/http_communication_profile_api_client.dart';
 import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
 import 'package:convo_coach/features/communication_profile/domain/communication_profile_repository.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,36 @@ void main() {
       await tester.pump();
       expect(find.text('Typed now'), findsOneWidget);
       expect(find.text('Loaded later'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'rejected restored session offers reauthentication without allowing overwrite',
+    (tester) async {
+      final router = await pumpConvoCoach(
+        tester,
+        initialLocation: '/profile/setup',
+        overrides: [
+          communicationProfileRepositoryProvider.overrideWithValue(
+            const _FailingCommunicationProfileRepository(
+              CommunicationProfileApiException('authentication_required'),
+            ),
+          ),
+        ],
+      );
+
+      expect(
+        find.text(
+          'Your sign-in could not be verified. Retry, or sign in again to load your saved details.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('profile-sign-in-again')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('profile-sign-in-again')));
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/auth');
     },
   );
 
@@ -93,7 +124,7 @@ void main() {
     );
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
-    expect(find.text('ConvoCoach is only for adults 18+.'), findsOneWidget);
+    expect(find.text('ELLIS is only for adults 18+.'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).at(1), '24');
     await tester.tap(saveButton);
@@ -174,4 +205,30 @@ class _PendingCommunicationProfileRepository
   Future<CommunicationProfile> deletePhoto(
     CommunicationProfile profile,
   ) async => profile;
+}
+
+class _FailingCommunicationProfileRepository
+    implements CommunicationProfileRepository {
+  const _FailingCommunicationProfileRepository(this.error);
+
+  final Object error;
+
+  @override
+  Future<CommunicationProfile> fetch() => Future.error(error);
+
+  @override
+  Future<CommunicationProfile> save(CommunicationProfile profile) async =>
+      throw error;
+
+  @override
+  Future<CommunicationProfile> updatePhoto(
+    CommunicationProfile profile,
+    List<int> bytes,
+    String contentType,
+  ) async => throw error;
+
+  @override
+  Future<CommunicationProfile> deletePhoto(
+    CommunicationProfile profile,
+  ) async => throw error;
 }

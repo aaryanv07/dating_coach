@@ -7,6 +7,8 @@ import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_button.dart';
 import 'package:convo_coach/core/widgets/app_vibrant_backdrop.dart';
+import 'package:convo_coach/features/authentication/application/authentication_providers.dart';
+import 'package:convo_coach/features/authentication/domain/authentication_contracts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,14 +29,37 @@ void main() {
       ),
     );
 
-    expect(find.text('ConvoCoach'), findsOneWidget);
+    expect(find.text('ELLIS'), findsOneWidget);
     expect(find.byType(AppSlowRotate), findsOneWidget);
 
     await tester.pump(AppDurations.fast);
-    expect(find.text('ConvoCoach'), findsOneWidget);
+    expect(find.text('ELLIS'), findsOneWidget);
 
     await tester.pumpAndSettle();
     expect(find.text('Understand every conversation.'), findsOneWidget);
+  });
+
+  testWidgets('startup restores an authenticated session without login', (
+    tester,
+  ) async {
+    final router = createAppRouter(initialLocation: '/splash');
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hapticsProvider.overrideWithValue(const NoopAppHaptics()),
+          authenticationGatewayProvider.overrideWithValue(
+            const _AuthenticatedTestGateway(),
+          ),
+        ],
+        child: ConvoCoachApp(router: router),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Set up your profile'), findsOneWidget);
+    expect(find.text('Understand every conversation.'), findsNothing);
   });
 
   testWidgets('coach setup reveal honors the system motion preference', (
@@ -205,6 +230,27 @@ void main() {
     expect(find.text('Coaching result'), findsOneWidget);
     expect(find.byKey(const Key('app-depth-reveal-animation')), findsNothing);
   });
+}
+
+final class _AuthenticatedTestGateway implements MobileAuthenticationGateway {
+  const _AuthenticatedTestGateway();
+
+  @override
+  Future<MobileAuthenticationResult> signIn(
+    MobileAuthenticationMethod method,
+  ) async => const MobileAuthenticationRejected('not_used');
+
+  @override
+  Future<void> signOut() async {}
+
+  @override
+  Stream<MobileAuthenticationSession> watchSession() => Stream.value(
+    const MobileAuthenticationSession(
+      lifecycle: MobileAuthenticationLifecycle.authenticated,
+      method: MobileAuthenticationMethod.google,
+      opaqueAccountReference: 'test-account',
+    ),
+  );
 }
 
 void _noop() {}

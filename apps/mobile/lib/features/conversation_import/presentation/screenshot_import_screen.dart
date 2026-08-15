@@ -71,7 +71,7 @@ class ScreenshotImportScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Choose up to 10 screenshots. ConvoCoach prepares the message order and speaker suggestions on this device, then takes you straight to review.',
+                'Choose up to 10 screenshots. ELLIS prepares the message order and speaker suggestions on this device, then takes you straight to review.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -103,7 +103,7 @@ class ScreenshotImportScreen extends ConsumerWidget {
                 const AppEmptyState(
                   title: 'Ready when you are',
                   message:
-                      'Upload screenshots and ConvoCoach will open the conversation review automatically.',
+                      'Upload screenshots and ELLIS will open the conversation review automatically.',
                 ),
               ] else ...[
                 const SizedBox(height: AppSpacing.xl),
