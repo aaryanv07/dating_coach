@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'helpers/pump_app.dart';
 
 void main() {
-  testWidgets('privacy, age confirmation and mock authentication gate home', (
+  testWidgets('privacy, age, authentication and profile setup gate home', (
     tester,
   ) async {
     await pumpConvoCoach(tester, initialLocation: '/privacy');
@@ -32,6 +32,19 @@ void main() {
 
     await tester.tap(find.text('Continue with Google'));
     await tester.pumpAndSettle();
+    expect(find.text('Set up your profile'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Ari');
+    await tester.enterText(find.byType(TextField).at(1), '24');
+    await tester.enterText(find.byType(TextField).at(4), 'music');
+    final saveProfile = find.text('Save profile');
+    await tester.scrollUntilVisible(
+      saveProfile,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveProfile);
+    await tester.pumpAndSettle();
     expect(find.text('Level up your\nconversations.'), findsOneWidget);
+    expect(find.byType(Scrollable), findsWidgets);
   });
 }

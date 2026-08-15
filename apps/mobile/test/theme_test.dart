@@ -36,13 +36,16 @@ void main() {
     expect(container.read(motionPreferenceProvider), MotionPreference.reduced);
   });
 
-  test('motion tokens stay inside the 150 to 450 millisecond budget', () {
-    for (final duration in [
-      AppDurations.fast,
-      AppDurations.normal,
-      AppDurations.deliberate,
-    ]) {
-      expect(duration.inMilliseconds, inInclusiveRange(150, 450));
-    }
-  });
+  test(
+    'normal motion tokens stay inside the 150 to 300 millisecond budget',
+    () {
+      for (final duration in [
+        AppDurations.fast,
+        AppDurations.normal,
+        AppDurations.deliberate,
+      ]) {
+        expect(duration.inMilliseconds, inInclusiveRange(150, 300));
+      }
+    },
+  );
 }

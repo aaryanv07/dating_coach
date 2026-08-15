@@ -6,7 +6,7 @@ from uuid import UUID
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.verifier import AuthClaims
+from app.auth.contracts import AuthClaims
 from app.db.models import (
     CommunicationProfile,
     ConsentRecord,
@@ -29,6 +29,7 @@ class UserRepository:
         self._session = session
 
     async def get_or_create(self, claims: AuthClaims) -> User:
+        claims.validate_structure()
         user = await self._session.scalar(select(User).where(User.auth_subject == claims.subject))
         if user is not None:
             if user.deleted_at is not None:
@@ -37,7 +38,7 @@ class UserRepository:
 
         user = User(
             auth_subject=claims.subject,
-            email=claims.email,
+            email=claims.email if claims.email_verified else None,
             display_name=claims.display_name,
         )
         self._session.add(user)
@@ -82,26 +83,60 @@ class UserRepository:
         self,
         user_id: UUID,
         *,
+        fields_to_update: frozenset[str],
         preferred_name: str | None,
+        age: int | None,
+        gender: str | None,
+        profile_setup_completed: bool | None,
         relationship_intention: str | None,
         communication_tone: str | None,
         texting_style: str | None,
         preferred_message_length: str | None,
         uses_emojis: bool | None,
+        job_title: str | None,
+        likes: list[str] | None,
+        looking_for: list[str] | None,
     ) -> CommunicationProfile:
         profile = await self.get_profile(user_id)
-        if preferred_name is not None:
+        if "preferred_name" in fields_to_update:
             profile.preferred_name = preferred_name
-        if relationship_intention is not None:
+        if "age" in fields_to_update:
+            profile.age = age
+        if "gender" in fields_to_update:
+            profile.gender = gender
+        if "profile_setup_completed" in fields_to_update and profile_setup_completed is not None:
+            profile.profile_setup_completed = profile_setup_completed
+        if "relationship_intention" in fields_to_update:
             profile.relationship_intention = relationship_intention
-        if communication_tone is not None:
+        if "communication_tone" in fields_to_update:
             profile.communication_tone = communication_tone
-        if texting_style is not None:
+        if "texting_style" in fields_to_update:
             profile.texting_style = texting_style
-        if preferred_message_length is not None:
+        if "preferred_message_length" in fields_to_update:
             profile.preferred_message_length = preferred_message_length
-        if uses_emojis is not None:
+        if "uses_emojis" in fields_to_update:
             profile.uses_emojis = uses_emojis
+        if "job_title" in fields_to_update:
+            profile.job_title = job_title
+        if "likes" in fields_to_update and likes is not None:
+            profile.likes = likes
+        if "looking_for" in fields_to_update and looking_for is not None:
+            profile.looking_for = looking_for
+        await self._session.flush()
+        return profile
+
+    async def update_profile_photo(
+        self,
+        user_id: UUID,
+        *,
+        content: bytes | None,
+        content_type: str | None,
+    ) -> CommunicationProfile:
+        """Replace or remove an owner-scoped private profile photo."""
+        profile = await self.get_profile(user_id)
+        profile.profile_photo_bytes = content
+        profile.profile_photo_content_type = content_type
+        profile.profile_photo_updated_at = utc_now() if content is not None else None
         await self._session.flush()
         return profile
 
@@ -138,15 +173,21 @@ class ConsentRepository:
         )
         return list(records)
 
-    async def has_active(self, user_id: UUID, consent_type: str) -> bool:
+    async def has_active(
+        self,
+        user_id: UUID,
+        consent_type: str,
+        *,
+        policy_version: str | None = None,
+    ) -> bool:
+        statement = select(ConsentRecord).where(
+            ConsentRecord.user_id == user_id,
+            ConsentRecord.consent_type == consent_type,
+        )
+        if policy_version is not None:
+            statement = statement.where(ConsentRecord.policy_version == policy_version)
         latest = await self._session.scalar(
-            select(ConsentRecord)
-            .where(
-                ConsentRecord.user_id == user_id,
-                ConsentRecord.consent_type == consent_type,
-            )
-            .order_by(ConsentRecord.recorded_at.desc(), ConsentRecord.id.desc())
-            .limit(1)
+            statement.order_by(ConsentRecord.recorded_at.desc(), ConsentRecord.id.desc()).limit(1)
         )
         return latest is not None and latest.granted
 

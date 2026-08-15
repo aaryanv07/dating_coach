@@ -31,7 +31,7 @@ class SafeConversationImagePreprocessor
   final int maximumDimension;
 
   @override
-  String get version => 'image-v1';
+  String get version => 'image-v2';
 
   @override
   Future<PreprocessedImage> process(
@@ -131,12 +131,16 @@ PreprocessedImage _preprocess(Uint8List bytes, _PreprocessingConfig config) {
   }
 
   final contrast = _normalizedContrast(image);
-  image = img.adjustColor(image, contrast: contrast);
+  if (contrast != 1) {
+    image = img.adjustColor(image, contrast: contrast);
+  }
   image
     ..exif = img.ExifData()
     ..textData = null
     ..iccProfile = null;
-  final encoded = Uint8List.fromList(img.encodePng(image, level: 6));
+  // PNG level 1 remains lossless and metadata-free while avoiding the large
+  // CPU cost of high-compression output on multi-page phone screenshots.
+  final encoded = Uint8List.fromList(img.encodePng(image, level: 1));
   return PreprocessedImage(
     sourceIndex: config.sourceIndex,
     bytes: encoded,
@@ -144,6 +148,28 @@ PreprocessedImage _preprocess(Uint8List bytes, _PreprocessingConfig config) {
     height: image.height,
     orientationCorrected: orientationCorrected,
     wasResized: wasResized,
+    visualConfidenceRaster: _buildVisualConfidenceRaster(image),
+  );
+}
+
+VisualConfidenceRaster _buildVisualConfidenceRaster(img.Image image) {
+  const sampleStep = 4;
+  final width = (image.width / sampleStep).ceil();
+  final height = (image.height / sampleStep).ceil();
+  final luminance = Uint8List(width * height);
+  for (var y = 0; y < height; y++) {
+    final sourceY = math.min(image.height - 1, y * sampleStep + 2);
+    for (var x = 0; x < width; x++) {
+      final sourceX = math.min(image.width - 1, x * sampleStep + 2);
+      final pixel = image.getPixel(sourceX, sourceY);
+      luminance[y * width + x] =
+          (0.2126 * pixel.r + 0.7152 * pixel.g + 0.0722 * pixel.b).round();
+    }
+  }
+  return VisualConfidenceRaster(
+    width: width,
+    height: height,
+    luminance: luminance,
   );
 }
 
@@ -173,5 +199,5 @@ double _normalizedContrast(img.Image image) {
   final deviation = math.sqrt(variance);
   if (deviation < 0.12) return 1.24;
   if (deviation < 0.2) return 1.12;
-  return 1.04;
+  return 1;
 }

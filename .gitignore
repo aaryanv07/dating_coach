@@ -11,6 +11,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Flutter and Dart
 .dart_tool/
@@ -21,9 +22,24 @@ build/
 
 # Editors and operating systems
 .DS_Store
+Desktop.ini
+Thumbs.db
 .idea/
 .vscode/
 
 # Local service data
+.local/
 postgres_data/
 redis_data/
+
+# Terraform local state and production values
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.auto.tfvars
+crash.log
+apps/mobile/config/production.json
+apps/mobile/config/production.google-play.json
+release/google-play/*.aab
+release/google-play/*.sha256

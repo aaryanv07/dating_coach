@@ -36,7 +36,7 @@ class _AgeConfirmationScreenState extends State<AgeConfirmationScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'ConvoCoach is intended only for people aged 18 and above.',
+              'ELLIS is intended only for people aged 18 and above.',
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: AppSpacing.xxl),

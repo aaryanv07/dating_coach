@@ -66,9 +66,9 @@ class AppShell extends StatelessWidget {
               label: 'Progress',
             ),
             const NavigationDestination(
-              icon: Icon(Icons.tune_outlined),
-              selectedIcon: Icon(Icons.tune_rounded),
-              label: 'Settings',
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "fixture_id": "reaction_lab_emoji_heavy_hinglish",
+  "layout_preset": "social_dm",
+  "inspiration": "original_reaction_lab_style",
+  "theme": "dark",
+  "language": "hinglish",
+  "viewport": {"width": 720, "height": 1600},
+  "traits": [
+    "original_design",
+    "dark_mode",
+    "mixed_english_hinglish",
+    "emoji_heavy",
+    "emoji_only_messages",
+    "reaction_heavy",
+    "reactions",
+    "compact_screen"
+  ],
+  "expected_source_order": [0],
+  "expected_duplicate_ids": [],
+  "expected_warnings": [],
+  "messages": [
+    {
+      "id": "reaction-1",
+      "speaker": "other",
+      "text": "That chai meme was too accurate 😂",
+      "timestamp": "2026-07-19T19:05:00.000",
+      "visible_timestamp_text": "7:05 PM",
+      "reference_confidence": 0.96,
+      "requires_manual_review": false
+    },
+    {
+      "id": "reaction-2",
+      "speaker": "me",
+      "text": "Bilkul, mera Monday exactly aisa tha 😭",
+      "timestamp": "2026-07-19T19:06:00.000",
+      "visible_timestamp_text": "7:06 PM",
+      "reference_confidence": 0.95,
+      "requires_manual_review": false
+    },
+    {
+      "id": "reaction-3",
+      "speaker": "other",
+      "text": "😂😂",
+      "timestamp": "2026-07-19T19:07:00.000",
+      "visible_timestamp_text": "7:07 PM",
+      "reference_confidence": 0.94,
+      "requires_manual_review": false,
+      "event_type": "emoji_message"
+    },
+    {
+      "id": "reaction-4",
+      "speaker": "me",
+      "text": "Okay, next one tum choose karo.",
+      "timestamp": "2026-07-19T19:08:00.000",
+      "visible_timestamp_text": "7:08 PM",
+      "reference_confidence": 0.96,
+      "requires_manual_review": false
+    }
+  ],
+  "pages": [
+    {
+      "source_index": 0,
+      "date_label": "19 Jul 2026",
+      "message_ids": ["reaction-1", "reaction-2", "reaction-3", "reaction-4"],
+      "crop_top_pixels": 0,
+      "low_contrast": false,
+      "reactions": [
+        {"message_id": "reaction-1", "text": "❤", "recognize_as_text": false},
+        {"message_id": "reaction-2", "text": "🔥", "recognize_as_text": false},
+        {"message_id": "reaction-3", "text": "👍", "recognize_as_text": false},
+        {"message_id": "reaction-4", "text": "😂", "recognize_as_text": false}
+      ]
+    }
+  ]
+}

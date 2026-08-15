@@ -16,6 +16,7 @@ abstract final class AppRadii {
   static const double large = 28;
   static const double pill = 100;
   static const BorderRadius card = BorderRadius.all(Radius.circular(medium));
+  static const BorderRadius hero = BorderRadius.all(Radius.circular(large));
   static const BorderRadius button = BorderRadius.all(Radius.circular(pill));
   static const BorderRadius sheet = BorderRadius.vertical(
     top: Radius.circular(large),
@@ -32,8 +33,8 @@ abstract final class AppSizes {
 
 abstract final class AppDurations {
   static const Duration fast = Duration(milliseconds: 180);
-  static const Duration normal = Duration(milliseconds: 300);
-  static const Duration deliberate = Duration(milliseconds: 420);
+  static const Duration normal = Duration(milliseconds: 260);
+  static const Duration deliberate = Duration(milliseconds: 280);
   static const Duration loadingPulse = Duration(milliseconds: 900);
   static const Duration ambient = Duration(milliseconds: 2400);
 }

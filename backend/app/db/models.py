@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -23,6 +25,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.domain.conversation_events import JsonObject
 
 DeletionStatus = Literal["pending", "completed", "failed"]
 
@@ -66,6 +69,15 @@ class User(TimestampMixin, Base):
     conversations: Mapped[list[Conversation]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
     )
+    subscription_entitlements: Mapped[list[SubscriptionEntitlement]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    ai_usage_records: Mapped[list[AIUsageRecord]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    ai_output_reports: Mapped[list[AIOutputReport]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class UserPreference(TimestampMixin, Base):
@@ -98,13 +110,29 @@ class CommunicationProfile(TimestampMixin, Base):
         Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     preferred_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    profile_setup_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     relationship_intention: Mapped[str | None] = mapped_column(String(32), nullable=True)
     communication_tone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     texting_style: Mapped[str | None] = mapped_column(String(32), nullable=True)
     preferred_message_length: Mapped[str | None] = mapped_column(String(16), nullable=True)
     uses_emojis: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    job_title: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    likes: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    looking_for: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    profile_photo_bytes: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    profile_photo_content_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    profile_photo_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     user: Mapped[User] = relationship(back_populates="communication_profile")
+
+    @property
+    def has_profile_photo(self) -> bool:
+        """Expose photo presence without serializing private image bytes."""
+        return self.profile_photo_bytes is not None
 
 
 class ConsentRecord(Base):
@@ -163,10 +191,18 @@ class Conversation(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="Message.position",
     )
+    events: Mapped[list[ConversationEvent]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="ConversationEvent.position",
+    )
     sources: Mapped[list[ConversationSource]] = relationship(
         back_populates="conversation",
         cascade="all, delete-orphan",
         order_by="ConversationSource.source_index",
+    )
+    ai_output_reports: Mapped[list[AIOutputReport]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
     )
 
 
@@ -274,6 +310,262 @@ class Message(TimestampMixin, Base):
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
     participant: Mapped[ConversationParticipant] = relationship(back_populates="messages")
+
+
+class ConversationEvent(TimestampMixin, Base):
+    """A typed, reviewed conversation item that does not assume every item is a message."""
+
+    __tablename__ = "conversation_events"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "position"),
+        Index("ix_conversation_events_conversation_created", "conversation_id", "created_at"),
+        Index("ix_conversation_events_conversation_type", "conversation_id", "event_type"),
+        CheckConstraint("position >= 0", name="position"),
+        CheckConstraint(
+            "event_type IN ('text_message', 'emoji_message', 'reaction', 'image', 'video', "
+            "'gif', 'sticker', 'voice_note', 'audio', 'document', 'link', 'location', "
+            "'contact_card', 'poll', 'payment_request', 'call_started', 'call_ended', "
+            "'missed_call', 'declined_call', 'deleted_message', 'edited_message_marker', "
+            "'reply_reference', 'system_message', 'date_separator', 'unread_separator', "
+            "'encryption_notice', 'member_event', 'unknown')",
+            name="event_type",
+        ),
+        CheckConstraint("speaker IN ('user', 'other', 'system', 'unknown')", name="speaker"),
+        CheckConstraint(
+            "source_image_index IS NULL OR source_image_index >= 0",
+            name="source_image_index",
+        ),
+        CheckConstraint(
+            "ocr_confidence IS NULL OR (ocr_confidence >= 0 AND ocr_confidence <= 1)",
+            name="ocr_confidence",
+        ),
+        CheckConstraint(
+            "classification_confidence IS NULL OR "
+            "(classification_confidence >= 0 AND classification_confidence <= 1)",
+            name="classification_confidence",
+        ),
+        CheckConstraint(
+            "speaker_confidence IS NULL OR (speaker_confidence >= 0 AND speaker_confidence <= 1)",
+            name="speaker_confidence",
+        ),
+        CheckConstraint(
+            "timestamp_confidence IS NULL OR "
+            "(timestamp_confidence >= 0 AND timestamp_confidence <= 1)",
+            name="timestamp_confidence",
+        ),
+        CheckConstraint(
+            "relationship_confidence IS NULL OR "
+            "(relationship_confidence >= 0 AND relationship_confidence <= 1)",
+            name="relationship_confidence",
+        ),
+        CheckConstraint(
+            "event_type NOT IN ('system_message', 'date_separator', 'unread_separator', "
+            "'encryption_notice', 'member_event') OR speaker = 'system'",
+            name="system_speaker",
+        ),
+        CheckConstraint(
+            "event_type != 'unknown' OR requires_review",
+            name="unknown_requires_review",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    speaker: Mapped[str] = mapped_column(String(16), nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    timestamp_is_estimated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    raw_timestamp_text: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    source_image_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_region_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classification_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    speaker_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    timestamp_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    relationship_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    requires_review: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    metadata_json: Mapped[JsonObject] = mapped_column(JSON, default=dict, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    conversation: Mapped[Conversation] = relationship(back_populates="events")
+    outgoing_relationships: Mapped[list[ConversationEventRelationship]] = relationship(
+        back_populates="source_event",
+        cascade="all, delete-orphan",
+        foreign_keys="ConversationEventRelationship.source_event_id",
+    )
+    incoming_relationships: Mapped[list[ConversationEventRelationship]] = relationship(
+        back_populates="target_event",
+        cascade="all, delete-orphan",
+        foreign_keys="ConversationEventRelationship.target_event_id",
+    )
+
+
+class ConversationEventRelationship(TimestampMixin, Base):
+    """A directed, typed relationship between two events in the same conversation."""
+
+    __tablename__ = "conversation_event_relationships"
+    __table_args__ = (
+        UniqueConstraint("source_event_id", "target_event_id", "relationship_type"),
+        Index("ix_event_relationships_source", "source_event_id"),
+        Index("ix_event_relationships_target", "target_event_id"),
+        CheckConstraint("source_event_id != target_event_id", name="distinct_events"),
+        CheckConstraint(
+            "relationship_type IN ('reaction_target', 'reply_target', 'edit_target', "
+            "'media_caption', 'call_pair', 'system_context', 'duplicate_of')",
+            name="relationship_type",
+        ),
+        CheckConstraint(
+            "confidence IS NULL OR (confidence >= 0 AND confidence <= 1)",
+            name="confidence",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    source_event_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversation_events.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    target_event_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversation_events.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    relationship_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    metadata_json: Mapped[JsonObject] = mapped_column(JSON, default=dict, nullable=False)
+
+    source_event: Mapped[ConversationEvent] = relationship(
+        back_populates="outgoing_relationships", foreign_keys=[source_event_id]
+    )
+    target_event: Mapped[ConversationEvent] = relationship(
+        back_populates="incoming_relationships", foreign_keys=[target_event_id]
+    )
+
+
+class SubscriptionEntitlement(TimestampMixin, Base):
+    """Server-verified paid entitlement without receipt or profile content."""
+
+    __tablename__ = "subscription_entitlements"
+    __table_args__ = (
+        Index("ix_subscription_entitlements_user_period", "user_id", "current_period_end"),
+        UniqueConstraint("storefront", "transaction_reference_hash"),
+        CheckConstraint("plan_code IN ('plus')", name="plan_code"),
+        CheckConstraint("status IN ('active', 'grace', 'expired', 'revoked')", name="status"),
+        CheckConstraint("storefront IN ('apple', 'google', 'admin')", name="storefront"),
+        CheckConstraint("current_period_end > current_period_start", name="period_order"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    plan_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    storefront: Mapped[str] = mapped_column(String(16), nullable=False)
+    transaction_reference_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    verified_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+
+    user: Mapped[User] = relationship(back_populates="subscription_entitlements")
+
+
+class AIUsageRecord(TimestampMixin, Base):
+    """Content-free quota reservation, completion, and cost ledger."""
+
+    __tablename__ = "ai_usage_records"
+    __table_args__ = (
+        UniqueConstraint("user_id", "allowance_kind", "idempotency_key"),
+        Index("ix_ai_usage_user_window", "user_id", "allowance_kind", "window_start"),
+        Index("ix_ai_usage_status_created", "status", "created_at"),
+        CheckConstraint(
+            "allowance_kind IN ('conversation_analysis', 'reply_generation', "
+            "'first_message_generation', 'progress_insight')",
+            name="allowance_kind",
+        ),
+        CheckConstraint("plan_code IN ('welcome', 'free', 'plus')", name="plan_code"),
+        CheckConstraint("status IN ('reserved', 'completed', 'released')", name="status"),
+        CheckConstraint("window_end > window_start", name="window_order"),
+        CheckConstraint("attempt_count >= 1 AND attempt_count <= 3", name="attempt_count"),
+        CheckConstraint(
+            "input_tokens >= 0 AND output_tokens >= 0 AND total_tokens >= 0",
+            name="token_counts",
+        ),
+        CheckConstraint("cost_microusd >= 0", name="cost_microusd"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    conversation_id: Mapped[UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    allowance_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    plan_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    model_identifier: Mapped[str] = mapped_column(String(64), nullable=False)
+    correlation_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cost_microusd: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="ai_usage_records")
+
+
+class AIOutputReport(TimestampMixin, Base):
+    """Content-free user report about one opaque generated-response identifier."""
+
+    __tablename__ = "ai_output_reports"
+    __table_args__ = (
+        UniqueConstraint("user_id", "response_id"),
+        Index("ix_ai_output_reports_status_created", "status", "created_at"),
+        Index("ix_ai_output_reports_category_created", "category", "created_at"),
+        CheckConstraint(
+            "category IN ('harmful_or_unsafe', 'harassing_or_hateful', "
+            "'sexual_content', 'deceptive_or_manipulative', 'other')",
+            name="category",
+        ),
+        CheckConstraint(
+            "status IN ('received', 'reviewed', 'actioned', 'dismissed')",
+            name="status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    response_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="received", nullable=False)
+
+    user: Mapped[User] = relationship(back_populates="ai_output_reports")
+    conversation: Mapped[Conversation] = relationship(back_populates="ai_output_reports")
 
 
 class DeletionRequest(Base):

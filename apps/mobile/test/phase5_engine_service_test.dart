@@ -33,8 +33,58 @@ void main() {
       expect(result.messages.first.timestamp, DateTime(2026, 7, 14, 9, 30));
       expect(result.messages.first.needsReview, isTrue);
       expect(result.messages.last.needsReview, isFalse);
+      expect(
+        result.warnings.map((warning) => warning.code),
+        contains(ExtractionWarningCode.eventReviewRequired),
+      );
       expect(result.metadata.provider, 'synthetic_provider');
-      expect(result.metadata.extractionVersion, 'conversation-extraction-v1');
+      expect(
+        result.metadata.extractionVersion,
+        'conversation-extraction-v3-visual-events',
+      );
+    },
+  );
+
+  test('real engine preprocesses one screenshot ahead of native OCR', () async {
+    final preprocessor = _PipelinedPreprocessor();
+    final provider = _PipelinedTextProvider(preprocessor);
+    final engine = RealConversationOcrEngine(
+      preprocessor: preprocessor,
+      textRecognitionProvider: provider,
+    );
+
+    final result = await engine.extract(
+      [_source(index: 0), _source(index: 1)],
+      locale: 'en_GB',
+      onProgress: (_) {},
+      cancellationToken: ExtractionCancellationToken(),
+    );
+
+    expect(result.diagnostics.processedScreenshotCount, 2);
+    expect(provider.secondPreprocessingStartedDuringFirstRecognition, isTrue);
+  });
+
+  test(
+    'real engine rejects pre-cancelled work without starting preprocessing',
+    () async {
+      final preprocessor = _CountingPreprocessor();
+      final engine = RealConversationOcrEngine(
+        preprocessor: preprocessor,
+        textRecognitionProvider: _FakeTextProvider(),
+      );
+      final cancellation = ExtractionCancellationToken()..cancel();
+
+      await expectLater(
+        engine.extract(
+          [_source()],
+          locale: 'en_GB',
+          onProgress: (_) {},
+          cancellationToken: cancellation,
+        ),
+        throwsA(isA<ExtractionCancelledException>()),
+      );
+
+      expect(preprocessor.calls, 0);
     },
   );
 
@@ -147,13 +197,13 @@ void main() {
   );
 }
 
-TemporaryImportSource _source() => TemporaryImportSource(
-  metadata: const ImportSourceMetadata(
-    id: 'synthetic-source',
-    name: 'synthetic.png',
+TemporaryImportSource _source({int index = 0}) => TemporaryImportSource(
+  metadata: ImportSourceMetadata(
+    id: 'synthetic-source-$index',
+    name: 'synthetic-$index.png',
     mimeType: 'image/png',
     byteSize: 4,
-    index: 0,
+    index: index,
   ),
   bytes: Uint8List.fromList([1, 2, 3, 4]),
 );
@@ -182,6 +232,30 @@ class _FakePreprocessor implements ConversationImagePreprocessor {
     TemporaryImportSource source, {
     required ExtractionCancellationToken cancellationToken,
   }) async {
+    cancellationToken.throwIfCancelled();
+    return PreprocessedImage(
+      sourceIndex: source.metadata.index,
+      bytes: Uint8List.fromList([1]),
+      width: 400,
+      height: 800,
+      orientationCorrected: false,
+      wasResized: false,
+    );
+  }
+}
+
+class _CountingPreprocessor implements ConversationImagePreprocessor {
+  var calls = 0;
+
+  @override
+  String get version => 'counting-v1';
+
+  @override
+  Future<PreprocessedImage> process(
+    TemporaryImportSource source, {
+    required ExtractionCancellationToken cancellationToken,
+  }) async {
+    calls += 1;
     cancellationToken.throwIfCancelled();
     return PreprocessedImage(
       sourceIndex: source.metadata.index,
@@ -232,6 +306,61 @@ class _FakeTextProvider implements TextRecognitionProvider {
           confidence: 0.98,
         ),
       ],
+    );
+  }
+}
+
+class _PipelinedPreprocessor implements ConversationImagePreprocessor {
+  final started = <int>{};
+
+  @override
+  String get version => 'pipelined-test';
+
+  @override
+  Future<PreprocessedImage> process(
+    TemporaryImportSource source, {
+    required ExtractionCancellationToken cancellationToken,
+  }) async {
+    started.add(source.metadata.index);
+    await Future<void>.delayed(Duration.zero);
+    return PreprocessedImage(
+      sourceIndex: source.metadata.index,
+      bytes: Uint8List.fromList([1]),
+      width: 400,
+      height: 800,
+      orientationCorrected: false,
+      wasResized: false,
+    );
+  }
+}
+
+class _PipelinedTextProvider implements TextRecognitionProvider {
+  _PipelinedTextProvider(this.preprocessor);
+
+  final _PipelinedPreprocessor preprocessor;
+  bool secondPreprocessingStartedDuringFirstRecognition = false;
+
+  @override
+  String get providerId => 'pipelined-provider';
+
+  @override
+  String get providerVersion => '1';
+
+  @override
+  Future<RecognizedTextPage> recognize(
+    PreprocessedImage image, {
+    required ExtractionCancellationToken cancellationToken,
+  }) async {
+    if (image.sourceIndex == 0) {
+      await Future<void>.delayed(Duration.zero);
+      secondPreprocessingStartedDuringFirstRecognition = preprocessor.started
+          .contains(1);
+    }
+    return RecognizedTextPage(
+      sourceIndex: image.sourceIndex,
+      width: image.width,
+      height: image.height,
+      lines: const [],
     );
   }
 }

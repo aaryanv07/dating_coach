@@ -1,25 +1,135 @@
+import 'dart:async';
+
+import 'package:convo_coach/features/communication_profile/application/communication_profile_controller.dart';
+import 'package:convo_coach/features/communication_profile/data/http_communication_profile_api_client.dart';
+import 'package:convo_coach/features/communication_profile/domain/communication_profile.dart';
+import 'package:convo_coach/features/communication_profile/domain/communication_profile_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/pump_app.dart';
 
 void main() {
-  testWidgets('settings opens and saves the basic communication profile', (
+  testWidgets(
+    'first-login profile form renders while the API is still loading',
+    (tester) async {
+      final repository = _PendingCommunicationProfileRepository();
+      await pumpConvoCoach(
+        tester,
+        initialLocation: '/profile/setup',
+        overrides: [
+          communicationProfileRepositoryProvider.overrideWithValue(repository),
+        ],
+        settle: false,
+      );
+      await tester.pump();
+
+      expect(find.text('Set up your profile'), findsOneWidget);
+      expect(find.text('Preferred name'), findsOneWidget);
+      expect(find.text('Age'), findsOneWidget);
+      expect(
+        find.text(
+          'Loading any saved details in the background. You can start now.',
+        ),
+        findsOneWidget,
+      );
+      await tester.enterText(find.byType(TextField).first, 'Typed now');
+      repository.complete(
+        const CommunicationProfile.empty().copyWith(
+          preferredName: 'Loaded later',
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Typed now'), findsOneWidget);
+      expect(find.text('Loaded later'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'rejected restored session offers reauthentication without allowing overwrite',
+    (tester) async {
+      final router = await pumpConvoCoach(
+        tester,
+        initialLocation: '/profile/setup',
+        overrides: [
+          communicationProfileRepositoryProvider.overrideWithValue(
+            const _FailingCommunicationProfileRepository(
+              CommunicationProfileApiException('authentication_required'),
+            ),
+          ),
+        ],
+      );
+
+      expect(
+        find.text(
+          'Your sign-in could not be verified. Retry, or sign in again to load your saved details.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('profile-sign-in-again')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('profile-sign-in-again')));
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/auth');
+    },
+  );
+
+  testWidgets('profile hub opens and saves the communication profile', (
     tester,
   ) async {
-    await pumpConvoCoach(tester, initialLocation: '/settings');
+    await pumpConvoCoach(tester, initialLocation: '/profile');
 
-    await tester.tap(find.text('Communication profile'));
+    await tester.tap(find.text('Edit profile'));
     await tester.pumpAndSettle();
 
     expect(find.text('Tell us what feels natural to you.'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'Ari');
-    await tester.drag(find.byType(ListView), const Offset(0, -520));
+    await tester.enterText(find.byType(TextField).first, 'Ari');
+    expect(find.text('Job or occupation'), findsOneWidget);
+    expect(find.text('Things you like'), findsOneWidget);
+    expect(find.text('What you want'), findsOneWidget);
+    final saveButton = find.text('Save profile');
+    await tester.scrollUntilVisible(
+      saveButton,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save profile'));
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Communication profile saved.'), findsOneWidget);
+    expect(find.text('Profile saved.'), findsOneWidget);
+  });
+
+  testWidgets('first login requires adult profile basics before home', (
+    tester,
+  ) async {
+    final router = await pumpConvoCoach(
+      tester,
+      initialLocation: '/profile/setup',
+    );
+
+    expect(find.text('Set up your profile'), findsOneWidget);
+    expect(find.text('Age'), findsOneWidget);
+    expect(find.text('Gender or self-description'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'Ari');
+    await tester.enterText(find.byType(TextField).at(1), '17');
+    await tester.enterText(find.byType(TextField).at(4), 'music');
+    final saveButton = find.text('Save profile');
+    await tester.scrollUntilVisible(
+      saveButton,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    expect(find.text('ELLIS is only for adults 18+.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(1), '24');
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, '/home');
   });
 
   testWidgets(
@@ -56,11 +166,69 @@ void main() {
         tester.platformDispatcher.clearTextScaleFactorTestValue();
       });
 
-      await pumpConvoCoach(tester, initialLocation: '/settings/profile');
+      await pumpConvoCoach(tester, initialLocation: '/profile/edit');
 
-      expect(find.text('Communication profile'), findsOneWidget);
+      expect(find.text('Your profile'), findsOneWidget);
       expect(find.text('Tell us what feels natural to you.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _PendingCommunicationProfileRepository
+    implements CommunicationProfileRepository {
+  final Completer<CommunicationProfile> _fetch = Completer();
+
+  void complete([
+    CommunicationProfile profile = const CommunicationProfile.empty(),
+  ]) {
+    if (!_fetch.isCompleted) {
+      _fetch.complete(profile);
+    }
+  }
+
+  @override
+  Future<CommunicationProfile> fetch() => _fetch.future;
+
+  @override
+  Future<CommunicationProfile> save(CommunicationProfile profile) async =>
+      profile;
+
+  @override
+  Future<CommunicationProfile> updatePhoto(
+    CommunicationProfile profile,
+    List<int> bytes,
+    String contentType,
+  ) async => profile;
+
+  @override
+  Future<CommunicationProfile> deletePhoto(
+    CommunicationProfile profile,
+  ) async => profile;
+}
+
+class _FailingCommunicationProfileRepository
+    implements CommunicationProfileRepository {
+  const _FailingCommunicationProfileRepository(this.error);
+
+  final Object error;
+
+  @override
+  Future<CommunicationProfile> fetch() => Future.error(error);
+
+  @override
+  Future<CommunicationProfile> save(CommunicationProfile profile) async =>
+      throw error;
+
+  @override
+  Future<CommunicationProfile> updatePhoto(
+    CommunicationProfile profile,
+    List<int> bytes,
+    String contentType,
+  ) async => throw error;
+
+  @override
+  Future<CommunicationProfile> deletePhoto(
+    CommunicationProfile profile,
+  ) async => throw error;
 }

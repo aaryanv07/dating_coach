@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum RelationshipIntention {
   serious,
   exploring,
@@ -22,39 +24,78 @@ enum MessageLength { short, medium, long }
 class CommunicationProfile {
   const CommunicationProfile({
     required this.preferredName,
+    required this.age,
+    required this.gender,
+    required this.profileSetupCompleted,
     required this.relationshipIntention,
     required this.communicationTone,
     required this.messageLength,
     required this.usesEmojis,
+    required this.jobTitle,
+    required this.likes,
+    required this.lookingFor,
+    required this.profilePhotoBytes,
   });
 
   const CommunicationProfile.empty()
     : preferredName = '',
+      age = null,
+      gender = '',
+      profileSetupCompleted = false,
       relationshipIntention = RelationshipIntention.unsure,
       communicationTone = CommunicationTone.natural,
       messageLength = MessageLength.medium,
-      usesEmojis = true;
+      usesEmojis = true,
+      jobTitle = '',
+      likes = const [],
+      lookingFor = const [],
+      profilePhotoBytes = null;
 
   final String preferredName;
+  final int? age;
+  final String gender;
+  final bool profileSetupCompleted;
   final RelationshipIntention relationshipIntention;
   final CommunicationTone communicationTone;
   final MessageLength messageLength;
   final bool usesEmojis;
+  final String jobTitle;
+  final List<String> likes;
+  final List<String> lookingFor;
+  final Uint8List? profilePhotoBytes;
 
   CommunicationProfile copyWith({
     String? preferredName,
+    int? age,
+    String? gender,
+    bool? profileSetupCompleted,
     RelationshipIntention? relationshipIntention,
     CommunicationTone? communicationTone,
     MessageLength? messageLength,
     bool? usesEmojis,
+    String? jobTitle,
+    List<String>? likes,
+    List<String>? lookingFor,
+    Uint8List? profilePhotoBytes,
+    bool clearProfilePhoto = false,
   }) {
     return CommunicationProfile(
       preferredName: preferredName ?? this.preferredName,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      profileSetupCompleted:
+          profileSetupCompleted ?? this.profileSetupCompleted,
       relationshipIntention:
           relationshipIntention ?? this.relationshipIntention,
       communicationTone: communicationTone ?? this.communicationTone,
       messageLength: messageLength ?? this.messageLength,
       usesEmojis: usesEmojis ?? this.usesEmojis,
+      jobTitle: jobTitle ?? this.jobTitle,
+      likes: List.unmodifiable(likes ?? this.likes),
+      lookingFor: List.unmodifiable(lookingFor ?? this.lookingFor),
+      profilePhotoBytes: clearProfilePhoto
+          ? null
+          : profilePhotoBytes ?? this.profilePhotoBytes,
     );
   }
 }

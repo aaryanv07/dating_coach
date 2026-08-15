@@ -13,8 +13,11 @@ import 'package:convo_coach/features/progress/presentation/progress_screen.dart'
 import 'package:convo_coach/features/settings/presentation/settings_screen.dart';
 import 'package:convo_coach/features/shell/presentation/app_shell.dart';
 import 'package:convo_coach/features/splash/presentation/splash_screen.dart';
+import 'package:convo_coach/features/subscription/presentation/subscription_screen.dart';
 import 'package:convo_coach/core/widgets/app_state_view.dart';
 import 'package:convo_coach/features/communication_profile/presentation/communication_profile_screen.dart';
+import 'package:convo_coach/features/conversation_dashboard/presentation/conversation_dashboard_screen.dart';
+import 'package:convo_coach/features/conversation_coach/presentation/conversation_coach_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -41,6 +44,20 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
       GoRoute(
         path: '/auth',
         builder: (context, state) => const AuthenticationScreen(),
+      ),
+      GoRoute(
+        path: '/profile/setup',
+        builder: (context, state) =>
+            const CommunicationProfileScreen(setupMode: true),
+      ),
+      GoRoute(path: '/settings', redirect: (context, state) => '/profile'),
+      GoRoute(
+        path: '/settings/profile',
+        redirect: (context, state) => '/profile/edit',
+      ),
+      GoRoute(
+        path: '/settings/subscription',
+        redirect: (context, state) => '/profile/subscription',
       ),
       GoRoute(
         path: '/import',
@@ -84,6 +101,23 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
                     builder: (context, state) => ConversationDetailScreen(
                       conversationId: state.pathParameters['conversationId']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'dashboard',
+                        builder: (context, state) =>
+                            ConversationDashboardScreen(
+                              conversationId:
+                                  state.pathParameters['conversationId']!,
+                            ),
+                      ),
+                      GoRoute(
+                        path: 'coach-preview',
+                        builder: (context, state) => ConversationCoachScreen(
+                          conversationId:
+                              state.pathParameters['conversationId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -100,13 +134,17 @@ GoRouter createAppRouter({String initialLocation = '/splash'}) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
                 routes: [
                   GoRoute(
-                    path: 'profile',
+                    path: 'edit',
                     builder: (context, state) =>
                         const CommunicationProfileScreen(),
+                  ),
+                  GoRoute(
+                    path: 'subscription',
+                    builder: (context, state) => const SubscriptionScreen(),
                   ),
                 ],
               ),

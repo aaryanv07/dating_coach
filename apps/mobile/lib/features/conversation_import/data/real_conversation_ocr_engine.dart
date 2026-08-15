@@ -2,6 +2,7 @@ import 'package:convo_coach/features/conversation_import/data/image_preprocessor
 import 'package:convo_coach/features/conversation_import/data/temporary_source_store.dart';
 import 'package:convo_coach/features/conversation_import/data/text_recognition_provider.dart';
 import 'package:convo_coach/features/conversation_import/domain/extraction_models.dart';
+import 'package:convo_coach/features/conversation_import/domain/event_classifier.dart';
 import 'package:convo_coach/features/conversation_import/domain/message_region_grouper.dart';
 import 'package:convo_coach/features/conversation_import/domain/ocr_engine.dart';
 import 'package:convo_coach/features/conversation_import/domain/overlap_detector.dart';
@@ -17,6 +18,7 @@ class RealConversationOcrEngine implements OcrEngine {
     this.speakerAssignment = const GeometrySpeakerAssignment(),
     this.screenshotOrdering = const TimestampScreenshotOrdering(),
     this.overlapDetector = const BoundaryOverlapDetector(),
+    this.eventClassifier = const DeterministicConversationEventClassifier(),
   });
 
   final ConversationImagePreprocessor preprocessor;
@@ -25,6 +27,7 @@ class RealConversationOcrEngine implements OcrEngine {
   final SpeakerAssignmentStrategy speakerAssignment;
   final ScreenshotOrderingStrategy screenshotOrdering;
   final ScreenshotOverlapStrategy overlapDetector;
+  final ConversationEventClassificationStrategy eventClassifier;
 
   @override
   String get providerId => textRecognitionProvider.providerId;
@@ -33,7 +36,7 @@ class RealConversationOcrEngine implements OcrEngine {
   String get providerVersion => textRecognitionProvider.providerVersion;
 
   @override
-  String get extractionVersion => 'conversation-extraction-v1';
+  String get extractionVersion => 'conversation-extraction-v3-visual-events';
 
   @override
   Future<OcrExtractionResult> extract(
@@ -45,26 +48,45 @@ class RealConversationOcrEngine implements OcrEngine {
     if (sources.isEmpty) {
       throw const ExtractionException('Add a screenshot before extracting.');
     }
+    cancellationToken.throwIfCancelled();
     final screenshots = <ExtractedScreenshot>[];
     var confidenceAvailable = true;
+    Future<PreprocessedImage>? pendingPreprocessing = preprocessor.process(
+      sources.first,
+      cancellationToken: cancellationToken,
+    );
     for (var index = 0; index < sources.length; index++) {
+      final processed = await pendingPreprocessing!;
       cancellationToken.throwIfCancelled();
-      final processed = await preprocessor.process(
-        sources[index],
-        cancellationToken: cancellationToken,
-      );
       onProgress((index + 0.35) / sources.length);
-      final page = await textRecognitionProvider.recognize(
-        processed,
-        cancellationToken: cancellationToken,
-      );
+      pendingPreprocessing = index + 1 < sources.length
+          ? preprocessor.process(
+              sources[index + 1],
+              cancellationToken: cancellationToken,
+            )
+          : null;
+      RecognizedTextPage page;
+      try {
+        page = await textRecognitionProvider.recognize(
+          processed,
+          cancellationToken: cancellationToken,
+        );
+      } on Object {
+        // A single bounded look-ahead may still be preprocessing. Await it so
+        // temporary work and errors never escape this extraction scope.
+        try {
+          await pendingPreprocessing;
+        } on Object {
+          // Preserve the recognition failure as the stable boundary error.
+        }
+        rethrow;
+      }
       final regions = regionGrouper
           .group(page, locale: locale)
           .map((region) {
-            final assigned = speakerAssignment.assign(
-              region,
-              pageWidth: page.width,
-            );
+            final assigned = region.eventTypeHint?.isStructural ?? false
+                ? MessageSpeaker.system
+                : speakerAssignment.assign(region, pageWidth: page.width);
             if (region.confidence == null) confidenceAvailable = false;
             return region.copyWith(speaker: assigned);
           })
@@ -96,37 +118,38 @@ class RealConversationOcrEngine implements OcrEngine {
         ),
       );
     }
-    if (deduplicated.regions.any(
-      (region) => region.speaker == MessageSpeaker.unknown,
+    final events = eventClassifier.classify(deduplicated.regions);
+    if (events.any(
+      (event) =>
+          event.speaker == MessageSpeaker.unknown &&
+          !event.eventType.isStructural,
     )) {
       warnings.add(
         const ExtractionWarning(
           code: ExtractionWarningCode.unknownSpeaker,
           message:
-              'Some message positions were ambiguous. Assign those speakers before saving.',
+              'Some item positions do not identify a speaker reliably. Assign those speakers before saving.',
+        ),
+      );
+    }
+    if (events.any(
+      (event) => event.needsReview && event.speaker != MessageSpeaker.unknown,
+    )) {
+      warnings.add(
+        const ExtractionWarning(
+          code: ExtractionWarningCode.eventReviewRequired,
+          message:
+              'Some event types or relationships have limited evidence. Review them before saving.',
         ),
       );
     }
 
-    final messages = <ReviewMessage>[];
-    for (var index = 0; index < deduplicated.regions.length; index++) {
-      final region = deduplicated.regions[index];
-      messages.add(
-        ReviewMessage(
-          id: 'ocr-${region.sourceIndex}-${region.sourceOrder}-$index',
-          speaker: region.speaker,
-          text: region.text,
-          timestamp: region.timestamp,
-          timestampEstimated: false,
-          ocrConfidence: region.confidence,
-          sourceScreenshotIndex: region.sourceIndex,
-          status: ReviewMessageStatus.extracted,
-          visibleTimestampText: region.visibleTimestampText,
-        ),
-      );
-    }
+    final messages = events
+        .where((event) => event.eventType.countsAsMessage)
+        .toList(growable: false);
     return OcrExtractionResult(
       messages: List.unmodifiable(messages),
+      events: events,
       warnings: List.unmodifiable(warnings),
       metadata: ExtractionMetadata(
         provider: providerId,
@@ -134,6 +157,20 @@ class RealConversationOcrEngine implements OcrEngine {
         extractionVersion: extractionVersion,
         preprocessingVersion: preprocessor.version,
         confidenceAvailable: confidenceAvailable,
+      ),
+      diagnostics: ExtractionDiagnostics(
+        processedScreenshotCount: screenshots.length,
+        candidateMessageCount: screenshots.fold(
+          0,
+          (total, screenshot) => total + screenshot.regions.length,
+        ),
+        duplicateMessagesRemoved: deduplicated.removedCount,
+        unknownSpeakerCount: events
+            .where((event) => event.speaker == MessageSpeaker.unknown)
+            .length,
+        orderedSourceIndices: List.unmodifiable(
+          ordered.screenshots.map((screenshot) => screenshot.sourceIndex),
+        ),
       ),
     );
   }

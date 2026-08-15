@@ -13,16 +13,26 @@ void main() {
   test('communication profile DTO round-trips explicit choices', () {
     const profile = CommunicationProfile(
       preferredName: 'Ari',
+      age: 27,
+      gender: 'Man',
+      profileSetupCompleted: true,
       relationshipIntention: RelationshipIntention.friendshipFirst,
       communicationTone: CommunicationTone.thoughtful,
       messageLength: MessageLength.short,
       usesEmojis: false,
+      jobTitle: 'Designer',
+      likes: ['music', 'hiking'],
+      lookingFor: ['kind conversation'],
+      profilePhotoBytes: null,
     );
 
     final dto = CommunicationProfileDto.fromDomain(profile);
     final restored = CommunicationProfileDto.fromJson(dto.toJson()).toDomain();
 
     expect(restored.preferredName, 'Ari');
+    expect(restored.age, 27);
+    expect(restored.gender, 'Man');
+    expect(restored.profileSetupCompleted, isTrue);
     expect(dto.toJson()['relationship_intention'], 'friendship_first');
     expect(dto.toJson()['preferred_message_length'], MessageLength.short.name);
     expect(
@@ -32,6 +42,8 @@ void main() {
     expect(restored.communicationTone, CommunicationTone.thoughtful);
     expect(restored.messageLength, MessageLength.short);
     expect(restored.usesEmojis, isFalse);
+    expect(restored.jobTitle, 'Designer');
+    expect(restored.likes, ['music', 'hiking']);
   });
 
   test('profile repository saves through its API client abstraction', () async {
@@ -40,10 +52,17 @@ void main() {
     );
     const updated = CommunicationProfile(
       preferredName: 'Mira',
+      age: 29,
+      gender: 'Woman',
+      profileSetupCompleted: true,
       relationshipIntention: RelationshipIntention.serious,
       communicationTone: CommunicationTone.calm,
       messageLength: MessageLength.medium,
       usesEmojis: true,
+      jobTitle: 'Engineer',
+      likes: ['books'],
+      lookingFor: ['serious dating'],
+      profilePhotoBytes: null,
     );
 
     await repository.save(updated);
@@ -52,6 +71,21 @@ void main() {
     expect(fetched.preferredName, 'Mira');
     expect(fetched.communicationTone, CommunicationTone.calm);
   });
+
+  test(
+    'profile text still loads when the optional photo request fails',
+    () async {
+      final repository = ApiCommunicationProfileRepository(
+        _FailingPhotoProfileClient(),
+      );
+
+      final fetched = await repository.fetch();
+
+      expect(fetched.preferredName, 'Mira');
+      expect(fetched.profileSetupCompleted, isTrue);
+      expect(fetched.profilePhotoBytes, isNull);
+    },
+  );
 
   test('Riverpod profile provider exposes mock repository state', () async {
     final client = MockCommunicationProfileApiClient();
@@ -107,4 +141,21 @@ void main() {
     expect(deleted, isTrue);
     expect(container.read(conversationListProvider).value, hasLength(1));
   });
+}
+
+final class _FailingPhotoProfileClient
+    extends MockCommunicationProfileApiClient {
+  _FailingPhotoProfileClient()
+    : super(
+        initialProfile: CommunicationProfileDto.fromJson(const {
+          'preferred_name': 'Mira',
+          'age': 29,
+          'profile_setup_completed': true,
+          'has_profile_photo': true,
+        }),
+      );
+
+  @override
+  Future<List<int>?> fetchProfilePhoto() =>
+      Future<List<int>?>.error(StateError('synthetic_photo_failure'));
 }

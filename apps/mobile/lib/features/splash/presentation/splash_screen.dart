@@ -8,17 +8,20 @@ import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:convo_coach/core/theme/app_typography.dart';
 import 'package:convo_coach/core/widgets/app_background.dart';
 import 'package:convo_coach/core/widgets/app_brand.dart';
+import 'package:convo_coach/features/authentication/application/authentication_providers.dart';
+import 'package:convo_coach/features/authentication/domain/authentication_contracts.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _scheduled = false;
 
   @override
@@ -27,11 +30,25 @@ class _SplashScreenState extends State<SplashScreen> {
     if (_scheduled) return;
     _scheduled = true;
     final delay = AppMotion.duration(context, AppMotionSpeed.deliberate);
-    unawaited(
-      Future<void>.delayed(delay * 2, () {
-        if (mounted) context.go('/onboarding');
-      }),
-    );
+    unawaited(_resolveLaunchDestination(delay * 2));
+  }
+
+  Future<void> _resolveLaunchDestination(Duration minimumDelay) async {
+    final results = await Future.wait<Object?>([
+      Future<void>.delayed(minimumDelay),
+      ref
+          .read(authenticationGatewayProvider)
+          .watchSession()
+          .first
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => const MobileAuthenticationSession.signedOut(),
+          )
+          .catchError((_) => const MobileAuthenticationSession.signedOut()),
+    ]);
+    if (!mounted) return;
+    final session = results[1] as MobileAuthenticationSession;
+    context.go(session.isAuthenticated ? '/profile/setup' : '/onboarding');
   }
 
   @override

@@ -4,6 +4,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val convoCoachMinSdk = 24
+fun secureReleaseValue(name: String): String? =
+    providers.environmentVariable(name).orNull
+        ?: providers.gradleProperty(name).orNull
+
+val releaseSigningValues = listOf(
+    secureReleaseValue("CONVOCOACH_RELEASE_STORE_FILE"),
+    secureReleaseValue("CONVOCOACH_RELEASE_STORE_PASSWORD"),
+    secureReleaseValue("CONVOCOACH_RELEASE_KEY_ALIAS"),
+    secureReleaseValue("CONVOCOACH_RELEASE_KEY_PASSWORD"),
+)
+val releaseSigningConfigured = releaseSigningValues.all { !it.isNullOrBlank() }
+val releaseSigningPartiallyConfigured = releaseSigningValues.any { !it.isNullOrBlank() }
+
+if (releaseSigningPartiallyConfigured && !releaseSigningConfigured) {
+    throw GradleException("Incomplete ConvoCoach release-signing configuration.")
+}
+
 android {
     namespace = "com.convocoach.convo_coach"
     compileSdk = flutter.compileSdkVersion
@@ -15,21 +33,37 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.convocoach.convo_coach"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = convoCoachMinSdk
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders.putAll(
+            mapOf("appAuthRedirectScheme" to "com.convocoach.convo-coach")
+        )
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(releaseSigningValues[0]!!)
+                storePassword = releaseSigningValues[1]
+                keyAlias = releaseSigningValues[2]
+                keyPassword = releaseSigningValues[3]
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig =
+                if (releaseSigningConfigured) signingConfigs.getByName("release") else null
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

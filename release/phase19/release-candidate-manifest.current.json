@@ -1,0 +1,255 @@
+{
+  "schema_version": "release-candidate-manifest.v2",
+  "candidate_id": "phase19-local-evidence-20260729",
+  "application_version": "0.2.0-5",
+  "generated_at": "2026-07-29T17:35:00Z",
+  "source_revision": "ba3a5805804422b8e1fa2898d1fb5bcd0929d685",
+  "source_worktree_clean": false,
+  "source_matches_revision": false,
+  "environment": "production",
+  "authentication_verifier_mode": "production_contract",
+  "production_authentication_available": false,
+  "ai_execution_enabled": true,
+  "ai_provider_mode": "zai_glm",
+  "ai_provider_qualified": false,
+  "ai_usage_enforcement_enabled": true,
+  "external_ai_processing_approved": false,
+  "live_ai_safety_evaluation_passed": false,
+  "production_deployment_available": false,
+  "store_billing_available": false,
+  "backup_restore_verified": false,
+  "observability_alerting_available": false,
+  "legal_privacy_review_approved": false,
+  "mock_execution_enabled": false,
+  "phase6a3_status": "blocked",
+  "artifacts": [
+    {
+      "schema_version": "release-artifact-provenance.v1",
+      "artifact_id": "android-phase19-aab",
+      "platform": "android",
+      "media_type": "application.android-aab",
+      "sha256": "d2a2e994fb84afd89c6ee9719d93c7d6b8d6bc319a6e9d2a5e5734c3e04fde09",
+      "size_bytes": 77190145,
+      "source_revision": "ba3a5805804422b8e1fa2898d1fb5bcd0929d685",
+      "source_matches_revision": false,
+      "build_command_id": "flutter-appbundle-release-phase19",
+      "signed": false
+    },
+    {
+      "schema_version": "release-artifact-provenance.v1",
+      "artifact_id": "ios-phase19-runner",
+      "platform": "ios",
+      "media_type": "application.ios-executable",
+      "sha256": "2451478dc83c6f7326877593aaad56b1e62491756477b6defe3ce74f65121b60",
+      "size_bytes": 51411728,
+      "source_revision": "ba3a5805804422b8e1fa2898d1fb5bcd0929d685",
+      "source_matches_revision": false,
+      "build_command_id": "flutter-ios-release-no-codesign-phase19",
+      "signed": false
+    }
+  ],
+  "supply_chain": [
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "backend-runtime-lock",
+      "sha256": "7881f60c72194b6686ebb80bb5036345253559255c2a1c0c200a08e6ed7fcd1b",
+      "size_bytes": 61516
+    },
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "backend-development-lock",
+      "sha256": "853032d942ecd44fe7a8f0bb43cfc91c2e78e4f67cd9e4f13085ac6bd50d7a8d",
+      "size_bytes": 77181
+    },
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "backend-python-project",
+      "sha256": "af9b88cd256ff19557730728e841a3b91b20915085bcb787c8c17ee3d78e5d14",
+      "size_bytes": 1062
+    },
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "flutter-package-lock",
+      "sha256": "5689fbfe14628870accef4834b1eacbc14eb80fd2caa15c3b613d25be0e49b75",
+      "size_bytes": 31704
+    },
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "ios-pod-lock",
+      "sha256": "a000feecc78423a6d964d3af1a0c2553288dd80c20b7971eee47e5ec3d5c8a75",
+      "size_bytes": 4327
+    },
+    {
+      "schema_version": "supply-chain-component-evidence.v1",
+      "component_id": "android-gradle-wrapper",
+      "sha256": "ffc01dc8034ddd96bb95187519a64551ee2ea7e78d2eace137615dec217d86b7",
+      "size_bytes": 201
+    }
+  ],
+  "gates": [
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "backend_quality",
+      "status": "pass",
+      "evidence_ids": ["backend-210-tests-hash-locked"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "flutter_quality",
+      "status": "pass",
+      "evidence_ids": ["flutter-147-tests-analysis"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "database_migrations",
+      "status": "pass",
+      "evidence_ids": ["postgres16-up-down-up-cycle"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "repository_validation",
+      "status": "pass",
+      "evidence_ids": ["repository-contract-validation"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "privacy_security_scans",
+      "status": "pass",
+      "evidence_ids": ["privacy-controls-and-secret-scan"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "supply_chain_evidence",
+      "status": "pass",
+      "evidence_ids": ["hash-locked-dependency-inputs"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "artifact_provenance",
+      "status": "blocked",
+      "evidence_ids": ["android-phase19-aab", "ios-phase19-runner"],
+      "failure_codes": ["source_revision_uncommitted"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "android_release_build",
+      "status": "pass",
+      "evidence_ids": ["android-phase19-aab"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "ios_release_build",
+      "status": "pass",
+      "evidence_ids": ["ios-phase19-runner"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "android_release_signing",
+      "status": "blocked",
+      "evidence_ids": ["android-phase19-aab"],
+      "failure_codes": ["android_artifact_unsigned"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "ios_release_signing",
+      "status": "blocked",
+      "evidence_ids": ["ios-phase19-runner"],
+      "failure_codes": ["ios_artifact_unsigned"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "android_physical_qualification",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["physical_android_device_unavailable"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "ios_physical_qualification",
+      "status": "blocked",
+      "evidence_ids": ["phase6a-ios-physical-20260730"],
+      "failure_codes": [
+        "phase6a3_ios_event_classification_below_target",
+        "phase6a3_ios_minimum_fixture_extraction_below_target"
+      ]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "production_authentication",
+      "status": "blocked",
+      "evidence_ids": ["oidc-contract-implemented"],
+      "failure_codes": ["production_oidc_tenant_unconfigured"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "production_ai_qualified",
+      "status": "blocked",
+      "evidence_ids": ["zai-synthetic-live-smoke-20260729"],
+      "failure_codes": ["production_ai_processing_unapproved", "production_ai_safety_evaluation_missing"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "production_deployment",
+      "status": "blocked",
+      "evidence_ids": ["local-container-readiness-only"],
+      "failure_codes": ["managed_production_deployment_missing"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "store_billing_qualified",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["store_products_and_receipts_missing"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "backup_restore_qualified",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["managed_backup_restore_evidence_missing"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "observability_alerting_qualified",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["production_alerting_unconfigured"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "legal_privacy_review",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["legal_privacy_review_unapproved"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "mock_execution_disabled",
+      "status": "pass",
+      "evidence_ids": ["production-configuration-policy"],
+      "failure_codes": []
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "source_revision_clean",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["source_worktree_dirty", "source_revision_mismatch"]
+    },
+    {
+      "schema_version": "release-gate-evidence.v2",
+      "gate_id": "controlled_launch_approval",
+      "status": "blocked",
+      "evidence_ids": [],
+      "failure_codes": ["controlled_launch_not_authorized"]
+    }
+  ]
+}

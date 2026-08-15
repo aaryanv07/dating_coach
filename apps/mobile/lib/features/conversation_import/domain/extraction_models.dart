@@ -1,3 +1,4 @@
+import 'package:convo_coach/features/conversation_import/domain/conversation_event.dart';
 import 'package:convo_coach/features/conversation_import/domain/review_message.dart';
 import 'package:flutter/foundation.dart';
 
@@ -18,6 +19,8 @@ class OcrBounds {
   double get width => right - left;
   double get height => bottom - top;
   double get centerX => (left + right) / 2;
+  double get centerY => (top + bottom) / 2;
+  double get area => width * height;
 
   OcrBounds union(OcrBounds other) => OcrBounds(
     left: left < other.left ? left : other.left,
@@ -79,6 +82,7 @@ class PreprocessedImage {
     required this.height,
     required this.orientationCorrected,
     required this.wasResized,
+    this.visualConfidenceRaster,
   });
 
   final int sourceIndex;
@@ -87,6 +91,22 @@ class PreprocessedImage {
   final int height;
   final bool orientationCorrected;
   final bool wasResized;
+  final VisualConfidenceRaster? visualConfidenceRaster;
+}
+
+/// A compact, metadata-free luminance map used to calibrate native OCR
+/// confidence without decoding the sanitized image a second time.
+@immutable
+class VisualConfidenceRaster {
+  const VisualConfidenceRaster({
+    required this.width,
+    required this.height,
+    required this.luminance,
+  });
+
+  final int width;
+  final int height;
+  final Uint8List luminance;
 }
 
 enum TimestampPrecision { date, time, dateTime }
@@ -125,6 +145,10 @@ class CandidateMessageRegion {
     required this.speaker,
     this.timestamp,
     this.visibleTimestampText,
+    this.eventTypeHint,
+    this.pageWidth,
+    this.compactAttachmentHint,
+    this.visualPlaceholder = false,
   });
 
   final String text;
@@ -135,11 +159,18 @@ class CandidateMessageRegion {
   final MessageSpeaker speaker;
   final DateTime? timestamp;
   final String? visibleTimestampText;
+  final ConversationEventType? eventTypeHint;
+  final int? pageWidth;
+  final bool? compactAttachmentHint;
+  final bool visualPlaceholder;
 
   CandidateMessageRegion copyWith({
     MessageSpeaker? speaker,
     DateTime? timestamp,
     String? visibleTimestampText,
+    ConversationEventType? eventTypeHint,
+    bool? compactAttachmentHint,
+    bool? visualPlaceholder,
   }) {
     return CandidateMessageRegion(
       text: text,
@@ -150,6 +181,11 @@ class CandidateMessageRegion {
       speaker: speaker ?? this.speaker,
       timestamp: timestamp ?? this.timestamp,
       visibleTimestampText: visibleTimestampText ?? this.visibleTimestampText,
+      eventTypeHint: eventTypeHint ?? this.eventTypeHint,
+      pageWidth: pageWidth,
+      compactAttachmentHint:
+          compactAttachmentHint ?? this.compactAttachmentHint,
+      visualPlaceholder: visualPlaceholder ?? this.visualPlaceholder,
     );
   }
 }
@@ -161,6 +197,7 @@ enum ExtractionWarningCode {
   timelineGap,
   duplicateOverlapRemoved,
   unknownSpeaker,
+  eventReviewRequired,
 }
 
 @immutable
@@ -189,16 +226,40 @@ class ExtractionMetadata {
 }
 
 @immutable
+class ExtractionDiagnostics {
+  const ExtractionDiagnostics({
+    this.processedScreenshotCount = 0,
+    this.candidateMessageCount = 0,
+    this.duplicateMessagesRemoved = 0,
+    this.unknownSpeakerCount = 0,
+    this.orderedSourceIndices = const [],
+  });
+
+  final int processedScreenshotCount;
+  final int candidateMessageCount;
+  final int duplicateMessagesRemoved;
+  final int unknownSpeakerCount;
+  final List<int> orderedSourceIndices;
+}
+
+@immutable
 class OcrExtractionResult {
   const OcrExtractionResult({
     required this.messages,
     required this.warnings,
     required this.metadata,
-  });
+    List<ReviewMessage>? events,
+    this.diagnostics = const ExtractionDiagnostics(),
+  }) : events = events ?? messages;
 
+  /// Compatibility projection containing only event types that count as messages.
   final List<ReviewMessage> messages;
+
+  /// Full typed review sequence, including structural items and relationships.
+  final List<ReviewMessage> events;
   final List<ExtractionWarning> warnings;
   final ExtractionMetadata metadata;
+  final ExtractionDiagnostics diagnostics;
 }
 
 class ExtractionCancellationToken {

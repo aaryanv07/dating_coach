@@ -4,6 +4,7 @@ import 'package:convo_coach/core/motion/app_motion.dart';
 import 'package:convo_coach/core/theme/app_theme.dart';
 import 'package:convo_coach/core/theme/app_tokens.dart';
 import 'package:convo_coach/core/theme/theme_controller.dart';
+import 'package:convo_coach/core/widgets/app_privacy_shield.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +49,7 @@ class _ConvoCoachAppState extends ConsumerState<ConvoCoachApp> {
             MediaQuery.maybeOf(context)?.disableAnimations ?? false;
         return MotionScope(
           reduceMotion: reduceMotion || systemReduced,
-          child: child ?? const SizedBox.shrink(),
+          child: AppPrivacyShield(child: child ?? const SizedBox.shrink()),
         );
       },
     );
